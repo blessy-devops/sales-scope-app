@@ -47,8 +47,6 @@ export function useUserPreferences() {
           preference_key: key,
           preference_value: value,
           user_id: null // Por enquanto null até implementar auth
-        }, {
-          onConflict: 'preference_key'
         });
       
       if (error) throw error;
