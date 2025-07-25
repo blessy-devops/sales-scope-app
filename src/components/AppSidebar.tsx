@@ -15,9 +15,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useTheme } from 'next-themes';
@@ -42,22 +39,22 @@ export function AppSidebar() {
   return (
     <Sidebar 
       className={cn(
-        "border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
+        "bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800",
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Header com Logo */}
-      <SidebarHeader className="border-b border-sidebar-border p-4">
+      <SidebarHeader className="p-6 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+            <LayoutDashboard className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-sidebar-foreground truncate">
+              <h2 className="font-bold text-gray-900 dark:text-white text-lg truncate">
                 Sales Scope
               </h2>
-              <p className="text-xs text-sidebar-foreground/60">
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 Dashboard de Vendas
               </p>
             </div>
@@ -66,56 +63,56 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* Navigation Menu */}
-      <SidebarContent className="flex-1 p-2">
-        <nav className="space-y-1">
-          <SidebarMenu>
-            {menuItems.map((item) => {
-              const IconComponent = item.icon;
-              const active = isActive(item.url);
-              
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    className={cn(
-                      "w-full justify-start transition-all duration-200 group relative",
-                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      collapsed ? "px-3" : "px-3",
-                      active && "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                    )}
-                  >
-                    <NavLink to={item.url} end>
-                      <IconComponent className={cn(
-                        "flex-shrink-0 transition-all duration-200",
-                        collapsed ? "w-5 h-5" : "w-5 h-5"
-                      )} />
-                      {!collapsed && (
-                        <span className="font-medium truncate">
-                          {item.title}
-                        </span>
-                      )}
-                      {/* Active indicator */}
-                      {active && !collapsed && (
-                        <div className="absolute right-2 w-1.5 h-1.5 bg-sidebar-primary-foreground rounded-full" />
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
+      <SidebarContent className="flex-1 p-4">
+        <nav className="space-y-2">
+          {menuItems.map((item) => {
+            const IconComponent = item.icon;
+            const active = isActive(item.url);
+            
+            return (
+              <NavLink
+                key={item.title}
+                to={item.url}
+                end
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+                  "hover:bg-gray-100 dark:hover:bg-gray-800",
+                  collapsed ? "justify-center" : "justify-start",
+                  active 
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+                    : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <IconComponent className={cn(
+                  "flex-shrink-0 transition-all duration-200",
+                  "w-5 h-5",
+                  active ? "text-indigo-600 dark:text-indigo-400" : ""
+                )} />
+                {!collapsed && (
+                  <span className="font-semibold truncate text-sm">
+                    {item.title}
+                  </span>
+                )}
+                {/* Active indicator */}
+                {active && (
+                  <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
       </SidebarContent>
 
       {/* Footer com Dark Mode e Configurações */}
-      <SidebarFooter className="border-t border-sidebar-border p-2 space-y-1">
+      <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
         {/* Dark Mode Toggle */}
-        <SidebarMenuButton
+        <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className={cn(
-            "w-full justify-start transition-all duration-200",
-            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed ? "px-3" : "px-3"
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
+            "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300",
+            "hover:text-gray-900 dark:hover:text-white",
+            collapsed ? "justify-center" : "justify-start"
           )}
         >
           {theme === 'dark' ? (
@@ -124,48 +121,55 @@ export function AppSidebar() {
             <Moon className="w-5 h-5" />
           )}
           {!collapsed && (
-            <span className="font-medium">
+            <span className="font-semibold text-sm">
               {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
             </span>
           )}
-        </SidebarMenuButton>
+        </button>
 
         {/* Configurações */}
-        <SidebarMenuButton
-          asChild
+        <NavLink
+          to="/settings"
           className={cn(
-            "w-full justify-start transition-all duration-200",
-            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed ? "px-3" : "px-3",
-            isActive('/settings') && "bg-sidebar-primary text-sidebar-primary-foreground"
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
+            "hover:bg-gray-100 dark:hover:bg-gray-800",
+            collapsed ? "justify-center" : "justify-start",
+            isActive('/settings')
+              ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm"
+              : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           )}
         >
-          <NavLink to="/settings">
-            <Settings className="w-5 h-5" />
-            {!collapsed && (
-              <span className="font-medium">Configurações</span>
-            )}
-          </NavLink>
-        </SidebarMenuButton>
+          <Settings className={cn(
+            "w-5 h-5",
+            isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
+          )} />
+          {!collapsed && (
+            <span className="font-semibold text-sm">Configurações</span>
+          )}
+          {isActive('/settings') && (
+            <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+          )}
+        </NavLink>
 
         {/* Collapse Button */}
-        <SidebarMenuButton
+        <button
           onClick={toggleSidebar}
           className={cn(
-            "w-full justify-start transition-all duration-200",
-            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed ? "px-3" : "px-3"
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
+            "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400",
+            "hover:text-gray-700 dark:hover:text-gray-300",
+            collapsed ? "justify-center" : "justify-start"
           )}
         >
           {collapsed ? (
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           ) : (
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           )}
           {!collapsed && (
-            <span className="font-medium">Recolher</span>
+            <span className="font-medium text-sm">Recolher</span>
           )}
-        </SidebarMenuButton>
+        </button>
       </SidebarFooter>
     </Sidebar>
   );
