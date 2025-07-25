@@ -7,7 +7,9 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePicker } from '@/components/DatePicker';
-import { useNavigate } from 'react-router-dom';
+import { DashboardChart } from '@/components/DashboardChart';
+import { LoadingCard } from '@/components/LoadingCard';
+import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
 import { useChannels } from '@/hooks/useChannels';
@@ -21,13 +23,16 @@ import {
   Calendar as CalendarIcon,
   ArrowRight,
   ShoppingBag,
-  BarChart3
+  BarChart3,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
 
 const Index = () => {
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const { isConnected, lastUpdate } = useRealTimeUpdates();
   const { channels } = useChannels();
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
@@ -165,18 +170,47 @@ const Index = () => {
   const channelData = getChannelData();
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="bg-background p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard de Vendas</h1>
-          <p className="text-muted-foreground">
-            Acompanhe o desempenho das suas vendas vs metas em tempo real
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Dashboard de Vendas</h1>
+            <p className="text-muted-foreground">
+              Acompanhe o desempenho das suas vendas vs metas em tempo real
+            </p>
+          </div>
+          
+          {/* Status de Conexão */}
+          <div className="flex items-center gap-2 text-sm">
+            {isConnected ? (
+              <>
+                <Wifi className="w-4 h-4 text-success" />
+                <span className="text-success">Online</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Offline</span>
+              </>
+            )}
+            {lastUpdate && (
+              <span className="text-muted-foreground">
+                · Atualizado {format(lastUpdate, 'HH:mm', { locale: ptBR })}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* TOP SECTION - Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <LoadingCard key={index} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {metrics.map((metric, index) => {
             const IconComponent = metric.icon;
             return (
@@ -196,8 +230,9 @@ const Index = () => {
                 </CardContent>
               </Card>
             );
-          })}
-        </div>
+            })}
+          </div>
+        )}
 
         {/* FILTROS */}
         <Card className="border-border/50">
@@ -231,10 +266,13 @@ const Index = () => {
           </CardContent>
         </Card>
 
+        {/* GRÁFICO */}
+        <DashboardChart />
+
         {/* BOTTOM SECTION - Grid de Canais */}
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">Desempenho por Canal</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Desempenho por Canal</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {channelData.map((channel) => {
               const IconComponent = getChannelIcon(channel.type);
               return (
@@ -297,8 +335,8 @@ const Index = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="border-t pt-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Acesso Rápido</h2>
+        <div className="border-t pt-6 md:pt-8">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Acesso Rápido</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="border-border/50 hover:shadow-md transition-all duration-200">
               <CardHeader className="pb-3">
@@ -309,7 +347,7 @@ const Index = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <Button 
-                  onClick={() => navigate('/channels')}
+                  onClick={() => window.location.href = '/channels'}
                   variant="outline"
                   className="w-full gap-2"
                 >
@@ -328,7 +366,7 @@ const Index = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <Button 
-                  onClick={() => navigate('/targets')}
+                  onClick={() => window.location.href = '/targets'}
                   variant="outline"
                   className="w-full gap-2"
                 >
@@ -347,7 +385,7 @@ const Index = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <Button 
-                  onClick={() => navigate('/sales')}
+                  onClick={() => window.location.href = '/sales'}
                   variant="outline"
                   className="w-full gap-2"
                 >
