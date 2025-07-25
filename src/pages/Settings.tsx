@@ -152,27 +152,30 @@ export default function Settings() {
 
     setAddingUser(true);
     try {
-      // Create user via Supabase Auth Admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create user via regular signup flow
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
-        user_metadata: {
-          full_name: newUserName
-        },
-        email_confirm: true
+        options: {
+          data: {
+            full_name: newUserName
+          }
+        }
       });
 
       if (authError) throw authError;
 
       // The user profile will be created automatically by the trigger
-      // But we need to update it to set created_by (first_login is set to false by default)
+      // Update it to set created_by after a brief delay to ensure the trigger completed
       if (authData.user) {
-        await supabase
-          .from('user_profiles')
-          .update({ 
-            created_by: user?.id 
-          })
-          .eq('id', authData.user.id);
+        setTimeout(async () => {
+          await supabase
+            .from('user_profiles')
+            .update({ 
+              created_by: user?.id 
+            })
+            .eq('id', authData.user.id);
+        }, 1000);
 
         // Send welcome email (optional - will fail silently if Resend is not configured)
         try {
@@ -221,9 +224,13 @@ export default function Settings() {
     }
 
     try {
-      // Remove user via Supabase Auth Admin API
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
+      // Delete user profile (this will cascade delete the auth user)
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) throw error;
 
       toast({
         title: 'Sucesso',
