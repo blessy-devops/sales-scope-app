@@ -170,37 +170,8 @@ const Index = () => {
   const channelData = getChannelData();
 
   return (
-    <div className="bg-background p-4 md:p-6">
+    <div className="p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Dashboard de Vendas</h1>
-            <p className="text-muted-foreground">
-              Acompanhe o desempenho das suas vendas vs metas em tempo real
-            </p>
-          </div>
-          
-          {/* Status de Conexão */}
-          <div className="flex items-center gap-2 text-sm">
-            {isConnected ? (
-              <>
-                <Wifi className="w-4 h-4 text-success" />
-                <span className="text-success">Online</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Offline</span>
-              </>
-            )}
-            {lastUpdate && (
-              <span className="text-muted-foreground">
-                · Atualizado {format(lastUpdate, 'HH:mm', { locale: ptBR })}
-              </span>
-            )}
-          </div>
-        </div>
 
         {/* TOP SECTION - Métricas */}
         {loading ? (

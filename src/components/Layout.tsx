@@ -1,17 +1,21 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
+import { PageHeader } from './PageHeader';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
 interface LayoutProps {
   children: ReactNode;
+  onNewChannel?: () => void;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, onNewChannel }: LayoutProps) {
   const { toast } = useToast();
+  const location = useLocation();
 
   const exportToExcel = () => {
     try {
@@ -41,18 +45,21 @@ export function Layout({ children }: LayoutProps) {
     }
   };
 
+  // Mostrar botão de exportar apenas no dashboard
+  const showExportButton = location.pathname === '/';
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-            <div className="flex items-center justify-between h-full px-4">
+          {/* Page Header */}
+          <PageHeader onNewChannel={onNewChannel}>
+            <div className="flex items-center gap-2">
               <SidebarTrigger className="md:hidden" />
               
-              <div className="flex items-center gap-2 ml-auto">
+              {showExportButton && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -60,11 +67,11 @@ export function Layout({ children }: LayoutProps) {
                   className="gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Exportar Excel</span>
+                  <span className="hidden sm:inline">Exportar</span>
                 </Button>
-              </div>
+              )}
             </div>
-          </header>
+          </PageHeader>
 
           {/* Main Content */}
           <main className="flex-1 overflow-auto">

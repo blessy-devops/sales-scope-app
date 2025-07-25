@@ -1,107 +1,172 @@
-import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Home, 
-  ShoppingBag, 
+  LayoutDashboard, 
+  Store, 
   Target, 
-  BarChart3, 
+  DollarSign,
   Settings,
   Moon,
-  Sun
+  Sun,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 
 const menuItems = [
-  { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'Canais', url: '/channels', icon: ShoppingBag },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Canais de Venda', url: '/channels', icon: Store },
   { title: 'Metas', url: '/targets', icon: Target },
-  { title: 'Vendas', url: '/sales', icon: BarChart3 },
-  { title: 'Configurações', url: '/settings', icon: Settings },
+  { title: 'Lançar Vendas', url: '/sales', icon: DollarSign },
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const currentPath = location.pathname;
 
   const collapsed = state === 'collapsed';
   const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground';
 
   return (
-    <Sidebar className={collapsed ? 'w-16' : 'w-64'}>
-      <SidebarContent className="p-2">
-        {/* Logo/Brand */}
-        <div className="mb-6 px-3 pt-2">
-          {!collapsed ? (
-            <h2 className="text-lg font-bold text-primary">Sales Scope</h2>
-          ) : (
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-primary-foreground" />
+    <Sidebar 
+      className={cn(
+        "border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
+        collapsed ? 'w-16' : 'w-64'
+      )}
+    >
+      {/* Header com Logo */}
+      <SidebarHeader className="border-b border-sidebar-border p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+            <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
+          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-sidebar-foreground truncate">
+                Sales Scope
+              </h2>
+              <p className="text-xs text-sidebar-foreground/60">
+                Dashboard de Vendas
+              </p>
             </div>
           )}
         </div>
+      </SidebarHeader>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>
-            Navegação
-          </SidebarGroupLabel>
-          
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
+      {/* Navigation Menu */}
+      <SidebarContent className="flex-1 p-2">
+        <nav className="space-y-1">
+          <SidebarMenu>
+            {menuItems.map((item) => {
+              const IconComponent = item.icon;
+              const active = isActive(item.url);
+              
+              return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={({ isActive }) => getNavCls({ isActive })}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      {!collapsed && <span>{item.title}</span>}
+                  <SidebarMenuButton 
+                    asChild
+                    className={cn(
+                      "w-full justify-start transition-all duration-200 group relative",
+                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      collapsed ? "px-3" : "px-3",
+                      active && "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                    )}
+                  >
+                    <NavLink to={item.url} end>
+                      <IconComponent className={cn(
+                        "flex-shrink-0 transition-all duration-200",
+                        collapsed ? "w-5 h-5" : "w-5 h-5"
+                      )} />
+                      {!collapsed && (
+                        <span className="font-medium truncate">
+                          {item.title}
+                        </span>
+                      )}
+                      {/* Active indicator */}
+                      {active && !collapsed && (
+                        <div className="absolute right-2 w-1.5 h-1.5 bg-sidebar-primary-foreground rounded-full" />
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Dark Mode Toggle */}
-        <div className="mt-auto pt-4">
-          <Button
-            variant="ghost"
-            size={collapsed ? "icon" : "sm"}
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-full justify-start"
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4" />
-            ) : (
-              <Moon className="w-4 h-4" />
-            )}
-            {!collapsed && (
-              <span className="ml-2">
-                {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-              </span>
-            )}
-          </Button>
-        </div>
+              );
+            })}
+          </SidebarMenu>
+        </nav>
       </SidebarContent>
+
+      {/* Footer com Dark Mode e Configurações */}
+      <SidebarFooter className="border-t border-sidebar-border p-2 space-y-1">
+        {/* Dark Mode Toggle */}
+        <SidebarMenuButton
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className={cn(
+            "w-full justify-start transition-all duration-200",
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed ? "px-3" : "px-3"
+          )}
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-5 h-5" />
+          ) : (
+            <Moon className="w-5 h-5" />
+          )}
+          {!collapsed && (
+            <span className="font-medium">
+              {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+            </span>
+          )}
+        </SidebarMenuButton>
+
+        {/* Configurações */}
+        <SidebarMenuButton
+          asChild
+          className={cn(
+            "w-full justify-start transition-all duration-200",
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed ? "px-3" : "px-3",
+            isActive('/settings') && "bg-sidebar-primary text-sidebar-primary-foreground"
+          )}
+        >
+          <NavLink to="/settings">
+            <Settings className="w-5 h-5" />
+            {!collapsed && (
+              <span className="font-medium">Configurações</span>
+            )}
+          </NavLink>
+        </SidebarMenuButton>
+
+        {/* Collapse Button */}
+        <SidebarMenuButton
+          onClick={toggleSidebar}
+          className={cn(
+            "w-full justify-start transition-all duration-200",
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed ? "px-3" : "px-3"
+          )}
+        >
+          {collapsed ? (
+            <ChevronRight className="w-5 h-5" />
+          ) : (
+            <ChevronLeft className="w-5 h-5" />
+          )}
+          {!collapsed && (
+            <span className="font-medium">Recolher</span>
+          )}
+        </SidebarMenuButton>
+      </SidebarFooter>
     </Sidebar>
   );
 }
