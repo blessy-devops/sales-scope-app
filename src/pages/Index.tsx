@@ -238,7 +238,7 @@ const Index = () => {
         </Card>
 
         {/* GRÁFICO */}
-        <DashboardChart />
+        <DashboardChart periodFilter={periodFilter} />
 
         {/* BOTTOM SECTION - Grid de Canais */}
         <div>
