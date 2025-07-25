@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { Save, Settings as SettingsIcon } from 'lucide-react';
 
 interface DashboardConfig {
@@ -20,6 +21,7 @@ interface DashboardConfig {
 
 const Settings = () => {
   const { toast } = useToast();
+  const { getPreference, setPreference, loading: preferencesLoading } = useUserPreferences();
   
   const [config, setConfig] = useState<DashboardConfig>({
     showRealizadoGlobal: true,
@@ -34,6 +36,23 @@ const Settings = () => {
 
   const [loading, setLoading] = useState(false);
 
+  // Carregar configurações salvas
+  useEffect(() => {
+    if (!preferencesLoading) {
+      const savedConfig = getPreference('dashboard_config', {
+        showRealizadoGlobal: true,
+        showMetaGlobal: true,
+        showGapPercent: true,
+        showGapValue: true,
+        showMetaDiariaOriginal: true,
+        showMetaDiariaAjustada: true,
+        showChart: true,
+        showChannelGrid: true,
+      });
+      setConfig(savedConfig);
+    }
+  }, [preferencesLoading, getPreference]);
+
   const handleConfigChange = (key: keyof DashboardConfig, value: boolean) => {
     setConfig(prev => ({
       ...prev,
@@ -45,11 +64,7 @@ const Settings = () => {
     setLoading(true);
     
     try {
-      // Simular salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Aqui você salvaria no Supabase ou localStorage
-      localStorage.setItem('dashboardConfig', JSON.stringify(config));
+      await setPreference('dashboard_config', config);
       
       toast({
         title: 'Configurações salvas',

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DatePicker } from '@/components/DatePicker';
 import { DashboardChart } from '@/components/DashboardChart';
 import { LoadingCard } from '@/components/LoadingCard';
@@ -13,6 +14,7 @@ import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
 import { useChannels } from '@/hooks/useChannels';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { format, startOfMonth, endOfMonth, subDays, getDaysInMonth, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -36,6 +38,7 @@ const Index = () => {
   const { channels } = useChannels();
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
+  const { getPreference } = useUserPreferences();
   
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('mes');
   const [customStartDate, setCustomStartDate] = useState<Date>();
@@ -128,50 +131,76 @@ const Index = () => {
     }).format(value);
   };
 
-  const metrics = [
+  // Carregar configurações do dashboard
+  const dashboardConfig = getPreference('dashboard_config', {
+    showRealizadoGlobal: true,
+    showMetaGlobal: true,
+    showGapPercent: true,
+    showGapValue: true,
+    showMetaDiariaOriginal: true,
+    showMetaDiariaAjustada: true,
+    showChart: true,
+    showChannelGrid: true,
+  });
+
+  const allMetrics = [
     {
+      key: 'showRealizadoGlobal',
       title: 'Realizado Global',
       value: formatCurrency(totalSalesMonth),
       icon: DollarSign,
-      color: 'text-primary'
+      color: 'text-primary',
+      tooltip: 'Total de vendas realizadas no período selecionado'
     },
     {
+      key: 'showMetaGlobal',
       title: 'Meta Global',
       value: formatCurrency(totalTargetMonth),
       icon: Target,
-      color: 'text-primary'
+      color: 'text-primary',
+      tooltip: 'Total de metas definidas para o período'
     },
     {
+      key: 'showGapPercent',
       title: 'GAP %',
       value: `${gapPercent >= 0 ? '+' : ''}${gapPercent.toFixed(1)}%`,
       icon: gapPercent >= 0 ? TrendingUp : TrendingDown,
-      color: gapPercent >= 0 ? 'text-success' : 'text-destructive'
+      color: gapPercent >= 0 ? 'text-success' : 'text-destructive',
+      tooltip: 'Diferença percentual entre realizado e meta'
     },
     {
+      key: 'showGapValue',
       title: 'GAP R$',
       value: formatCurrency(gapValue),
       icon: gapValue >= 0 ? TrendingUp : TrendingDown,
-      color: gapValue >= 0 ? 'text-success' : 'text-destructive'
+      color: gapValue >= 0 ? 'text-success' : 'text-destructive',
+      tooltip: 'Diferença em valores entre realizado e meta'
     },
     {
+      key: 'showMetaDiariaOriginal',
       title: 'Meta Diária Original',
       value: formatCurrency(originalDailyTarget),
       icon: Target,
-      color: 'text-muted-foreground'
+      color: 'text-muted-foreground',
+      tooltip: 'Meta mensal dividida pelos dias do mês'
     },
     {
+      key: 'showMetaDiariaAjustada',
       title: 'Meta Diária Ajustada',
       value: formatCurrency(adjustedDailyTarget),
       icon: Target,
-      color: 'text-warning'
+      color: 'text-warning',
+      tooltip: 'Meta ajustada para compensar o GAP nos dias restantes'
     }
   ];
 
+  const metrics = allMetrics.filter(metric => dashboardConfig[metric.key as keyof typeof dashboardConfig]);
   const channelData = getChannelData();
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <TooltipProvider>
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
 
         {/* TOP SECTION - Métricas */}
         {loading ? (
@@ -185,21 +214,28 @@ const Index = () => {
           {metrics.map((metric, index) => {
             const IconComponent = metric.icon;
             return (
-              <Card key={index} className="border-border/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <IconComponent className={`w-5 h-5 ${metric.color}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
-                      {metric.title}
-                    </p>
-                    <p className={`text-lg font-bold ${metric.color}`}>
-                      {metric.value}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Tooltip key={index}>
+                <TooltipTrigger asChild>
+                  <Card className="border-border/50 cursor-help">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <IconComponent className={`w-5 h-5 ${metric.color}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          {metric.title}
+                        </p>
+                        <p className={`text-lg font-bold ${metric.color}`}>
+                          {metric.value}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{metric.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
             );
             })}
           </div>
@@ -238,72 +274,74 @@ const Index = () => {
         </Card>
 
         {/* GRÁFICO */}
-        <DashboardChart periodFilter={periodFilter} />
+        {dashboardConfig.showChart && <DashboardChart periodFilter={periodFilter} />}
 
         {/* BOTTOM SECTION - Grid de Canais */}
-        <div>
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Desempenho por Canal</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {channelData.map((channel) => {
-              const IconComponent = getChannelIcon(channel.type);
-              return (
-                <Card key={channel.id} className="border-border/50 hover:shadow-md transition-all duration-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <IconComponent className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate">{channel.name}</h3>
-                        <Badge variant="outline" className="text-xs">
-                          {channel.type}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Realizado</span>
-                        <span className="font-medium text-foreground">
-                          {formatCurrency(channel.sales)}
-                        </span>
+        {dashboardConfig.showChannelGrid && (
+          <div>
+            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Desempenho por Canal</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {channelData.map((channel) => {
+                const IconComponent = getChannelIcon(channel.type);
+                return (
+                  <Card key={channel.id} className="border-border/50 hover:shadow-md transition-all duration-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <IconComponent className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-foreground truncate">{channel.name}</h3>
+                          <Badge variant="outline" className="text-xs">
+                            {channel.type}
+                          </Badge>
+                        </div>
                       </div>
                       
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Meta</span>
-                        <span className="font-medium text-foreground">
-                          {formatCurrency(channel.target)}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Progresso</span>
+                          <span className="text-muted-foreground">Realizado</span>
                           <span className="font-medium text-foreground">
-                            {channel.progress.toFixed(1)}%
+                            {formatCurrency(channel.sales)}
                           </span>
                         </div>
-                        <Progress 
-                          value={channel.progress} 
-                          className="h-2"
-                        />
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Meta</span>
+                          <span className="font-medium text-foreground">
+                            {formatCurrency(channel.target)}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Progresso</span>
+                            <span className="font-medium text-foreground">
+                              {channel.progress.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={channel.progress} 
+                            className="h-2"
+                          />
+                        </div>
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">GAP</span>
+                          <span className={`font-medium ${
+                            channel.gap >= 0 ? 'text-success' : 'text-destructive'
+                          }`}>
+                            {channel.gap >= 0 ? '+' : ''}{channel.gap.toFixed(1)}%
+                          </span>
+                        </div>
                       </div>
-                      
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">GAP</span>
-                        <span className={`font-medium ${
-                          channel.gap >= 0 ? 'text-success' : 'text-destructive'
-                        }`}>
-                          {channel.gap >= 0 ? '+' : ''}{channel.gap.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Quick Actions */}
         <div className="border-t pt-6 md:pt-8">
@@ -368,7 +406,8 @@ const Index = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 
