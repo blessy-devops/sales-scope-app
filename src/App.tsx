@@ -4,12 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Channels from "./pages/Channels";
 import Targets from "./pages/Targets";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ChangePassword from "./pages/ChangePassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,17 +26,63 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
+          <AuthProvider>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/channels" element={<Channels />} />
-              <Route path="/targets" element={<Targets />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/settings" element={<Settings />} />
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Protected routes */}
+              <Route path="/change-password" element={
+                <ProtectedRoute>
+                  <ChangePassword />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Index />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/channels" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Channels />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/targets" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Targets />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/sales" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Sales />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Settings />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Layout>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
