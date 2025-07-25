@@ -1,45 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SalesTarget, TargetHistory, MonthlyTargetData } from '@/types/target';
 import { useChannels } from './useChannels';
-
-// Dados mockados para demonstração
-const mockTargets: SalesTarget[] = [
-  { id: '1', channel_id: '1', month: 12, year: 2024, target_amount: 50000 },
-  { id: '2', channel_id: '2', month: 12, year: 2024, target_amount: 25000 },
-  { id: '3', channel_id: '4', month: 12, year: 2024, target_amount: 75000 },
-  { id: '4', channel_id: '5', month: 12, year: 2024, target_amount: 100000 },
-  // Mês anterior
-  { id: '5', channel_id: '1', month: 11, year: 2024, target_amount: 45000 },
-  { id: '6', channel_id: '2', month: 11, year: 2024, target_amount: 22000 },
-  { id: '7', channel_id: '4', month: 11, year: 2024, target_amount: 70000 },
-];
-
-const mockHistory: TargetHistory[] = [
-  {
-    id: '1',
-    channel_id: '1',
-    month: 12,
-    year: 2024,
-    old_amount: 45000,
-    new_amount: 50000,
-    changed_at: '2024-12-01T10:30:00Z',
-  },
-  {
-    id: '2',
-    channel_id: '4',
-    month: 12,
-    year: 2024,
-    old_amount: 70000,
-    new_amount: 75000,
-    changed_at: '2024-12-02T14:15:00Z',
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
 
 export function useTargets() {
   const { channels } = useChannels();
-  const [targets, setTargets] = useState<SalesTarget[]>(mockTargets);
-  const [history, setHistory] = useState<TargetHistory[]>(mockHistory);
-  const [loading, setLoading] = useState(false);
+  const [targets, setTargets] = useState<SalesTarget[]>([]);
+  const [history, setHistory] = useState<TargetHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTargets();
+    fetchHistory();
+  }, []);
+
+  const fetchTargets = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sales_targets')
+        .select('*')
+        .order('year', { ascending: false })
+        .order('month', { ascending: false });
+      
+      if (error) throw error;
+      setTargets(data || []);
+    } catch (error) {
+      console.error('Error fetching targets:', error);
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('target_history')
+        .select('*')
+        .order('changed_at', { ascending: false });
+      
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getTargetsForMonth = (month: number, year: number): SalesTarget[] => {
     return targets.filter(t => t.month === month && t.year === year);
@@ -59,12 +63,7 @@ export function useTargets() {
     setLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay
-      
-      const newTargets: SalesTarget[] = [];
-      const newHistory: TargetHistory[] = [];
-      
-      targetsData.forEach(data => {
+      for (const data of targetsData) {
         const existingTarget = targets.find(
           t => t.channel_id === data.channel_id && t.month === month && t.year === year
         );
@@ -72,58 +71,57 @@ export function useTargets() {
         if (existingTarget) {
           // Atualizar meta existente
           if (existingTarget.target_amount !== data.target_amount) {
-            newHistory.push({
-              id: Math.random().toString(36).substr(2, 9),
+            // Salvar histórico
+            await supabase
+              .from('target_history')
+              .insert({
+                channel_id: data.channel_id,
+                month,
+                year,
+                old_amount: existingTarget.target_amount,
+                new_amount: data.target_amount,
+              });
+            
+            // Atualizar meta
+            await supabase
+              .from('sales_targets')
+              .update({ 
+                target_amount: data.target_amount,
+                previous_amount: existingTarget.target_amount 
+              })
+              .eq('id', existingTarget.id);
+          }
+        } else if (data.target_amount > 0) {
+          // Criar nova meta
+          await supabase
+            .from('sales_targets')
+            .insert({
               channel_id: data.channel_id,
               month,
               year,
-              old_amount: existingTarget.target_amount,
-              new_amount: data.target_amount,
-              changed_at: new Date().toISOString(),
+              target_amount: data.target_amount,
             });
-          }
           
-          newTargets.push({
-            ...existingTarget,
-            target_amount: data.target_amount,
-            updated_at: new Date().toISOString(),
-          });
-        } else {
-          // Criar nova meta
-          const newTarget: SalesTarget = {
-            id: Math.random().toString(36).substr(2, 9),
-            channel_id: data.channel_id,
-            month,
-            year,
-            target_amount: data.target_amount,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          
-          newTargets.push(newTarget);
-          
-          if (data.target_amount > 0) {
-            newHistory.push({
-              id: Math.random().toString(36).substr(2, 9),
+          // Salvar histórico
+          await supabase
+            .from('target_history')
+            .insert({
               channel_id: data.channel_id,
               month,
               year,
               old_amount: 0,
               new_amount: data.target_amount,
-              changed_at: new Date().toISOString(),
             });
-          }
         }
-      });
+      }
       
-      // Atualizar estado
-      setTargets(prev => [
-        ...prev.filter(t => !(t.month === month && t.year === year)),
-        ...newTargets
-      ]);
+      // Recarregar dados
+      await fetchTargets();
+      await fetchHistory();
       
-      setHistory(prev => [...prev, ...newHistory]);
-      
+    } catch (error) {
+      console.error('Error saving targets:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
