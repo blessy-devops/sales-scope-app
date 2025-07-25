@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface SetupCheckProps {
   children: React.ReactNode;
@@ -10,7 +9,6 @@ interface SetupCheckProps {
 export function SetupCheck({ children }: SetupCheckProps) {
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
 
   useEffect(() => {
     checkForUsers();

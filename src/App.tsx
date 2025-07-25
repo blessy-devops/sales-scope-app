@@ -30,8 +30,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SetupCheck>
-            <AuthProvider>
+          <AuthProvider>
+            <SetupCheck>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
@@ -90,8 +90,8 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </SetupCheck>
           </AuthProvider>
-        </SetupCheck>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
