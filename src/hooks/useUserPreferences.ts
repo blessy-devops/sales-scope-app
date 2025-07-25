@@ -48,7 +48,7 @@ export function useUserPreferences() {
           preference_value: value,
           user_id: null // Por enquanto null até implementar auth
         }, {
-          onConflict: 'user_id,preference_key'
+          onConflict: 'preference_key'
         });
       
       if (error) throw error;
@@ -59,6 +59,7 @@ export function useUserPreferences() {
       }));
     } catch (error) {
       console.error('Error setting preference:', error);
+      throw error;
     }
   };
 
