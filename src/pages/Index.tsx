@@ -121,10 +121,13 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Configure e acompanhe suas metas de vendas
+                Configure e acompanhe suas metas de vendas mensais
               </p>
-              <Button variant="outline" className="w-full gap-2" disabled>
-                Em breve
+              <Button 
+                onClick={() => navigate('/targets')}
+                className="w-full gap-2"
+              >
+                Acessar
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </CardContent>
