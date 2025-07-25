@@ -82,34 +82,20 @@ const Index = () => {
     }
   };
 
-  // Calcular dados dos canais baseado no período selecionado
+  // Calcular dados dos canais baseado apenas no mês atual (não impactado pelos filtros)
   const getChannelData = () => {
     return channels.filter(c => c.is_active).map(channel => {
       let channelSales = 0;
       let channelTarget = 0;
       
-      if (periodFilter === 'mes') {
-        // Vendas do mês
-        for (let d = new Date(startMonth); d <= endMonth; d.setDate(d.getDate() + 1)) {
-          const dateStr = format(d, 'yyyy-MM-dd');
-          channelSales += getSaleAmount(channel.id, dateStr);
-        }
-        // Meta do mês
-        const target = currentMonthTargets.find(t => t.channel_id === channel.id);
-        channelTarget = target?.target_amount || 0;
-      } else if (periodFilter === 'hoje') {
-        const today = format(currentDate, 'yyyy-MM-dd');
-        channelSales = getSaleAmount(channel.id, today);
-        channelTarget = originalDailyTarget; // Usar meta diária
-      } else if (periodFilter === '7dias') {
-        // Últimos 7 dias
-        for (let i = 0; i < 7; i++) {
-          const date = subDays(currentDate, i);
-          const dateStr = format(date, 'yyyy-MM-dd');
-          channelSales += getSaleAmount(channel.id, dateStr);
-        }
-        channelTarget = originalDailyTarget * 7; // Meta de 7 dias
+      // Sempre usar dados do mês atual para os cards de canal
+      for (let d = new Date(startMonth); d <= endMonth; d.setDate(d.getDate() + 1)) {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        channelSales += getSaleAmount(channel.id, dateStr);
       }
+      // Meta do mês
+      const target = currentMonthTargets.find(t => t.channel_id === channel.id);
+      channelTarget = target?.target_amount || 0;
       
       const progress = channelTarget > 0 ? (channelSales / channelTarget) * 100 : 0;
       const channelGap = channelTarget > 0 ? ((channelSales - channelTarget) / channelTarget) * 100 : 0;
@@ -201,6 +187,25 @@ const Index = () => {
     <TooltipProvider>
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-8">
+
+        {/* FILTRO ESTÁTICO PARA MÉTRICAS */}
+        <Card className="border-border/50">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <Tabs value="mes" className="pointer-events-none">
+                <TabsList className="grid w-full grid-cols-4 md:w-auto opacity-75">
+                  <TabsTrigger value="hoje" disabled>Hoje</TabsTrigger>
+                  <TabsTrigger value="7dias" disabled>Últimos 7 dias</TabsTrigger>
+                  <TabsTrigger value="mes">Este mês</TabsTrigger>
+                  <TabsTrigger value="customizado" disabled>Customizado</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="text-sm text-muted-foreground">
+                Métricas sempre baseadas no mês atual
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* TOP SECTION - Métricas */}
         {loading ? (
