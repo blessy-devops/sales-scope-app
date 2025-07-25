@@ -39,22 +39,22 @@ export function AppSidebar() {
   return (
     <Sidebar 
       className={cn(
-        "bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800",
+        "bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800",
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Header com Logo */}
-      <SidebarHeader className="p-6 border-b border-gray-200 dark:border-gray-800">
+      <SidebarHeader className="p-6 border-b border-gray-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
             <LayoutDashboard className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-gray-900 dark:text-white text-lg truncate">
+              <h2 className="font-bold text-gray-900 dark:text-slate-100 text-lg truncate">
                 Sales Scope
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">
                 Dashboard de Vendas
               </p>
             </div>
@@ -76,11 +76,11 @@ export function AppSidebar() {
                 end
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
-                  "hover:bg-gray-100 dark:hover:bg-gray-800",
+                  "hover:bg-gray-100 dark:hover:bg-slate-800",
                   collapsed ? "justify-center" : "justify-start",
                   active 
-                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm" 
-                    : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+                    : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
                 )}
               >
                 <IconComponent className={cn(
@@ -104,14 +104,14 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer com Dark Mode e Configurações */}
-      <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
+      <SidebarFooter className="p-4 border-t border-gray-200 dark:border-slate-800 space-y-2">
         {/* Dark Mode Toggle */}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
-            "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300",
-            "hover:text-gray-900 dark:hover:text-white",
+            "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300",
+            "hover:text-gray-900 dark:hover:text-slate-100",
             collapsed ? "justify-center" : "justify-start"
           )}
         >
@@ -132,11 +132,11 @@ export function AppSidebar() {
           to="/settings"
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
-            "hover:bg-gray-100 dark:hover:bg-gray-800",
+            "hover:bg-gray-100 dark:hover:bg-slate-800",
             collapsed ? "justify-center" : "justify-start",
             isActive('/settings')
-              ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm"
-              : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
+              : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
           )}
         >
           <Settings className={cn(
@@ -156,8 +156,8 @@ export function AppSidebar() {
           onClick={toggleSidebar}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
-            "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400",
-            "hover:text-gray-700 dark:hover:text-gray-300",
+            "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400",
+            "hover:text-gray-700 dark:hover:text-slate-300",
             collapsed ? "justify-center" : "justify-start"
           )}
         >

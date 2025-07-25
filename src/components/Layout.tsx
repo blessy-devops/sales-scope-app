@@ -50,7 +50,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen flex w-full bg-gray-50 dark:bg-slate-950">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
@@ -64,7 +64,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
                   variant="outline"
                   size="sm"
                   onClick={exportToExcel}
-                  className="gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl shadow-sm"
+                  className="gap-2 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl shadow-sm"
                 >
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">Exportar</span>
@@ -74,7 +74,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
           </PageHeader>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-950">
+          <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950">
             <div className="min-h-full">{children}</div>
           </main>
         </div>

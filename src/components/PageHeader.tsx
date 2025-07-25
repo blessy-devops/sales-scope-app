@@ -62,16 +62,16 @@ export function PageHeader({ title, description, children, onNewChannel }: PageH
   const pageDescription = description || info?.description || '';
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <div className="border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="flex items-center justify-between px-6 py-5">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
             <IconComponent className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{pageTitle}</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">{pageTitle}</h1>
             {pageDescription && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5">{pageDescription}</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mt-0.5">{pageDescription}</p>
             )}
           </div>
         </div>
@@ -79,7 +79,7 @@ export function PageHeader({ title, description, children, onNewChannel }: PageH
         <div className="flex items-center gap-4">
           {/* Status de Conexão (apenas no dashboard) */}
           {currentPath === '/' && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
               {isConnected ? (
                 <>
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -88,11 +88,11 @@ export function PageHeader({ title, description, children, onNewChannel }: PageH
               ) : (
                 <>
                   <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">Offline</span>
+                  <span className="text-gray-500 dark:text-slate-400 text-sm font-medium">Offline</span>
                 </>
               )}
               {lastUpdate && (
-                <span className="text-gray-500 dark:text-gray-400 text-xs">
+                <span className="text-gray-500 dark:text-slate-400 text-xs">
                   · {format(lastUpdate, 'HH:mm', { locale: ptBR })}
                 </span>
               )}
