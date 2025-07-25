@@ -120,6 +120,27 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       target_history: {
         Row: {
           changed_at: string | null
@@ -185,6 +206,33 @@ export type Database = {
           preference_value?: Json
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          email: string
+          first_login: boolean | null
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          first_login?: boolean | null
+          full_name: string
+          id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          first_login?: boolean | null
+          full_name?: string
+          id?: string
         }
         Relationships: []
       }
