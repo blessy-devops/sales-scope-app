@@ -40,9 +40,9 @@ export function SetupCheck({ children }: SetupCheckProps) {
     );
   }
 
-  // If no users exist and we're not already on setup page, redirect to setup
-  if (!hasUsers && window.location.pathname !== '/setup') {
-    return <Navigate to="/setup" replace />;
+  // Only redirect to setup if explicitly on setup route and no users exist
+  if (!hasUsers && window.location.pathname === '/setup') {
+    return <>{children}</>;
   }
 
   // If users exist and we're on setup page, redirect to login

@@ -63,7 +63,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
           {/* Page Header */}
           <PageHeader onNewChannel={onNewChannel}>
             <div className="flex items-center gap-2 justify-between w-full">
-              <SidebarTrigger className="md:hidden" />
+              <SidebarTrigger />
               
               <div className="flex items-center gap-2">
                 {showExportButton && (
