@@ -27,7 +27,9 @@ import {
   ShoppingBag,
   BarChart3,
   Wifi,
-  WifiOff
+  WifiOff,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
@@ -64,13 +66,28 @@ const Index = () => {
     totalSalesMonth += daySales.reduce((sum, sale) => sum + sale.amount, 0);
   }
   
-  const gapValue = totalSalesMonth - totalTargetMonth;
-  const gapPercent = totalTargetMonth > 0 ? (gapValue / totalTargetMonth) * 100 : 0;
-  
+  // NOVOS CÁLCULOS
   const daysInMonth = getDaysInMonth(currentDate);
-  const remainingDays = Math.max(0, daysInMonth - currentDate.getDate() + 1);
+  const daysPassed = currentDate.getDate();
+  
+  // Meta esperada até hoje = (Meta Mensal / Dias do Mês) × Dias passados
+  const expectedTargetToday = (totalTargetMonth / daysInMonth) * daysPassed;
+  
+  // Desempenho R$ = Realizado - Meta esperada até hoje
+  const performanceValue = totalSalesMonth - expectedTargetToday;
+  
+  // Desempenho % = (Desempenho R$ / Meta esperada até hoje) × 100
+  const performancePercent = expectedTargetToday > 0 ? (performanceValue / expectedTargetToday) * 100 : 0;
+  
+  // Saldo Meta R$ = Meta Mensal - Realizado
+  const remainingTargetValue = totalTargetMonth - totalSalesMonth;
+  
+  // Saldo Meta % = (Saldo Meta R$ / Meta Mensal) × 100
+  const remainingTargetPercent = totalTargetMonth > 0 ? (remainingTargetValue / totalTargetMonth) * 100 : 0;
+  
+  const remainingDays = Math.max(0, daysInMonth - currentDate.getDate());
   const originalDailyTarget = totalTargetMonth / daysInMonth;
-  const adjustedDailyTarget = remainingDays > 0 ? Math.max(0, -gapValue) / remainingDays : 0;
+  const adjustedDailyTarget = remainingDays > 0 ? Math.max(0, remainingTargetValue) / remainingDays : 0;
 
   // Função para obter ícone do canal
   const getChannelIcon = (type: string) => {
@@ -98,14 +115,18 @@ const Index = () => {
       channelTarget = target?.target_amount || 0;
       
       const progress = channelTarget > 0 ? (channelSales / channelTarget) * 100 : 0;
-      const channelGap = channelTarget > 0 ? ((channelSales - channelTarget) / channelTarget) * 100 : 0;
+      // Calcular desempenho do canal com a nova fórmula
+      const channelExpectedTarget = (channelTarget / daysInMonth) * daysPassed;
+      const channelPerformanceValue = channelSales - channelExpectedTarget;
+      const channelPerformancePercent = channelExpectedTarget > 0 ? (channelPerformanceValue / channelExpectedTarget) * 100 : 0;
       
       return {
         ...channel,
         sales: channelSales,
         target: channelTarget,
         progress: Math.min(progress, 100),
-        gap: channelGap
+        performanceValue: channelPerformanceValue,
+        performancePercent: channelPerformancePercent
       };
     });
   };
@@ -121,8 +142,9 @@ const Index = () => {
   const dashboardConfig = getPreference('dashboard_config', {
     showRealizadoGlobal: true,
     showMetaGlobal: true,
-    showGapPercent: true,
-    showGapValue: true,
+    showDesempenhoPercent: true,
+    showDesempenhoValue: true,
+    showSaldoMeta: true,
     showMetaDiariaOriginal: true,
     showMetaDiariaAjustada: true,
     showChart: true,
@@ -132,35 +154,43 @@ const Index = () => {
   const allMetrics = [
     {
       key: 'showRealizadoGlobal',
-      title: 'Realizado Global',
+      title: 'Realizado',
       value: formatCurrency(totalSalesMonth),
       icon: DollarSign,
       color: 'text-primary',
-      tooltip: 'Total de vendas realizadas no período selecionado'
+      tooltip: 'Total de vendas realizadas no mês atual'
     },
     {
       key: 'showMetaGlobal',
-      title: 'Meta Global',
+      title: 'Meta Mensal',
       value: formatCurrency(totalTargetMonth),
       icon: Target,
       color: 'text-primary',
-      tooltip: 'Total de metas definidas para o período'
+      tooltip: 'Total de metas definidas para o mês'
     },
     {
-      key: 'showGapPercent',
-      title: 'GAP %',
-      value: `${gapPercent >= 0 ? '+' : ''}${gapPercent.toFixed(1)}%`,
-      icon: gapPercent >= 0 ? TrendingUp : TrendingDown,
-      color: gapPercent >= 0 ? 'text-success' : 'text-destructive',
-      tooltip: 'Diferença percentual entre realizado e meta'
+      key: 'showDesempenhoPercent',
+      title: 'Desempenho %',
+      value: `${performancePercent >= 0 ? '+' : ''}${performancePercent.toFixed(1)}%`,
+      icon: performancePercent >= 0 ? ArrowUp : ArrowDown,
+      color: performancePercent >= 0 ? 'text-emerald-600' : 'text-red-500',
+      tooltip: 'Diferença entre realizado e esperado até hoje'
     },
     {
-      key: 'showGapValue',
-      title: 'GAP R$',
-      value: formatCurrency(gapValue),
-      icon: gapValue >= 0 ? TrendingUp : TrendingDown,
-      color: gapValue >= 0 ? 'text-success' : 'text-destructive',
-      tooltip: 'Diferença em valores entre realizado e meta'
+      key: 'showDesempenhoValue',
+      title: 'Desempenho R$',
+      value: `${performanceValue >= 0 ? '+' : ''}${formatCurrency(Math.abs(performanceValue))}`,
+      icon: performanceValue >= 0 ? ArrowUp : ArrowDown,
+      color: performanceValue >= 0 ? 'text-emerald-600' : 'text-red-500',
+      tooltip: 'Diferença entre realizado e esperado até hoje'
+    },
+    {
+      key: 'showSaldoMeta',
+      title: 'Saldo Meta',
+      value: `${formatCurrency(Math.abs(remainingTargetValue))} (${Math.abs(remainingTargetPercent).toFixed(1)}%)`,
+      icon: Target,
+      color: 'text-slate-600',
+      tooltip: 'Quanto falta para atingir a meta total do mês'
     },
     {
       key: 'showMetaDiariaOriginal',
@@ -176,7 +206,7 @@ const Index = () => {
       value: formatCurrency(adjustedDailyTarget),
       icon: Target,
       color: 'text-warning',
-      tooltip: 'Meta ajustada para compensar o GAP nos dias restantes'
+      tooltip: 'Meta ajustada para atingir o saldo restante nos dias que faltam'
     }
   ];
 
@@ -300,11 +330,11 @@ const Index = () => {
                         </div>
                         
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">GAP</span>
+                          <span className="text-muted-foreground">Desempenho</span>
                           <span className={`font-medium ${
-                            channel.gap >= 0 ? 'text-success' : 'text-destructive'
+                            channel.performancePercent >= 0 ? 'text-emerald-600' : 'text-red-500'
                           }`}>
-                            {channel.gap >= 0 ? '+' : ''}{channel.gap.toFixed(1)}%
+                            {channel.performancePercent >= 0 ? '+' : ''}{channel.performancePercent.toFixed(1)}%
                           </span>
                         </div>
                       </div>
