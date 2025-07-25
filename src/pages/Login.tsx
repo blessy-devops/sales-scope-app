@@ -30,26 +30,9 @@ export default function Login() {
 
   useEffect(() => {
     if (user) {
-      // Check if user needs to change password on first login
-      checkFirstLogin();
-    }
-  }, [user]);
-
-  const checkFirstLogin = async () => {
-    if (!user) return;
-    
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('first_login')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.first_login) {
-      navigate('/change-password');
-    } else {
       navigate(from, { replace: true });
     }
-  };
+  }, [user, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

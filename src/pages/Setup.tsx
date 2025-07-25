@@ -57,16 +57,21 @@ export default function Setup() {
 
       // Update user profile to mark as non-first-login since this is admin setup
       if (authData.user) {
-        // Wait a bit for the profile to be created by the trigger
+        // Wait a bit for the profile to be created by the trigger, then update
         setTimeout(async () => {
-          await supabase
-            .from('user_profiles')
-            .update({ 
-              first_login: false,
-              created_by: null // This is the initial admin
-            })
-            .eq('id', authData.user.id);
-        }, 1000);
+          try {
+            await supabase
+              .from('user_profiles')
+              .update({ 
+                first_login: false,
+                created_by: null // This is the initial admin
+              })
+              .eq('id', authData.user.id);
+            console.log('Profile updated successfully');
+          } catch (err) {
+            console.error('Error updating profile:', err);
+          }
+        }, 2000); // Increased timeout to 2 seconds
       }
 
       // Set default invite code if not exists
