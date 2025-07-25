@@ -10,11 +10,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useChannels } from '@/hooks/useChannels';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-interface DashboardChartProps {
-  periodFilter?: 'hoje' | '7dias' | 'mes' | 'customizado';
-}
-
-export function DashboardChart({ periodFilter = 'mes' }: DashboardChartProps) {
+export function DashboardChart() {
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
   const { channels } = useChannels();
@@ -43,10 +39,8 @@ export function DashboardChart({ periodFilter = 'mes' }: DashboardChartProps) {
     const daysInMonth = endMonth.getDate();
     const dailyTarget = totalMonthlyTarget / daysInMonth;
     
-    let daysToShow = 14;
-    if (periodFilter === 'hoje') daysToShow = 1;
-    else if (periodFilter === '7dias') daysToShow = 7;
-    else if (periodFilter === 'mes') daysToShow = Math.min(currentDate.getDate(), 30);
+    // Sempre mostrar dados do mês atual
+    const daysToShow = Math.min(currentDate.getDate(), 30);
     
     for (let i = daysToShow - 1; i >= 0; i--) {
       const date = subDays(currentDate, i);
@@ -69,22 +63,13 @@ export function DashboardChart({ periodFilter = 'mes' }: DashboardChartProps) {
 
   const chartData = generateChartData();
 
-  const getPeriodLabel = () => {
-    switch (periodFilter) {
-      case 'hoje': return 'Vendas vs Meta (Hoje)';
-      case '7dias': return 'Vendas vs Meta (Últimos 7 dias)';
-      case 'mes': return 'Vendas vs Meta (Este mês)';
-      default: return 'Vendas vs Meta';
-    }
-  };
-
   return (
     <Collapsible open={!isCollapsed} onOpenChange={() => handleToggleCollapse()}>
       <Card className="border-border/50">
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{getPeriodLabel()}</CardTitle>
+              <CardTitle className="text-lg">Vendas vs Meta (Este mês)</CardTitle>
               <Button variant="ghost" size="sm">
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </Button>

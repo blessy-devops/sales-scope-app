@@ -246,40 +246,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* FILTROS */}
-        <Card className="border-border/50">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <Tabs value={periodFilter} onValueChange={(value) => setPeriodFilter(value as PeriodFilter)}>
-                <TabsList className="grid w-full grid-cols-4 md:w-auto">
-                  <TabsTrigger value="hoje">Hoje</TabsTrigger>
-                  <TabsTrigger value="7dias">Últimos 7 dias</TabsTrigger>
-                  <TabsTrigger value="mes">Este mês</TabsTrigger>
-                  <TabsTrigger value="customizado">Customizado</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              {periodFilter === 'customizado' && (
-                <div className="flex gap-2 items-center">
-                  <DatePicker
-                    date={customStartDate}
-                    onDateChange={setCustomStartDate}
-                    placeholder="Data inicial"
-                  />
-                  <span className="text-muted-foreground">até</span>
-                  <DatePicker
-                    date={customEndDate}
-                    onDateChange={setCustomEndDate}
-                    placeholder="Data final"
-                  />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* GRÁFICO */}
-        {dashboardConfig.showChart && <DashboardChart periodFilter={periodFilter} />}
+        {dashboardConfig.showChart && <DashboardChart />}
 
         {/* BOTTOM SECTION - Grid de Canais */}
         {dashboardConfig.showChannelGrid && (
