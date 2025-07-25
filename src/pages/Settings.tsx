@@ -174,6 +174,19 @@ export default function Settings() {
             created_by: user?.id 
           })
           .eq('id', authData.user.id);
+
+        // Send welcome email (optional - will fail silently if Resend is not configured)
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              name: newUserName,
+              email: newUserEmail,
+              temporaryPassword: newUserPassword
+            }
+          });
+        } catch (emailError) {
+          console.log('Welcome email not sent (Resend not configured):', emailError);
+        }
       }
 
       toast({

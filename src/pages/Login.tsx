@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { signIn, user } = useAuth();
@@ -19,6 +20,13 @@ export default function Login() {
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/';
+  const message = location.state?.message;
+
+  useEffect(() => {
+    if (message) {
+      setSuccess(message);
+    }
+  }, [message]);
 
   useEffect(() => {
     if (user) {
@@ -89,6 +97,12 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+              
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -128,7 +142,15 @@ export default function Login() {
               </Button>
             </form>
             
-            <div className="mt-4 text-center">
+            <div className="mt-4 space-y-2 text-center">
+              <p className="text-sm text-muted-foreground">
+                <Link 
+                  to="/forgot-password" 
+                  className="font-medium text-primary hover:underline"
+                >
+                  Esqueci minha senha
+                </Link>
+              </p>
               <p className="text-sm text-muted-foreground">
                 Não tem uma conta?{' '}
                 <Link 

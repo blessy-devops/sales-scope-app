@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { SetupCheck } from "@/components/SetupCheck";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Channels from "./pages/Channels";
@@ -15,6 +16,9 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ChangePassword from "./pages/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,11 +30,15 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthProvider>
+          <SetupCheck>
+            <AuthProvider>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/setup" element={<Setup />} />
               
               {/* Protected routes */}
               <Route path="/change-password" element={
@@ -83,6 +91,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
+        </SetupCheck>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
