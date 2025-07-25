@@ -142,10 +142,13 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Registre vendas e acompanhe resultados em tempo real
+                Registre vendas diárias e acompanhe resultados em tempo real
               </p>
-              <Button variant="outline" className="w-full gap-2" disabled>
-                Em breve
+              <Button 
+                onClick={() => navigate('/sales')}
+                className="w-full gap-2"
+              >
+                Acessar
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </CardContent>
