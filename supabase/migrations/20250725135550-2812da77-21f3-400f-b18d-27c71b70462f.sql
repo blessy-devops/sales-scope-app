@@ -1,0 +1,1 @@
+UPDATE user_profiles SET first_login = false WHERE first_login = true;

@@ -165,12 +165,11 @@ export default function Settings() {
       if (authError) throw authError;
 
       // The user profile will be created automatically by the trigger
-      // But we need to update it to mark first_login = true and set created_by
+      // But we need to update it to set created_by (first_login is set to false by default)
       if (authData.user) {
         await supabase
           .from('user_profiles')
           .update({ 
-            first_login: true,
             created_by: user?.id 
           })
           .eq('id', authData.user.id);
