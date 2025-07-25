@@ -42,27 +42,31 @@ export default function Setup() {
     }
 
     try {
-      // Create the first admin user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create the first admin user using normal signup
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        user_metadata: {
-          full_name: fullName
-        },
-        email_confirm: true
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
       });
 
       if (authError) throw authError;
 
       // Update user profile to mark as non-first-login since this is admin setup
       if (authData.user) {
-        await supabase
-          .from('user_profiles')
-          .update({ 
-            first_login: false,
-            created_by: null // This is the initial admin
-          })
-          .eq('id', authData.user.id);
+        // Wait a bit for the profile to be created by the trigger
+        setTimeout(async () => {
+          await supabase
+            .from('user_profiles')
+            .update({ 
+              first_login: false,
+              created_by: null // This is the initial admin
+            })
+            .eq('id', authData.user.id);
+        }, 1000);
       }
 
       // Set default invite code if not exists
