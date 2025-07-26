@@ -1,3 +1,4 @@
+import blessyLogo from '@/assets/blessy-logo.png';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -46,8 +47,12 @@ export function AppSidebar() {
       {/* Header com Logo */}
       <SidebarHeader className="p-6 border-b border-gray-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-            <LayoutDashboard className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+            <img 
+              src={blessyLogo} 
+              alt="Blessy Logo" 
+              className="w-full h-full object-cover rounded-xl"
+            />
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
