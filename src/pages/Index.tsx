@@ -878,78 +878,95 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[400px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <Treemap
-                        data={(() => {
-                          const totalSales = channelData.reduce((sum, channel) => sum + channel.sales, 0);
-                          
-                          return channelData
-                            .filter(channel => channel.sales > 0)
-                            .map(channel => ({
-                              name: channel.name,
-                              size: channel.sales,
-                              percentage: totalSales > 0 ? ((channel.sales / totalSales) * 100).toFixed(1) : 0,
-                              color: channel.sales >= channel.target * 0.9 ? '#10b981' : 
-                                     channel.sales >= channel.target * 0.7 ? '#f59e0b' : '#ef4444'
-                            }))
-                            .sort((a, b) => b.size - a.size);
-                        })()}
-                        dataKey="size"
-                        aspectRatio={16/9}
-                        stroke="#fff"
-                        content={({ root, depth, x, y, width, height, index, payload, colors, ...rest }) => {
-                          if (!payload || width < 40 || height < 40) return null;
-                          
-                          return (
-                            <g>
-                              <rect
-                                x={x}
-                                y={y}
-                                width={width}
-                                height={height}
-                                style={{
-                                  fill: payload.color,
-                                  stroke: '#fff',
-                                  strokeWidth: 2,
-                                }}
-                              />
-                              {width > 80 && height > 60 && (
-                                <>
-                                  <text
-                                    x={x + width / 2}
-                                    y={y + height / 2 - 8}
-                                    textAnchor="middle"
-                                    fill="#fff"
-                                    fontSize="12"
-                                    fontWeight="bold"
-                                  >
-                                    {payload.name}
-                                  </text>
-                                  <text
-                                    x={x + width / 2}
-                                    y={y + height / 2 + 8}
-                                    textAnchor="middle"
-                                    fill="#fff"
-                                    fontSize="10"
-                                  >
-                                    {payload.percentage}%
-                                  </text>
-                                  <text
-                                    x={x + width / 2}
-                                    y={y + height / 2 + 24}
-                                    textAnchor="middle"
-                                    fill="#fff"
-                                    fontSize="10"
-                                  >
-                                    {formatCurrency(payload.size)}
-                                  </text>
-                                </>
-                              )}
-                            </g>
-                          );
-                        }}
-                      />
-                    </ResponsiveContainer>
+                    {(() => {
+                      const totalSales = channelData.reduce((sum, channel) => sum + channel.sales, 0);
+                      const treemapData = channelData
+                        .filter(channel => channel.sales > 0)
+                        .map(channel => ({
+                          name: channel.name,
+                          size: channel.sales,
+                          percentage: totalSales > 0 ? ((channel.sales / totalSales) * 100).toFixed(1) : 0,
+                          color: channel.sales >= channel.target * 0.9 ? '#10b981' : 
+                                 channel.sales >= channel.target * 0.7 ? '#f59e0b' : '#ef4444'
+                        }))
+                        .sort((a, b) => b.size - a.size);
+
+                      if (treemapData.length === 0) {
+                        return (
+                          <div className="flex items-center justify-center h-full text-muted-foreground">
+                            <div className="text-center">
+                              <p>Nenhuma venda registrada</p>
+                              <p className="text-sm">Os dados aparecerão aqui quando houver vendas</p>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <Treemap
+                            data={treemapData}
+                            dataKey="size"
+                            aspectRatio={16/9}
+                            stroke="#fff"
+                            content={(props) => {
+                              const { x, y, width, height, payload } = props;
+                              
+                              if (!payload || width < 40 || height < 40) {
+                                return null;
+                              }
+                              
+                              return (
+                                <g>
+                                  <rect
+                                    x={x}
+                                    y={y}
+                                    width={width}
+                                    height={height}
+                                    fill={payload.color}
+                                    stroke="#fff"
+                                    strokeWidth={2}
+                                    rx={4}
+                                  />
+                                  {width > 80 && height > 60 && (
+                                    <>
+                                      <text
+                                        x={x + width / 2}
+                                        y={y + height / 2 - 8}
+                                        textAnchor="middle"
+                                        fill="#fff"
+                                        fontSize="12"
+                                        fontWeight="bold"
+                                      >
+                                        {payload.name}
+                                      </text>
+                                      <text
+                                        x={x + width / 2}
+                                        y={y + height / 2 + 8}
+                                        textAnchor="middle"
+                                        fill="#fff"
+                                        fontSize="10"
+                                      >
+                                        {payload.percentage}%
+                                      </text>
+                                      <text
+                                        x={x + width / 2}
+                                        y={y + height / 2 + 24}
+                                        textAnchor="middle"
+                                        fill="#fff"
+                                        fontSize="10"
+                                      >
+                                        {formatCurrency(payload.size)}
+                                      </text>
+                                    </>
+                                  )}
+                                </g>
+                              );
+                            }}
+                          />
+                        </ResponsiveContainer>
+                      );
+                    })()}
                   </div>
                 </CardContent>
               </Card>
