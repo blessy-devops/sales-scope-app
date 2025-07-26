@@ -223,9 +223,9 @@ export function AppSidebar() {
               )}
             >
               {collapsed ? (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               ) : (
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5" />
               )}
               {!collapsed && (
                 <span className="font-medium text-sm">Recolher</span>
