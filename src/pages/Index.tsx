@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +16,7 @@ import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
 import { useChannels } from '@/hooks/useChannels';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { format, startOfMonth, endOfMonth, subDays, getDaysInMonth, differenceInDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subDays, getDaysInMonth, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   DollarSign,
@@ -32,7 +33,11 @@ import {
   ArrowDown,
   Activity,
   ChartLine,
-  Zap
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  Award,
+  TrendingDown as TrendingDownIcon
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
@@ -48,6 +53,7 @@ const Index = () => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('mes');
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
+  const [expandedAnalysis, setExpandedAnalysis] = useState(false);
   
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth() + 1;
@@ -388,6 +394,224 @@ const Index = () => {
 
         {/* GRÁFICO */}
         {dashboardConfig.showChart && <DashboardChart />}
+
+        {/* ANÁLISE DETALHADA DE RITMO */}
+        <Card className="border-border/50">
+          <CardContent className="p-6">
+            <Button
+              variant="ghost"
+              onClick={() => setExpandedAnalysis(!expandedAnalysis)}
+              className="w-full flex items-center justify-between p-4 h-auto"
+            >
+              <span className="text-lg font-semibold">Ver análise detalhada</span>
+              {expandedAnalysis ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </Button>
+            
+            {expandedAnalysis && (
+              <div className="mt-6 space-y-8 animate-fade-in">
+                {/* Gráfico de Linha */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Evolução dos Últimos 15 Dias</h3>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={(() => {
+                          const ultimos15Dias = [];
+                          for (let i = 14; i >= 0; i--) {
+                            const date = subDays(currentDate, i);
+                            const dateStr = format(date, 'yyyy-MM-dd');
+                            const daySales = getSalesForDate(dateStr);
+                            const totalDay = daySales.reduce((sum, sale) => sum + sale.amount, 0);
+                            
+                            ultimos15Dias.push({
+                              data: format(date, 'dd/MM'),
+                              vendas: totalDay,
+                              ritmoNecessario: requiredPace,
+                              metaDiariaOriginal: originalDailyTarget
+                            });
+                          }
+                          return ultimos15Dias;
+                        })()}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis 
+                          dataKey="data" 
+                          className="fill-muted-foreground text-xs"
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis 
+                          className="fill-muted-foreground text-xs"
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                        />
+                        <RechartsTooltip 
+                          formatter={(value: number, name: string) => [
+                            formatCurrency(value), 
+                            name === 'vendas' ? 'Vendas' : 
+                            name === 'ritmoNecessario' ? 'Ritmo Necessário' : 'Meta Diária Original'
+                          ]}
+                          labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--background))', 
+                            border: '1px solid hsl(var(--border))' 
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="vendas" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                          name="Vendas Diárias"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="ritmoNecessario" 
+                          stroke="hsl(var(--destructive))" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                          name="Ritmo Necessário"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="metaDiariaOriginal" 
+                          stroke="hsl(var(--muted-foreground))" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                          name="Meta Diária Original"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Tabela Comparativa de Canais */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Comparativo de Ritmo por Canal</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-3 text-sm font-semibold text-muted-foreground">Canal</th>
+                          <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Ritmo Atual</th>
+                          <th className="text-right p-3 text-sm font-semibold text-muted-foreground">Necessário</th>
+                          <th className="text-center p-3 text-sm font-semibold text-muted-foreground">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {channelData.map(canal => {
+                          const status = canal.currentPace >= canal.requiredPace;
+                          return (
+                            <tr key={canal.id} className="border-b border-border/50">
+                              <td className="p-3 text-sm font-medium">{canal.name}</td>
+                              <td className="p-3 text-sm text-right">R$ {canal.currentPace.toFixed(0)}</td>
+                              <td className="p-3 text-sm text-right">R$ {canal.requiredPace.toFixed(0)}</td>
+                              <td className="p-3 text-center text-lg">{status ? '✅' : '⚠️'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Previsão */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Previsão para Fim do Mês</h3>
+                  <Card className="p-4 bg-muted/30">
+                    <p className="text-sm font-medium">
+                      {(() => {
+                        const diasParaMeta = Math.ceil(remainingTargetValue / currentPace);
+                        const dataProjetada = addDays(new Date(), diasParaMeta);
+                        
+                        if (currentPace >= requiredPace) {
+                          return `Meta será atingida ${diasParaMeta <= remainingDays ? 
+                            `em ${format(dataProjetada, 'dd/MM')}` : 
+                            'dentro do prazo ✅'}`;
+                        } else {
+                          const deficitProjetado = remainingTargetValue - (currentPace * remainingDays);
+                          return `Projeção: R$ ${deficitProjetado.toFixed(0)} abaixo da meta ⚠️`;
+                        }
+                      })()}
+                    </p>
+                  </Card>
+                </div>
+
+                {/* Três Métricas Rápidas */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Métricas dos Últimos 15 Dias</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(() => {
+                      const ultimos15DiasDados = [];
+                      for (let i = 14; i >= 0; i--) {
+                        const date = subDays(currentDate, i);
+                        const dateStr = format(date, 'yyyy-MM-dd');
+                        const daySales = getSalesForDate(dateStr);
+                        const totalDay = daySales.reduce((sum, sale) => sum + sale.amount, 0);
+                        ultimos15DiasDados.push({
+                          date,
+                          dateStr,
+                          valor: totalDay
+                        });
+                      }
+                      
+                      const melhorDia = ultimos15DiasDados.reduce((max, day) => day.valor > max.valor ? day : max);
+                      const piorDia = ultimos15DiasDados.reduce((min, day) => day.valor < min.valor ? day : min);
+                      const ultimos7Dias = ultimos15DiasDados.slice(-7);
+                      const mediaUltimos7 = ultimos7Dias.reduce((sum, day) => sum + day.valor, 0) / 7;
+                      
+                      return [
+                        {
+                          title: 'Melhor Dia',
+                          value: `R$ ${melhorDia.valor.toFixed(0)}`,
+                          subtitle: `(${format(melhorDia.date, 'dd/MM')})`,
+                          icon: Award,
+                          color: 'text-emerald-600'
+                        },
+                        {
+                          title: 'Pior Dia',
+                          value: `R$ ${piorDia.valor.toFixed(0)}`,
+                          subtitle: `(${format(piorDia.date, 'dd/MM')})`,
+                          icon: TrendingDownIcon,
+                          color: 'text-red-500'
+                        },
+                        {
+                          title: 'Média Últimos 7 Dias',
+                          value: `R$ ${mediaUltimos7.toFixed(0)}`,
+                          subtitle: 'Ritmo semanal',
+                          icon: Activity,
+                          color: 'text-primary'
+                        }
+                      ];
+                    })().map((metrica, index) => {
+                      const IconComponent = metrica.icon;
+                      return (
+                        <Card key={index} className="p-4">
+                          <div className="flex items-center gap-3">
+                            <IconComponent className={`w-5 h-5 ${metrica.color}`} />
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">{metrica.title}</p>
+                              <p className={`text-lg font-bold ${metrica.color}`}>{metrica.value}</p>
+                              <p className="text-xs text-muted-foreground">{metrica.subtitle}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* BOTTOM SECTION - Grid de Canais */}
         {dashboardConfig.showChannelGrid && (
