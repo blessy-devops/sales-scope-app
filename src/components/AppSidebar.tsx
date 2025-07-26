@@ -11,7 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut
-} from 'lucide-react';
+ } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,7 @@ import {
   SidebarHeader,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -45,12 +46,18 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar 
-      className={cn(
-        "bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800",
-        collapsed ? 'w-16' : 'w-64'
-      )}
-    >
+    <TooltipProvider>
+      <Sidebar 
+        side="left"
+        className={cn(
+          "bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 transition-all duration-300 flex-shrink-0",
+          collapsed ? 'w-16' : 'w-64'
+        )}
+        style={{
+          minWidth: collapsed ? '64px' : '256px',
+          maxWidth: collapsed ? '64px' : '256px'
+        }}
+      >
       {/* Header com Logo */}
       <SidebarHeader className={cn(
         "border-b border-gray-200 dark:border-slate-800",
@@ -206,5 +213,6 @@ export function AppSidebar() {
         </button>
       </SidebarFooter>
     </Sidebar>
+    </TooltipProvider>
   );
 }
