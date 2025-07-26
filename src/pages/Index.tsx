@@ -450,11 +450,14 @@ const Index = () => {
                           tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
                         />
                         <RechartsTooltip 
-                          formatter={(value: number, name: string) => [
-                            formatCurrency(value), 
-                            name === 'vendas' ? 'Vendas Diárias' : 
-                            name === 'ritmoNecessario' ? 'Ritmo Necessário' : 'Meta Diária Original'
-                          ]}
+                          formatter={(value: number, name: string) => {
+                            const legendMap: Record<string, string> = {
+                              'vendas': 'Vendas Diárias',
+                              'ritmoNecessario': 'Ritmo Necessário', 
+                              'metaDiariaOriginal': 'Meta Diária Original'
+                            };
+                            return [formatCurrency(value), legendMap[name] || name];
+                          }}
                           labelStyle={{ color: 'hsl(var(--foreground))' }}
                           contentStyle={{ 
                             backgroundColor: 'hsl(var(--background))', 
