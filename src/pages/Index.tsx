@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Treemap, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Treemap } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -879,43 +879,76 @@ const Index = () => {
                 <CardContent>
                   <div className="h-[400px] w-full">
                     {(() => {
-                      const totalSales = channelData.reduce((sum, channel) => sum + channel.sales, 0);
-                      const treemapData = channelData
-                        .filter(channel => channel.sales > 0)
-                        .map(channel => ({
-                          name: channel.name,
-                          size: channel.sales,
-                          percentage: totalSales > 0 ? ((channel.sales / totalSales) * 100).toFixed(1) : 0,
-                          color: channel.sales >= channel.target * 0.9 ? '#10b981' : 
-                                 channel.sales >= channel.target * 0.7 ? '#f59e0b' : '#ef4444'
-                        }))
-                        .sort((a, b) => b.size - a.size);
+                      // Cores predefinidas para os canais
+                      const coresCanais = [
+                        '#3B82F6', // Blue
+                        '#10B981', // Green
+                        '#F59E0B', // Yellow
+                        '#EF4444', // Red
+                        '#8B5CF6', // Purple
+                        '#F97316', // Orange
+                        '#06B6D4', // Cyan
+                        '#84CC16', // Lime
+                      ];
 
-                      if (treemapData.length === 0) {
+                      const gerarCorPorIndice = (index) => {
+                        return coresCanais[index % coresCanais.length];
+                      };
+
+                      // Preparar dados dos canais com vendas
+                      const canaisComVendas = channelData
+                        .filter(channel => channel.sales > 0)
+                        .map((channel, index) => ({
+                          name: channel.name,
+                          total_vendas: channel.sales || 0,
+                          fill: gerarCorPorIndice(index)
+                        }))
+                        .sort((a, b) => b.total_vendas - a.total_vendas);
+
+                      // Estrutura de dados para o Treemap
+                      const dadosTreemap = [{
+                        name: 'root',
+                        children: canaisComVendas
+                      }];
+
+                      // Calcular total para porcentagens
+                      const totalVendas = canaisComVendas.reduce((sum, canal) => sum + canal.total_vendas, 0);
+
+                      // Verificar se há dados
+                      if (canaisComVendas.length === 0 || totalVendas === 0) {
                         return (
                           <div className="flex items-center justify-center h-full text-muted-foreground">
                             <div className="text-center">
-                              <p>Nenhuma venda registrada</p>
-                              <p className="text-sm">Os dados aparecerão aqui quando houver vendas</p>
+                              <p className="text-lg font-medium">Nenhuma venda registrada</p>
+                              <p className="text-sm mt-2">Os dados aparecerão aqui quando houver vendas nos canais</p>
                             </div>
                           </div>
                         );
                       }
 
                       return (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={400}>
                           <Treemap
-                            data={treemapData}
-                            dataKey="size"
+                            data={dadosTreemap}
+                            dataKey="total_vendas"
                             aspectRatio={16/9}
                             stroke="#fff"
                             content={(props) => {
                               const { x, y, width, height, payload } = props;
                               
-                              if (!payload || width < 40 || height < 40) {
+                              // Não renderizar se não há payload ou dimensões muito pequenas
+                              if (!payload || !payload.total_vendas || width < 50 || height < 40) {
                                 return null;
                               }
-                              
+
+                              // Calcular porcentagem
+                              const porcentagem = totalVendas > 0 ? 
+                                ((payload.total_vendas / totalVendas) * 100).toFixed(1) : 0;
+
+                              // Determinar se deve mostrar texto baseado no tamanho
+                              const mostrarTextoCompleto = width > 120 && height > 80;
+                              const mostrarTextoMinimo = width > 80 && height > 50;
+
                               return (
                                 <g>
                                   <rect
@@ -923,40 +956,71 @@ const Index = () => {
                                     y={y}
                                     width={width}
                                     height={height}
-                                    fill={payload.color}
+                                    fill={payload.fill}
                                     stroke="#fff"
                                     strokeWidth={2}
-                                    rx={4}
+                                    rx={6}
+                                    opacity={0.9}
                                   />
-                                  {width > 80 && height > 60 && (
+                                  
+                                  {mostrarTextoCompleto && (
                                     <>
                                       <text
                                         x={x + width / 2}
-                                        y={y + height / 2 - 8}
+                                        y={y + height / 2 - 12}
                                         textAnchor="middle"
                                         fill="#fff"
-                                        fontSize="12"
+                                        fontSize="14"
                                         fontWeight="bold"
+                                        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
                                       >
                                         {payload.name}
                                       </text>
                                       <text
                                         x={x + width / 2}
-                                        y={y + height / 2 + 8}
+                                        y={y + height / 2 + 6}
                                         textAnchor="middle"
                                         fill="#fff"
-                                        fontSize="10"
+                                        fontSize="12"
+                                        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
                                       >
-                                        {payload.percentage}%
+                                        {porcentagem}%
                                       </text>
                                       <text
                                         x={x + width / 2}
-                                        y={y + height / 2 + 24}
+                                        y={y + height / 2 + 22}
+                                        textAnchor="middle"
+                                        fill="#fff"
+                                        fontSize="11"
+                                        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
+                                      >
+                                        {formatCurrency(payload.total_vendas)}
+                                      </text>
+                                    </>
+                                  )}
+                                  
+                                  {mostrarTextoMinimo && !mostrarTextoCompleto && (
+                                    <>
+                                      <text
+                                        x={x + width / 2}
+                                        y={y + height / 2 - 4}
+                                        textAnchor="middle"
+                                        fill="#fff"
+                                        fontSize="12"
+                                        fontWeight="bold"
+                                        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
+                                      >
+                                        {payload.name}
+                                      </text>
+                                      <text
+                                        x={x + width / 2}
+                                        y={y + height / 2 + 12}
                                         textAnchor="middle"
                                         fill="#fff"
                                         fontSize="10"
+                                        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
                                       >
-                                        {formatCurrency(payload.size)}
+                                        {porcentagem}%
                                       </text>
                                     </>
                                   )}
