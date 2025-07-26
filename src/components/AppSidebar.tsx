@@ -52,10 +52,10 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-gray-900 dark:text-slate-100 text-lg truncate">
-                Sales Scope
+                Analytics
               </h2>
               <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">
-                Dashboard de Vendas
+                Performance Blessy
               </p>
             </div>
           )}

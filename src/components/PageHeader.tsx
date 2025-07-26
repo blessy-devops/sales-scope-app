@@ -58,7 +58,7 @@ export function PageHeader({ title, description, children, onNewChannel }: PageH
   const info = pageInfo[currentPath as keyof typeof pageInfo];
   const IconComponent = info?.icon || LayoutDashboard;
   
-  const pageTitle = title || info?.title || 'Sales Scope';
+  const pageTitle = title || info?.title || 'Analytics';
   const pageDescription = description || info?.description || '';
 
   return (
