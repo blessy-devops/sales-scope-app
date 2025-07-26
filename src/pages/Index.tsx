@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/DatePicker';
 import { DashboardChart } from '@/components/DashboardChart';
 import { LoadingCard } from '@/components/LoadingCard';
@@ -40,7 +41,8 @@ import {
   ChevronUp,
   Award,
   TrendingDown as TrendingDownIcon,
-  Calculator
+  Calculator,
+  Eye
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
@@ -57,16 +59,39 @@ const Index = () => {
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
   const [expandedAnalysis, setExpandedAnalysis] = useState(false);
+  const [viewFilter, setViewFilter] = useState<string>('global');
+
+  // Persistência do filtro de visão
+  useEffect(() => {
+    const savedView = localStorage.getItem('dashboard-view-filter');
+    if (savedView) {
+      setViewFilter(savedView);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('dashboard-view-filter', viewFilter);
+  }, [viewFilter]);
   
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
   
-  // Cálculos das métricas
+  // Obter canal selecionado
+  const selectedChannel = viewFilter === 'global' ? null : channels.find(c => c.id === viewFilter);
+  const activeChannels = channels.filter(c => c.is_active).sort((a, b) => a.name.localeCompare(b.name));
+
+  // Cálculos das métricas baseados no filtro de visão
   const currentMonthTargets = getTargetsForMonth(currentMonth, currentYear);
-  const totalTargetMonth = currentMonthTargets.reduce((sum, target) => sum + target.target_amount, 0);
   
-  // Calcular vendas do mês atual (soma de todas as vendas dos dias do mês)
+  // Filtrar metas conforme visão selecionada
+  const filteredTargets = viewFilter === 'global' 
+    ? currentMonthTargets 
+    : currentMonthTargets.filter(t => t.channel_id === viewFilter);
+  
+  const totalTargetMonth = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
+  
+  // Calcular vendas do mês atual filtradas conforme visão
   const startMonth = startOfMonth(currentDate);
   const endMonth = endOfMonth(currentDate);
   let totalSalesMonth = 0;
@@ -75,7 +100,12 @@ const Index = () => {
   for (let d = new Date(startMonth); d <= endMonth; d.setDate(d.getDate() + 1)) {
     const dateStr = format(d, 'yyyy-MM-dd');
     const daySales = getSalesForDate(dateStr);
-    totalSalesMonth += daySales.reduce((sum, sale) => sum + sale.amount, 0);
+    
+    if (viewFilter === 'global') {
+      totalSalesMonth += daySales.reduce((sum, sale) => sum + sale.amount, 0);
+    } else {
+      totalSalesMonth += getSaleAmount(viewFilter, dateStr);
+    }
   }
   
   // NOVOS CÁLCULOS
@@ -301,20 +331,48 @@ const Index = () => {
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* FILTRO ESTÁTICO PARA MÉTRICAS */}
+        {/* HEADER COM FILTROS */}
         <Card className="border-border/50">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <Tabs value="mes" className="pointer-events-none">
-                <TabsList className="grid w-full grid-cols-4 md:w-auto opacity-75">
-                  <TabsTrigger value="hoje" disabled>Hoje</TabsTrigger>
-                  <TabsTrigger value="7dias" disabled>Últimos 7 dias</TabsTrigger>
-                  <TabsTrigger value="mes">Este mês</TabsTrigger>
-                  <TabsTrigger value="customizado" disabled>Customizado</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <div className="text-sm text-muted-foreground">
-                Métricas sempre baseadas no mês atual
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <Tabs value="mes" className="pointer-events-none">
+                  <TabsList className="grid w-full grid-cols-4 sm:w-auto opacity-75">
+                    <TabsTrigger value="hoje" disabled>Hoje</TabsTrigger>
+                    <TabsTrigger value="7dias" disabled>Últimos 7 dias</TabsTrigger>
+                    <TabsTrigger value="mes">Este mês</TabsTrigger>
+                    <TabsTrigger value="customizado" disabled>Customizado</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                
+                {/* DROPDOWN DE VISÃO POR CANAL */}
+                <Select value={viewFilter} onValueChange={setViewFilter}>
+                  <SelectTrigger className="w-48 transition-all duration-200">
+                    <Eye className="w-4 h-4 mr-2 text-primary" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border shadow-lg">
+                    <SelectItem value="global" className="cursor-pointer">
+                      Visão Global
+                    </SelectItem>
+                    {activeChannels.map(channel => (
+                      <SelectItem key={channel.id} value={channel.id} className="cursor-pointer">
+                        {channel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex flex-col items-end gap-1">
+                <div className="text-sm text-muted-foreground">
+                  Métricas baseadas no mês atual
+                </div>
+                {viewFilter !== 'global' && selectedChannel && (
+                  <Badge variant="secondary" className="text-xs">
+                    Filtrando: {selectedChannel.name}
+                  </Badge>
+                )}
               </div>
             </div>
           </CardContent>
@@ -337,13 +395,18 @@ const Index = () => {
              return (
                <Tooltip key={index}>
                  <TooltipTrigger asChild>
-                    <Card className={`border-border/50 cursor-help transition-all duration-300 animate-fade-in ${
-                      isRhythmCard ? 'border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10' : ''
-                    }`}>
-                     <CardContent className="p-4">
-                       <div className="flex items-center justify-between mb-2">
-                         <IconComponent className={`w-5 h-5 ${metric.color}`} />
-                       </div>
+                      <Card className={`border-border/50 cursor-help transition-all duration-500 ease-in-out animate-fade-in ${
+                        isRhythmCard ? 'border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10' : ''
+                      } ${viewFilter !== 'global' ? 'border-accent/30 bg-gradient-to-br from-accent/5 to-accent/10' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <IconComponent className={`w-5 h-5 ${metric.color}`} />
+                          {viewFilter !== 'global' && (
+                            <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                              {selectedChannel?.name || 'Canal'}
+                            </Badge>
+                          )}
+                        </div>
                        <div className="space-y-2">
                          <p className="text-sm font-medium text-muted-foreground">
                            {metric.title}
@@ -398,7 +461,12 @@ const Index = () => {
         )}
 
         {/* GRÁFICO */}
-        {dashboardConfig.showChart && <DashboardChart />}
+        {dashboardConfig.showChart && (
+          <DashboardChart 
+            viewFilter={viewFilter} 
+            selectedChannel={selectedChannel}
+          />
+        )}
 
         {/* ANÁLISE DETALHADA DE RITMO */}
         <Card className="border-border/50">

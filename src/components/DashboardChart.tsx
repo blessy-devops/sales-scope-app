@@ -10,7 +10,12 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useChannels } from '@/hooks/useChannels';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-export function DashboardChart() {
+interface DashboardChartProps {
+  viewFilter?: string;
+  selectedChannel?: { id: string; name: string } | null;
+}
+
+export function DashboardChart({ viewFilter = 'global', selectedChannel }: DashboardChartProps) {
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
   const { channels } = useChannels();
@@ -29,9 +34,13 @@ export function DashboardChart() {
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
     
-    // Buscar metas do mês
+    // Buscar metas do mês filtradas por canal
     const monthlyTargets = getTargetsForMonth(currentMonth, currentYear);
-    const totalMonthlyTarget = monthlyTargets.reduce((sum, target) => sum + target.target_amount, 0);
+    const filteredTargets = viewFilter === 'global' 
+      ? monthlyTargets 
+      : monthlyTargets.filter(t => t.channel_id === viewFilter);
+    
+    const totalMonthlyTarget = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
     
     // Calcular meta diária baseada nos dias do mês
     const startMonth = startOfMonth(currentDate);
@@ -46,10 +55,15 @@ export function DashboardChart() {
       const date = subDays(currentDate, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       
-      // Somar vendas de todos os canais ativos para o dia
-      const totalDaySales = channels
-        .filter(c => c.is_active)
-        .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
+      // Calcular vendas conforme filtro de visão
+      let totalDaySales = 0;
+      if (viewFilter === 'global') {
+        totalDaySales = channels
+          .filter(c => c.is_active)
+          .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
+      } else {
+        totalDaySales = getSaleAmount(viewFilter, dateStr);
+      }
       
       data.push({
         date: format(date, 'dd/MM', { locale: ptBR }),
@@ -69,7 +83,14 @@ export function DashboardChart() {
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Vendas vs Meta (Este mês)</CardTitle>
+              <div className="flex flex-col">
+                <CardTitle className="text-lg">Vendas vs Meta (Este mês)</CardTitle>
+                {selectedChannel && (
+                  <span className="text-sm text-muted-foreground mt-1">
+                    Canal: {selectedChannel.name}
+                  </span>
+                )}
+              </div>
               <Button variant="ghost" size="sm">
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </Button>
