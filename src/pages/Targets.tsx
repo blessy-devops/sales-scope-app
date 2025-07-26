@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -85,9 +86,7 @@ export default function Targets() {
   }, [month, year, activeChannels.length]);
 
   const handleTargetChange = (channelId: string, value: string) => {
-    // Permitir apenas números e vírgula/ponto decimal
-    const sanitizedValue = value.replace(/[^\d.,]/g, '').replace(',', '.');
-    setTargetValues(prev => ({ ...prev, [channelId]: sanitizedValue }));
+    setTargetValues(prev => ({ ...prev, [channelId]: value }));
     setHasChanges(true);
   };
 
@@ -254,12 +253,11 @@ export default function Targets() {
                             <Label htmlFor={`target-${channel.id}`} className="text-sm font-medium">
                               Meta (R$)
                             </Label>
-                            <Input
+                            <CurrencyInput
                               id={`target-${channel.id}`}
-                              type="text"
-                              placeholder="0,00"
                               value={targetValues[channel.id] || ''}
-                              onChange={(e) => handleTargetChange(channel.id, e.target.value)}
+                              onValueChange={(value) => handleTargetChange(channel.id, value)}
+                              placeholder="R$ 0,00"
                               className="mt-1"
                             />
                           </div>

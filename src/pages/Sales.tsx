@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/DatePicker';
@@ -81,9 +82,7 @@ export default function Sales() {
   }, [dateStr, activeChannels.length]);
 
   const handleSaleChange = (channelId: string, value: string) => {
-    // Permitir apenas números e vírgula/ponto decimal
-    const sanitizedValue = value.replace(/[^\d.,]/g, '').replace(',', '.');
-    setSaleValues(prev => ({ ...prev, [channelId]: sanitizedValue }));
+    setSaleValues(prev => ({ ...prev, [channelId]: value }));
     setHasChanges(true);
   };
 
@@ -272,12 +271,11 @@ export default function Sales() {
                             <Label htmlFor={`sale-${channel.id}`} className="text-sm font-medium">
                               Valor da Venda (R$)
                             </Label>
-                            <Input
+                            <CurrencyInput
                               id={`sale-${channel.id}`}
-                              type="text"
-                              placeholder="0,00"
                               value={saleValues[channel.id] || ''}
-                              onChange={(e) => handleSaleChange(channel.id, e.target.value)}
+                              onValueChange={(value) => handleSaleChange(channel.id, value)}
+                              placeholder="R$ 0,00"
                               className="mt-1"
                             />
                           </div>
