@@ -54,7 +54,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Page Header */}
           <PageHeader onNewChannel={onNewChannel}>
             <div className="flex items-center gap-2 justify-end w-full">
@@ -76,9 +76,9 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
             </div>
           </PageHeader>
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            <div className="min-h-full p-6">{children}</div>
+          {/* Main Content - ÁREA COM SCROLL */}
+          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-950">
+            <div className="p-6">{children}</div>
           </main>
         </div>
       </div>
