@@ -403,7 +403,7 @@ const Index = () => {
               onClick={() => setExpandedAnalysis(!expandedAnalysis)}
               className="w-full flex items-center justify-between p-4 h-auto"
             >
-              <span className="text-lg font-semibold">Ver análise detalhada</span>
+              <span className="text-lg font-semibold">Ver análise detalhada de ritmo</span>
               {expandedAnalysis ? (
                 <ChevronUp className="w-5 h-5" />
               ) : (
@@ -452,7 +452,7 @@ const Index = () => {
                         <RechartsTooltip 
                           formatter={(value: number, name: string) => [
                             formatCurrency(value), 
-                            name === 'vendas' ? 'Vendas' : 
+                            name === 'vendas' ? 'Vendas Diárias' : 
                             name === 'ritmoNecessario' ? 'Ritmo Necessário' : 'Meta Diária Original'
                           ]}
                           labelStyle={{ color: 'hsl(var(--foreground))' }}
@@ -571,21 +571,21 @@ const Index = () => {
                       return [
                         {
                           title: 'Melhor Dia',
-                          value: `R$ ${melhorDia.valor.toFixed(0)}`,
+                          value: formatCurrency(melhorDia.valor),
                           subtitle: `(${format(melhorDia.date, 'dd/MM')})`,
                           icon: Award,
                           color: 'text-emerald-600'
                         },
                         {
                           title: 'Pior Dia',
-                          value: `R$ ${piorDia.valor.toFixed(0)}`,
+                          value: formatCurrency(piorDia.valor),
                           subtitle: `(${format(piorDia.date, 'dd/MM')})`,
                           icon: TrendingDownIcon,
                           color: 'text-red-500'
                         },
                         {
                           title: 'Média Últimos 7 Dias',
-                          value: `R$ ${mediaUltimos7.toFixed(0)}`,
+                          value: formatCurrency(mediaUltimos7),
                           subtitle: 'Ritmo semanal',
                           icon: Activity,
                           color: 'text-primary'
