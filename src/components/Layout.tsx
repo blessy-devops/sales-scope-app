@@ -1,9 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { PageHeader } from './PageHeader';
 import { UserDropdown } from './UserDropdown';
 import { Button } from '@/components/ui/button';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
@@ -15,6 +14,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children, onNewChannel }: LayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { toast } = useToast();
   const location = useLocation();
 
@@ -51,9 +51,9 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
 
   return (
     <div className="min-h-screen">
-      <AppSidebar />
+      <AppSidebar collapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
       
-      <div className="pl-64 min-h-screen flex flex-col">
+      <div className={`min-h-screen flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'pl-16' : 'pl-64'}`}>
         {/* Page Header */}
         <PageHeader onNewChannel={onNewChannel}>
           <div className="flex items-center gap-2 justify-end w-full">

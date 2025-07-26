@@ -25,8 +25,12 @@ const menuItems = [
   { title: 'Lançar Vendas', url: '/sales', icon: DollarSign },
 ];
 
-export function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+interface AppSidebarProps {
+  collapsed: boolean;
+  onToggle: (collapsed: boolean) => void;
+}
+
+export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { signOut } = useAuth();
@@ -39,7 +43,7 @@ export function AppSidebar() {
   };
 
   const toggleSidebar = () => {
-    setCollapsed(!collapsed);
+    onToggle(!collapsed);
   };
 
   const SidebarItem = ({ children, tooltip, ...props }: any) => {
