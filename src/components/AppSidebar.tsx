@@ -62,7 +62,7 @@ export function AppSidebar() {
     <TooltipProvider>
       <div 
         className={cn(
-          "bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 transition-all duration-300 flex-shrink-0 flex flex-col h-screen",
+          "fixed left-0 top-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 transition-all duration-300 flex-shrink-0 flex flex-col h-screen z-40",
           collapsed ? 'w-16' : 'w-64'
         )}
         style={{
