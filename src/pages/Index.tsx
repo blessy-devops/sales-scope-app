@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Treemap, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -865,66 +865,165 @@ const Index = () => {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="border-t pt-6 md:pt-8">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Acesso Rápido</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-border/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ShoppingBag className="w-4 h-4 text-primary" />
-                  Canais de Venda
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button 
-                  onClick={() => window.location.href = '/channels'}
-                  variant="outline"
-                  className="w-full gap-2"
-                >
-                  Gerenciar
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
+        {/* VISÃO ANALÍTICA - Gráfico de Árvore e Ranking */}
+        <div className="space-y-6">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground">Análise de Representatividade</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Gráfico de Árvore - 65% */}
+            <div className="lg:col-span-2">
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-base">Representatividade por Canal</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[400px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <Treemap
+                        data={(() => {
+                          const totalSales = channelData.reduce((sum, channel) => sum + channel.sales, 0);
+                          
+                          return channelData
+                            .filter(channel => channel.sales > 0)
+                            .map(channel => ({
+                              name: channel.name,
+                              size: channel.sales,
+                              percentage: totalSales > 0 ? ((channel.sales / totalSales) * 100).toFixed(1) : 0,
+                              color: channel.sales >= channel.target * 0.9 ? '#10b981' : 
+                                     channel.sales >= channel.target * 0.7 ? '#f59e0b' : '#ef4444'
+                            }))
+                            .sort((a, b) => b.size - a.size);
+                        })()}
+                        dataKey="size"
+                        aspectRatio={16/9}
+                        stroke="#fff"
+                        content={({ root, depth, x, y, width, height, index, payload, colors, ...rest }) => {
+                          if (!payload || width < 40 || height < 40) return null;
+                          
+                          return (
+                            <g>
+                              <rect
+                                x={x}
+                                y={y}
+                                width={width}
+                                height={height}
+                                style={{
+                                  fill: payload.color,
+                                  stroke: '#fff',
+                                  strokeWidth: 2,
+                                }}
+                              />
+                              {width > 80 && height > 60 && (
+                                <>
+                                  <text
+                                    x={x + width / 2}
+                                    y={y + height / 2 - 8}
+                                    textAnchor="middle"
+                                    fill="#fff"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                  >
+                                    {payload.name}
+                                  </text>
+                                  <text
+                                    x={x + width / 2}
+                                    y={y + height / 2 + 8}
+                                    textAnchor="middle"
+                                    fill="#fff"
+                                    fontSize="10"
+                                  >
+                                    {payload.percentage}%
+                                  </text>
+                                  <text
+                                    x={x + width / 2}
+                                    y={y + height / 2 + 24}
+                                    textAnchor="middle"
+                                    fill="#fff"
+                                    fontSize="10"
+                                  >
+                                    {formatCurrency(payload.size)}
+                                  </text>
+                                </>
+                              )}
+                            </g>
+                          );
+                        }}
+                      />
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card className="border-border/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="w-4 h-4 text-primary" />
-                  Metas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button 
-                  onClick={() => window.location.href = '/targets'}
-                  variant="outline"
-                  className="w-full gap-2"
-                >
-                  Configurar
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChart3 className="w-4 h-4 text-primary" />
-                  Lançar Vendas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button 
-                  onClick={() => window.location.href = '/sales'}
-                  variant="outline"
-                  className="w-full gap-2"
-                >
-                  Registrar
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Ranking Top 3 - 35% */}
+            <div className="lg:col-span-1">
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-base">Top 3 Canais do Mês</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {channelData
+                      .sort((a, b) => b.sales - a.sales)
+                      .slice(0, 3)
+                      .map((channel, index) => {
+                        const totalSales = channelData.reduce((sum, ch) => sum + ch.sales, 0);
+                        const percentage = totalSales > 0 ? (channel.sales / totalSales) * 100 : 0;
+                        const IconComponent = getChannelIcon(channel.type);
+                        
+                        return (
+                          <div key={channel.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm ${
+                              index === 0 ? 'bg-yellow-500' : 
+                              index === 1 ? 'bg-gray-400' : 'bg-amber-600'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <IconComponent className="w-4 h-4 text-primary" />
+                                <h4 className="font-medium text-sm truncate">{channel.name}</h4>
+                              </div>
+                              
+                              <p className="text-lg font-bold text-foreground">
+                                {formatCurrency(channel.sales)}
+                              </p>
+                              
+                              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                                <span>{percentage.toFixed(1)}% do total</span>
+                                <span className={channel.sales >= channel.target ? 'text-emerald-600' : 'text-red-500'}>
+                                  {((channel.sales / channel.target) * 100).toFixed(0)}% da meta
+                                </span>
+                              </div>
+                              
+                              <div className="mt-2">
+                                <Progress 
+                                  value={Math.min((channel.sales / channel.target) * 100, 100)} 
+                                  className="h-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  
+                  {/* Resumo Total */}
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <div className="text-center space-y-1">
+                      <p className="text-sm text-muted-foreground">Total Geral</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {formatCurrency(channelData.reduce((sum, ch) => sum + ch.sales, 0))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {channelData.length} canais ativos
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
