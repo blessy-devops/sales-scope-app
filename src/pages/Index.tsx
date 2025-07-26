@@ -29,7 +29,10 @@ import {
   Wifi,
   WifiOff,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Activity,
+  ChartLine,
+  Zap
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
@@ -89,6 +92,12 @@ const Index = () => {
   const originalDailyTarget = totalTargetMonth / daysInMonth;
   const adjustedDailyTarget = remainingDays > 0 ? Math.max(0, remainingTargetValue) / remainingDays : 0;
 
+  // CÁLCULOS DE RITMO
+  const currentPace = daysPassed > 0 ? totalSalesMonth / daysPassed : 0; // Ritmo atual
+  const projectedTotal = currentPace * daysInMonth; // Projetado
+  const projectedPercent = totalTargetMonth > 0 ? (projectedTotal / totalTargetMonth) * 100 : 0;
+  const requiredPace = remainingDays > 0 ? Math.max(0, remainingTargetValue) / remainingDays : 0; // Ritmo necessário
+
   // Função para obter ícone do canal
   const getChannelIcon = (type: string) => {
     switch (type) {
@@ -120,13 +129,24 @@ const Index = () => {
       const channelPerformanceValue = channelSales - channelExpectedTarget;
       const channelPerformancePercent = channelExpectedTarget > 0 ? (channelPerformanceValue / channelExpectedTarget) * 100 : 0;
       
+      // Cálculos de ritmo do canal
+      const channelCurrentPace = daysPassed > 0 ? channelSales / daysPassed : 0;
+      const channelProjectedTotal = channelCurrentPace * daysInMonth;
+      const channelProjectedPercent = channelTarget > 0 ? (channelProjectedTotal / channelTarget) * 100 : 0;
+      const channelRemainingTarget = channelTarget - channelSales;
+      const channelRequiredPace = remainingDays > 0 ? Math.max(0, channelRemainingTarget) / remainingDays : 0;
+      
       return {
         ...channel,
         sales: channelSales,
         target: channelTarget,
         progress: Math.min(progress, 100),
         performanceValue: channelPerformanceValue,
-        performancePercent: channelPerformancePercent
+        performancePercent: channelPerformancePercent,
+        currentPace: channelCurrentPace,
+        projectedTotal: channelProjectedTotal,
+        projectedPercent: channelProjectedPercent,
+        requiredPace: channelRequiredPace
       };
     });
   };
@@ -145,8 +165,11 @@ const Index = () => {
     showDesempenhoPercent: true,
     showDesempenhoValue: true,
     showSaldoMeta: true,
+    showRitmoAtual: true,
+    showProjetado: true,
+    showRitmoNecessario: true,
     showMetaDiariaOriginal: true,
-    showMetaDiariaAjustada: true,
+    showMetaDiariaAjustada: false,
     showChart: true,
     showChannelGrid: true,
   });
@@ -211,6 +234,37 @@ const Index = () => {
       tooltip: 'Quanto falta para atingir a meta total do mês'
     },
     {
+      key: 'showRitmoAtual',
+      title: 'Ritmo Atual',
+      value: formatCurrency(currentPace),
+      subtitle: 'Média diária até hoje',
+      icon: Activity,
+      color: 'text-primary',
+      isRhythm: true,
+      tooltip: 'Média de vendas por dia até hoje'
+    },
+    {
+      key: 'showProjetado',
+      title: 'Projetado',
+      value: formatCurrency(projectedTotal),
+      subtitle: `${projectedPercent.toFixed(1)}% da meta`,
+      icon: ChartLine,
+      color: projectedPercent >= 100 ? 'text-emerald-600' : projectedPercent >= 95 ? 'text-yellow-600' : 'text-red-500',
+      subtitleColor: projectedPercent >= 100 ? 'text-emerald-600' : projectedPercent >= 95 ? 'text-yellow-600' : 'text-red-500',
+      isRhythm: true,
+      tooltip: 'Projeção baseada no ritmo atual'
+    },
+    {
+      key: 'showRitmoNecessario',
+      title: 'Ritmo Necessário',
+      value: formatCurrency(requiredPace),
+      subtitle: 'Para atingir a meta',
+      icon: Zap,
+      color: requiredPace <= currentPace ? 'text-emerald-600' : 'text-red-500',
+      isRhythm: true,
+      tooltip: 'Vendas diárias necessárias para atingir a meta'
+    },
+    {
       key: 'showMetaDiariaOriginal',
       title: 'Meta Diária Original',
       value: formatCurrency(originalDailyTarget),
@@ -263,15 +317,18 @@ const Index = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
            {metrics.map((metric, index) => {
              const IconComponent = metric.icon;
              const isPerformanceCard = metric.isPerformance;
+             const isRhythmCard = metric.isRhythm;
              
              return (
                <Tooltip key={index}>
                  <TooltipTrigger asChild>
-                    <Card className="border-border/50 cursor-help transition-all duration-300 animate-fade-in">
+                    <Card className={`border-border/50 cursor-help transition-all duration-300 animate-fade-in ${
+                      isRhythmCard ? 'border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10' : ''
+                    }`}>
                      <CardContent className="p-4">
                        <div className="flex items-center justify-between mb-2">
                          <IconComponent className={`w-5 h-5 ${metric.color}`} />
@@ -283,6 +340,14 @@ const Index = () => {
                          <p className={`text-lg font-bold ${metric.color}`}>
                            {metric.value}
                          </p>
+                         
+                         {metric.subtitle && (
+                           <p className={`text-xs font-medium ${
+                             metric.subtitleColor || 'text-muted-foreground'
+                           }`}>
+                             {metric.subtitle}
+                           </p>
+                         )}
                          
                          {isPerformanceCard && (
                            <>
@@ -381,6 +446,35 @@ const Index = () => {
                           }`}>
                             {channel.performancePercent >= 0 ? '+' : ''}{channel.performancePercent.toFixed(1)}%
                           </span>
+                        </div>
+                        
+                        {/* Seção de Ritmo */}
+                        <div className="border-t pt-3 space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Ritmo</span>
+                            <span className="font-medium text-primary">
+                              {formatCurrency(channel.currentPace)}/dia
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Projetado</span>
+                            <span className={`font-medium ${
+                              channel.projectedPercent >= 100 ? 'text-emerald-600' : 
+                              channel.projectedPercent >= 95 ? 'text-yellow-600' : 'text-red-500'
+                            }`}>
+                              {formatCurrency(channel.projectedTotal)} ({channel.projectedPercent.toFixed(1)}%)
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Ritmo Necessário</span>
+                            <span className={`font-medium ${
+                              channel.requiredPace <= channel.currentPace ? 'text-emerald-600' : 'text-red-500'
+                            }`}>
+                              {formatCurrency(channel.requiredPace)}/dia
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
