@@ -1,12 +1,12 @@
 import { ReactNode } from 'react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { PageHeader } from './PageHeader';
+import { UserDropdown } from './UserDropdown';
 import { Button } from '@/components/ui/button';
-import { Download, LogOut } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import * as XLSX from 'xlsx';
 
 interface LayoutProps {
@@ -17,11 +17,6 @@ interface LayoutProps {
 export function Layout({ children, onNewChannel }: LayoutProps) {
   const { toast } = useToast();
   const location = useLocation();
-  const { signOut, user } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   const exportToExcel = () => {
     try {
@@ -55,15 +50,14 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
   const showExportButton = location.pathname === '/';
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-gray-50 dark:bg-slate-950">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
           {/* Page Header */}
           <PageHeader onNewChannel={onNewChannel}>
-            <div className="flex items-center gap-2 justify-between w-full">
-              <SidebarTrigger />
+            <div className="flex items-center gap-2 justify-end w-full">
               
               <div className="flex items-center gap-2">
                 {showExportButton && (
@@ -77,21 +71,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
                     <span className="hidden sm:inline">Exportar</span>
                   </Button>
                 )}
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground hidden sm:inline">
-                    {user?.email}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sair</span>
-                  </Button>
-                </div>
+                <UserDropdown />
               </div>
             </div>
           </PageHeader>

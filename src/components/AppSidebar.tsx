@@ -9,7 +9,8 @@ import {
   Moon,
   Sun,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useTheme } from 'next-themes';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
@@ -32,10 +34,15 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { signOut } = useAuth();
   const currentPath = location.pathname;
 
   const collapsed = state === 'collapsed';
   const isActive = (path: string) => currentPath === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <Sidebar 
@@ -45,8 +52,14 @@ export function AppSidebar() {
       )}
     >
       {/* Header com Logo */}
-      <SidebarHeader className="p-6 border-b border-gray-200 dark:border-slate-800">
-        <div className="flex items-center gap-3">
+      <SidebarHeader className={cn(
+        "border-b border-gray-200 dark:border-slate-800",
+        collapsed ? "p-3" : "p-6"
+      )}>
+        <div className={cn(
+          "flex items-center",
+          collapsed ? "justify-center" : "gap-3"
+        )}>
           <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
             <img 
               src={blessyLogo} 
@@ -155,6 +168,22 @@ export function AppSidebar() {
             <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
           )}
         </NavLink>
+
+        {/* Logout */}
+        <button
+          onClick={handleSignOut}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
+            "hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400",
+            "hover:text-red-700 dark:hover:text-red-300",
+            collapsed ? "justify-center" : "justify-start"
+          )}
+        >
+          <LogOut className="w-5 h-5" />
+          {!collapsed && (
+            <span className="font-semibold text-sm">Sair</span>
+          )}
+        </button>
 
         {/* Collapse Button */}
         <button
