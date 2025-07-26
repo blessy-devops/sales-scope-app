@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
@@ -37,7 +39,8 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
-  TrendingDown as TrendingDownIcon
+  TrendingDown as TrendingDownIcon,
+  Calculator
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
@@ -103,6 +106,8 @@ const Index = () => {
   const projectedTotal = currentPace * daysInMonth; // Projetado
   const projectedPercent = totalTargetMonth > 0 ? (projectedTotal / totalTargetMonth) * 100 : 0;
   const requiredPace = remainingDays > 0 ? Math.max(0, remainingTargetValue) / remainingDays : 0; // Ritmo necessário
+  
+  const [simulatedPace, setSimulatedPace] = useState<number[]>([currentPace || 0]);
 
   // Função para obter ícone do canal
   const getChannelIcon = (type: string) => {
@@ -609,7 +614,87 @@ const Index = () => {
                         </Card>
                       );
                     })}
-                  </div>
+                   </div>
+                </div>
+
+                {/* Simulador de Ritmo */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Calculator className="w-5 h-5 text-primary" />
+                    Simulador de Ritmo
+                  </h3>
+                  <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Ritmo Diário Simulado</Label>
+                          <span className="text-sm font-semibold text-primary">
+                            {formatCurrency(simulatedPace[0])}
+                          </span>
+                        </div>
+                        <Slider
+                          value={simulatedPace}
+                          onValueChange={setSimulatedPace}
+                          max={Math.max(currentPace * 2, 50000)}
+                          min={0}
+                          step={100}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>R$ 0</span>
+                          <span>Atual: {formatCurrency(currentPace)}</span>
+                          <span>{formatCurrency(Math.max(currentPace * 2, 50000))}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-background/60 rounded-lg p-4 border border-border/50">
+                        {(() => {
+                          const simulatedTotal = simulatedPace[0] * daysInMonth;
+                          const simulatedPercent = totalTargetMonth > 0 ? (simulatedTotal / totalTargetMonth) * 100 : 0;
+                          const difference = simulatedTotal - totalTargetMonth;
+                          const isAboveTarget = simulatedPercent >= 100;
+                          
+                          return (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Projeção Final:</span>
+                                <span className="font-semibold text-lg">
+                                  {formatCurrency(simulatedTotal)}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Percentual da Meta:</span>
+                                <span className={`font-bold text-lg ${
+                                  isAboveTarget ? 'text-emerald-600' : 'text-red-500'
+                                }`}>
+                                  {simulatedPercent.toFixed(1)}%
+                                </span>
+                              </div>
+                              
+                              <div className="mt-4 p-3 rounded-lg bg-muted/30">
+                                <p className="text-sm font-medium">
+                                  {isAboveTarget ? (
+                                    <>
+                                      🎯 <span className="text-emerald-600">
+                                        Se mantiver R$ {formatCurrency(simulatedPace[0])}/dia, superará a meta em {formatCurrency(Math.abs(difference))} ({(simulatedPercent - 100).toFixed(1)}%)
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      ⚠️ <span className="text-red-500">
+                                        Com R$ {formatCurrency(simulatedPace[0])}/dia, ficará {formatCurrency(Math.abs(difference))} abaixo da meta ({(100 - simulatedPercent).toFixed(1)}%)
+                                      </span>
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               </div>
             )}
