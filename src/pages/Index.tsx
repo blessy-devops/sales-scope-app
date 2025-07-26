@@ -234,6 +234,14 @@ const Index = () => {
       tooltip: 'Quanto falta para atingir a meta total do mês'
     },
     {
+      key: 'showMetaDiariaOriginal',
+      title: 'Meta Diária Original',
+      value: formatCurrency(originalDailyTarget),
+      icon: Target,
+      color: 'text-muted-foreground',
+      tooltip: 'Meta mensal dividida pelos dias do mês'
+    },
+    {
       key: 'showRitmoAtual',
       title: 'Ritmo Atual',
       value: formatCurrency(currentPace),
@@ -263,14 +271,6 @@ const Index = () => {
       color: requiredPace <= currentPace ? 'text-emerald-600' : 'text-red-500',
       isRhythm: true,
       tooltip: 'Vendas diárias necessárias para atingir a meta'
-    },
-    {
-      key: 'showMetaDiariaOriginal',
-      title: 'Meta Diária Original',
-      value: formatCurrency(originalDailyTarget),
-      icon: Target,
-      color: 'text-muted-foreground',
-      tooltip: 'Meta mensal dividida pelos dias do mês'
     },
     {
       key: 'showMetaDiariaAjustada',
