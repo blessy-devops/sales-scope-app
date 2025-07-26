@@ -151,6 +151,14 @@ const Index = () => {
     showChannelGrid: true,
   });
 
+  // Função para obter insight automático
+  const getPerformanceInsight = (percent: number) => {
+    if (percent > 10) return "Excelente! 🎉";
+    if (percent >= 0) return "No caminho certo! 👍";
+    if (percent >= -10) return "Atenção necessária ⚠️";
+    return "Ação urgente! 🚨";
+  };
+
   const allMetrics = [
     {
       key: 'showRealizadoGlobal',
@@ -172,17 +180,27 @@ const Index = () => {
       key: 'showDesempenhoPercent',
       title: 'Desempenho %',
       value: `${performancePercent >= 0 ? '+' : ''}${performancePercent.toFixed(1)}%`,
-      icon: performancePercent >= 0 ? ArrowUp : ArrowDown,
+      icon: performancePercent >= 0 ? TrendingUp : TrendingDown,
       color: performancePercent >= 0 ? 'text-emerald-600' : 'text-red-500',
-      tooltip: 'Diferença entre realizado e esperado até hoje'
+      bgColor: performancePercent >= 0 ? 'bg-emerald-50/50' : 'bg-red-50/50',
+      borderColor: performancePercent >= 0 ? 'border-emerald-200/50' : 'border-red-200/50',
+      tooltip: 'Diferença entre realizado e esperado até hoje',
+      isPerformance: true,
+      progressValue: Math.abs(performancePercent),
+      insight: getPerformanceInsight(performancePercent)
     },
     {
       key: 'showDesempenhoValue',
       title: 'Desempenho R$',
       value: `${performanceValue >= 0 ? '+' : ''}${formatCurrency(Math.abs(performanceValue))}`,
-      icon: performanceValue >= 0 ? ArrowUp : ArrowDown,
+      icon: performanceValue >= 0 ? TrendingUp : TrendingDown,
       color: performanceValue >= 0 ? 'text-emerald-600' : 'text-red-500',
-      tooltip: 'Diferença entre realizado e esperado até hoje'
+      bgColor: performanceValue >= 0 ? 'bg-emerald-50/50' : 'bg-red-50/50',
+      borderColor: performanceValue >= 0 ? 'border-emerald-200/50' : 'border-red-200/50',
+      tooltip: 'Diferença entre realizado e esperado até hoje',
+      isPerformance: true,
+      progressValue: Math.abs(performancePercent),
+      insight: getPerformanceInsight(performancePercent)
     },
     {
       key: 'showSaldoMeta',
@@ -246,33 +264,62 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {metrics.map((metric, index) => {
-            const IconComponent = metric.icon;
-            return (
-              <Tooltip key={index}>
-                <TooltipTrigger asChild>
-                  <Card className="border-border/50 cursor-help">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <IconComponent className={`w-5 h-5 ${metric.color}`} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">
-                          {metric.title}
-                        </p>
-                        <p className={`text-lg font-bold ${metric.color}`}>
-                          {metric.value}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{metric.tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-            })}
+           {metrics.map((metric, index) => {
+             const IconComponent = metric.icon;
+             const isPerformanceCard = metric.isPerformance;
+             
+             return (
+               <Tooltip key={index}>
+                 <TooltipTrigger asChild>
+                   <Card className={`border-border/50 cursor-help transition-all duration-300 animate-fade-in ${
+                     isPerformanceCard ? `${metric.bgColor} ${metric.borderColor}` : ''
+                   }`}>
+                     <CardContent className="p-4">
+                       <div className="flex items-center justify-between mb-2">
+                         <IconComponent className={`w-5 h-5 ${metric.color}`} />
+                       </div>
+                       <div className="space-y-2">
+                         <p className="text-sm font-medium text-muted-foreground">
+                           {metric.title}
+                         </p>
+                         <p className={`text-lg font-bold ${metric.color}`}>
+                           {metric.value}
+                         </p>
+                         
+                         {isPerformanceCard && (
+                           <>
+                             {/* Barra de progresso visual */}
+                             <div className="relative w-full h-2 bg-muted rounded-full overflow-hidden">
+                               <div className="absolute inset-0 flex items-center justify-center">
+                                 <div className="w-0.5 h-full bg-muted-foreground/30"></div>
+                               </div>
+                               <div 
+                                 className={`h-full transition-all duration-500 ${
+                                   performancePercent >= 0 ? 'bg-emerald-500' : 'bg-red-500'
+                                 }`}
+                                 style={{
+                                   width: `${Math.min(Math.abs(performancePercent), 50)}%`,
+                                   marginLeft: performancePercent >= 0 ? '50%' : `${50 - Math.min(Math.abs(performancePercent), 50)}%`
+                                 }}
+                               />
+                             </div>
+                             
+                             {/* Insight automático */}
+                             <p className="text-xs text-muted-foreground font-medium">
+                               {metric.insight}
+                             </p>
+                           </>
+                         )}
+                       </div>
+                     </CardContent>
+                   </Card>
+                 </TooltipTrigger>
+                 <TooltipContent>
+                   <p>{metric.tooltip}</p>
+                 </TooltipContent>
+               </Tooltip>
+             );
+             })}
           </div>
         )}
 
