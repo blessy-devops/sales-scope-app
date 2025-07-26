@@ -3,6 +3,7 @@ import { AppSidebar } from './AppSidebar';
 import { PageHeader } from './PageHeader';
 import { UserDropdown } from './UserDropdown';
 import { Button } from '@/components/ui/button';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
@@ -49,36 +50,38 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
   const showExportButton = location.pathname === '/';
 
   return (
-    <div className="min-h-screen flex w-full bg-gray-50 dark:bg-slate-950">
-      <AppSidebar />
-      
-      <div className="flex-1 flex flex-col">
-        {/* Page Header */}
-        <PageHeader onNewChannel={onNewChannel}>
-          <div className="flex items-center gap-2 justify-end w-full">
-            
-            <div className="flex items-center gap-2">
-              {showExportButton && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportToExcel}
-                  className="gap-2 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl shadow-sm"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Exportar</span>
-                </Button>
-              )}
-              <UserDropdown />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          {/* Page Header */}
+          <PageHeader onNewChannel={onNewChannel}>
+            <div className="flex items-center gap-2 justify-end w-full">
+              
+              <div className="flex items-center gap-2">
+                {showExportButton && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToExcel}
+                    className="gap-2 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl shadow-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Exportar</span>
+                  </Button>
+                )}
+                <UserDropdown />
+              </div>
             </div>
-          </div>
-        </PageHeader>
+          </PageHeader>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950">
-          <div className="min-h-full">{children}</div>
-        </main>
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
+            <div className="min-h-full p-6">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

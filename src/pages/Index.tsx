@@ -328,7 +328,7 @@ const Index = () => {
 
   return (
     <TooltipProvider>
-      <div className="p-6">
+      <div className="">
         <div className="max-w-7xl mx-auto space-y-8">
 
         {/* HEADER COM FILTROS */}
