@@ -271,9 +271,7 @@ const Index = () => {
              return (
                <Tooltip key={index}>
                  <TooltipTrigger asChild>
-                   <Card className={`border-border/50 cursor-help transition-all duration-300 animate-fade-in ${
-                     isPerformanceCard ? `${metric.bgColor} ${metric.borderColor}` : ''
-                   }`}>
+                    <Card className="border-border/50 cursor-help transition-all duration-300 animate-fade-in">
                      <CardContent className="p-4">
                        <div className="flex items-center justify-between mb-2">
                          <IconComponent className={`w-5 h-5 ${metric.color}`} />
