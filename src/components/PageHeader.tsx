@@ -64,16 +64,11 @@ export function PageHeader({ title, description, children, onNewChannel }: PageH
   return (
     <div className="border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="flex items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <IconComponent className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">{pageTitle}</h1>
-            {pageDescription && (
-              <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mt-0.5">{pageDescription}</p>
-            )}
-          </div>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">{pageTitle}</h1>
+          {pageDescription && (
+            <p className="text-sm text-gray-600 dark:text-slate-400 font-medium mt-0.5">{pageDescription}</p>
+          )}
         </div>
         
         <div className="flex items-center gap-4">
