@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Treemap } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -985,12 +985,31 @@ const Index = () => {
 
                       return (
                         <ResponsiveContainer width="100%" height={400}>
-                          <Treemap
-                            data={dadosTreemap}
-                            dataKey="size"
-                            stroke="#fff"
-                            content={<CustomizedContent />}
-                          />
+                          <PieChart>
+                            <Pie
+                              data={dadosTreemap}
+                              dataKey="size"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={150}
+                              label={({name, percent}) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                              labelLine={false}
+                            >
+                              {dadosTreemap.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip 
+                              formatter={(value) => [formatCurrency(Number(value)), 'Vendas']}
+                              labelStyle={{ color: 'hsl(var(--foreground))' }}
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(var(--background))', 
+                                border: '1px solid hsl(var(--border))' 
+                              }}
+                            />
+                            <Legend />
+                          </PieChart>
                         </ResponsiveContainer>
                       );
                     })()}
