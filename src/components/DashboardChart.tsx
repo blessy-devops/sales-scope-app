@@ -48,6 +48,25 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
     const daysInMonth = endMonth.getDate();
     const dailyTarget = totalMonthlyTarget / daysInMonth;
     
+    // Calcular ritmo atual (vendas acumuladas até hoje / dias passados)
+    let totalSalesUntilToday = 0;
+    const daysPassedSoFar = currentDate.getDate();
+    
+    for (let i = 1; i <= daysPassedSoFar; i++) {
+      const pastDate = new Date(currentYear, currentMonth - 1, i);
+      const dateStr = format(pastDate, 'yyyy-MM-dd');
+      
+      if (viewFilter === 'global') {
+        totalSalesUntilToday += channels
+          .filter(c => c.is_active)
+          .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
+      } else {
+        totalSalesUntilToday += getSaleAmount(viewFilter, dateStr);
+      }
+    }
+    
+    const currentPace = daysPassedSoFar > 0 ? totalSalesUntilToday / daysPassedSoFar : 0;
+    
     // Sempre mostrar dados do mês atual
     const daysToShow = Math.min(currentDate.getDate(), 30);
     
@@ -69,6 +88,7 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
         date: format(date, 'dd/MM', { locale: ptBR }),
         realizado: totalDaySales,
         meta: dailyTarget,
+        projetado: currentPace, // Linha constante do ritmo atual
       });
     }
     
@@ -120,10 +140,17 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
                       borderRadius: 'var(--radius)',
                     }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value: number, name: string) => [
-                      `R$ ${value.toLocaleString('pt-BR')}`,
-                      name === 'realizado' ? 'Realizado' : 'Meta Diária'
-                    ]}
+                    formatter={(value: number, name: string) => {
+                      const labelMap: Record<string, string> = {
+                        'realizado': 'Realizado',
+                        'meta': 'Meta Diária',
+                        'projetado': 'Projetado (Ritmo)'
+                      };
+                      return [
+                        `R$ ${value.toLocaleString('pt-BR')}`,
+                        labelMap[name] || name
+                      ];
+                    }}
                   />
                   <Line 
                     type="monotone" 
@@ -139,6 +166,14 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
                     stroke="hsl(var(--destructive))" 
                     strokeWidth={2}
                     strokeDasharray="5 5"
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="projetado" 
+                    stroke="hsl(var(--warning))" 
+                    strokeWidth={2}
+                    strokeDasharray="3 3"
                     dot={false}
                   />
                 </LineChart>
