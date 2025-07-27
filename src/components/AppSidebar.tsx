@@ -11,7 +11,8 @@ import {
   Sun,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  HelpCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
@@ -115,29 +116,34 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                   <NavLink
                     to={item.url}
                     end
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
-                      "hover:bg-gray-100 dark:hover:bg-slate-800",
-                      collapsed ? "justify-center" : "justify-start",
-                      active 
-                        ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm" 
-                        : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
-                    )}
-                  >
-                    <IconComponent className={cn(
-                      "flex-shrink-0 transition-all duration-200",
-                      "w-5 h-5",
-                      active ? "text-indigo-600 dark:text-indigo-400" : ""
-                    )} />
-                    {!collapsed && (
-                      <span className="font-semibold truncate text-sm">
-                        {item.title}
-                      </span>
-                    )}
-                    {/* Active indicator */}
-                    {active && !collapsed && (
-                      <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
-                    )}
+                     className={cn(
+                       "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+                       "hover:bg-gray-100 dark:hover:bg-slate-800",
+                       collapsed ? "justify-center" : "justify-start",
+                       active 
+                         ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+                         : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
+                     )}
+                   >
+                     <div className="flex items-center gap-2">
+                       <IconComponent className={cn(
+                         "flex-shrink-0 transition-all duration-200",
+                         "w-5 h-5",
+                         active ? "text-indigo-600 dark:text-indigo-400" : ""
+                       )} />
+                       {collapsed && (
+                         <HelpCircle className="w-3 h-3 opacity-50" />
+                       )}
+                     </div>
+                     {!collapsed && (
+                       <span className="font-semibold truncate text-sm">
+                         {item.title}
+                       </span>
+                     )}
+                     {/* Active indicator */}
+                     {active && !collapsed && (
+                       <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+                     )}
                   </NavLink>
                 </SidebarItem>
               );
@@ -149,92 +155,112 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         <div className="p-4 border-t border-gray-200 dark:border-slate-800 space-y-2">
           {/* Dark Mode Toggle */}
           <SidebarItem tooltip={collapsed ? (theme === 'dark' ? 'Modo Claro' : 'Modo Escuro') : undefined}>
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
-                "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300",
-                "hover:text-gray-900 dark:hover:text-slate-100",
-                collapsed ? "justify-center" : "justify-start"
-              )}
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-              {!collapsed && (
-                <span className="font-semibold text-sm">
-                  {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-                </span>
-              )}
-            </button>
+             <button
+               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+               className={cn(
+                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
+                 "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300",
+                 "hover:text-gray-900 dark:hover:text-slate-100",
+                 collapsed ? "justify-center" : "justify-start"
+               )}
+             >
+               <div className="flex items-center gap-2">
+                 {theme === 'dark' ? (
+                   <Sun className="w-5 h-5" />
+                 ) : (
+                   <Moon className="w-5 h-5" />
+                 )}
+                 {collapsed && (
+                   <HelpCircle className="w-3 h-3 opacity-50" />
+                 )}
+               </div>
+               {!collapsed && (
+                 <span className="font-semibold text-sm">
+                   {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+                 </span>
+               )}
+             </button>
           </SidebarItem>
 
           {/* Configurações */}
           <SidebarItem tooltip={collapsed ? 'Configurações' : undefined}>
             <NavLink
               to="/settings"
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
-                "hover:bg-gray-100 dark:hover:bg-slate-800",
-                collapsed ? "justify-center" : "justify-start",
-                isActive('/settings')
-                  ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
-              )}
-            >
-              <Settings className={cn(
-                "w-5 h-5",
-                isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
-              )} />
-              {!collapsed && (
-                <span className="font-semibold text-sm">Configurações</span>
-              )}
-              {isActive('/settings') && !collapsed && (
-                <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
-              )}
+               className={cn(
+                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
+                 "hover:bg-gray-100 dark:hover:bg-slate-800",
+                 collapsed ? "justify-center" : "justify-start",
+                 isActive('/settings')
+                   ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                   : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
+               )}
+             >
+               <div className="flex items-center gap-2">
+                 <Settings className={cn(
+                   "w-5 h-5",
+                   isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
+                 )} />
+                 {collapsed && (
+                   <HelpCircle className="w-3 h-3 opacity-50" />
+                 )}
+               </div>
+               {!collapsed && (
+                 <span className="font-semibold text-sm">Configurações</span>
+               )}
+               {isActive('/settings') && !collapsed && (
+                 <div className="absolute right-3 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+               )}
             </NavLink>
           </SidebarItem>
 
           {/* Logout */}
           <SidebarItem tooltip={collapsed ? 'Sair' : undefined}>
-            <button
-              onClick={handleSignOut}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
-                "hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400",
-                "hover:text-red-700 dark:hover:text-red-300",
-                collapsed ? "justify-center" : "justify-start"
-              )}
-            >
-              <LogOut className="w-5 h-5" />
-              {!collapsed && (
-                <span className="font-semibold text-sm">Sair</span>
-              )}
-            </button>
+             <button
+               onClick={handleSignOut}
+               className={cn(
+                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
+                 "hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400",
+                 "hover:text-red-700 dark:hover:text-red-300",
+                 collapsed ? "justify-center" : "justify-start"
+               )}
+             >
+               <div className="flex items-center gap-2">
+                 <LogOut className="w-5 h-5" />
+                 {collapsed && (
+                   <HelpCircle className="w-3 h-3 opacity-50" />
+                 )}
+               </div>
+               {!collapsed && (
+                 <span className="font-semibold text-sm">Sair</span>
+               )}
+             </button>
           </SidebarItem>
 
           {/* Collapse Button */}
           <SidebarItem tooltip={collapsed ? 'Expandir' : 'Recolher'}>
-            <button
-              onClick={toggleSidebar}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
-                "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400",
-                "hover:text-gray-700 dark:hover:text-slate-300",
-                collapsed ? "justify-center" : "justify-start"
-              )}
-            >
-              {collapsed ? (
-                <ChevronRight className="w-5 h-5" />
-              ) : (
-                <ChevronLeft className="w-5 h-5" />
-              )}
-              {!collapsed && (
-                <span className="font-medium text-sm">Recolher</span>
-              )}
-            </button>
+             <button
+               onClick={toggleSidebar}
+               className={cn(
+                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full",
+                 "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400",
+                 "hover:text-gray-700 dark:hover:text-slate-300",
+                 collapsed ? "justify-center" : "justify-start"
+               )}
+             >
+               <div className="flex items-center gap-2">
+                 {collapsed ? (
+                   <ChevronRight className="w-5 h-5" />
+                 ) : (
+                   <ChevronLeft className="w-5 h-5" />
+                 )}
+                 {collapsed && (
+                   <HelpCircle className="w-3 h-3 opacity-50" />
+                 )}
+               </div>
+               {!collapsed && (
+                 <span className="font-medium text-sm">Recolher</span>
+               )}
+             </button>
           </SidebarItem>
         </div>
       </div>
