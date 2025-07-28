@@ -17,6 +17,7 @@ import { useTargets } from '@/hooks/useTargets';
 import { useChannels } from '@/hooks/useChannels';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useDataReferencia } from '@/hooks/useDataReferencia';
+import { AnomalyAlertsCard } from '@/components/AnomalyAlertsCard';
 import { format, startOfMonth, endOfMonth, subDays, getDaysInMonth, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -370,6 +371,9 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* CARD DE ALERTAS DE ANOMALIAS */}
+        <AnomalyAlertsCard />
 
         {/* TOP SECTION - Métricas */}
         {loading ? (

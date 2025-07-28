@@ -1,1 +1,4 @@
 project_id = "uvqugawzhtcajucqbvro"
+
+[functions.process-anomalies]
+verify_jwt = false

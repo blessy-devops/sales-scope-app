@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      anomaly_logs: {
+        Row: {
+          channel_id: string
+          created_at: string
+          current_value: number
+          detected_at: string
+          dismissed_at: string | null
+          dismissed_by: string | null
+          expected_value: number
+          id: string
+          message: string
+          severity: string
+          type: string
+          updated_at: string
+          variation_percentage: number
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          current_value?: number
+          detected_at?: string
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          expected_value?: number
+          id?: string
+          message: string
+          severity: string
+          type: string
+          updated_at?: string
+          variation_percentage?: number
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          current_value?: number
+          detected_at?: string
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          expected_value?: number
+          id?: string
+          message?: string
+          severity?: string
+          type?: string
+          updated_at?: string
+          variation_percentage?: number
+        }
+        Relationships: []
+      }
       channels: {
         Row: {
           created_at: string | null

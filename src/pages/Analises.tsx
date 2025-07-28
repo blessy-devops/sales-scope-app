@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { AnomalyHistory } from '@/components/AnomalyHistory';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -195,6 +196,9 @@ const Analises = () => {
           );
         })}
       </div>
+      
+      {/* Histórico de Anomalias */}
+      <AnomalyHistory />
       
       {/* Footer Info */}
       <Card className="mt-8 bg-muted/30">
