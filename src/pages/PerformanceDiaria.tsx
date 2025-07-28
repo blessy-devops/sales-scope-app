@@ -31,8 +31,11 @@ import {
   ArrowUp,
   ArrowDown,
   Medal,
-  FileText
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 interface DailyObservation {
@@ -216,6 +219,25 @@ const PerformanceDiaria = () => {
     }).format(value);
   };
 
+  // Função para formatar moeda compacta (ex: 5.8K em vez de 5.806,45)
+  const formatCompactCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `R$ ${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `R$ ${(value / 1000).toFixed(1)}K`;
+    }
+    return formatCurrency(value);
+  };
+
+  // Funções de exportação
+  const exportarExcel = () => {
+    console.log('Exportar Excel');
+  };
+
+  const exportarCSV = () => {
+    console.log('Exportar CSV');
+  };
+
   // Função para obter classe CSS baseada na performance
   const getPerformanceClass = (percentage: number) => {
     if (percentage < 70) return 'bg-red-500 text-white';
@@ -275,7 +297,7 @@ const PerformanceDiaria = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate('/analises')}>
@@ -283,24 +305,42 @@ const PerformanceDiaria = () => {
           Voltar
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Performance Diária por Canal</h1>
-          <p className="text-muted-foreground">Análise detalhada do desempenho de vendas</p>
+          <h1 className="text-xl font-semibold">Performance Diária por Canal</h1>
+          <p className="text-sm text-gray-600">Análise detalhada do desempenho de vendas</p>
         </div>
       </div>
 
-      {/* Controles */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtros e Configurações
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Filtros em card */}
+      <Card className="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-medium flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Filtros e Configurações
+            </h2>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportarExcel}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Exportar Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportarCSV}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Exportar CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Seletor de período */}
             <div className="space-y-2">
-              <Label>Período</Label>
+              <Label className="text-sm">Período</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start text-left">
@@ -324,7 +364,7 @@ const PerformanceDiaria = () => {
 
             {/* Modo de visualização */}
             <div className="space-y-2">
-              <Label>Modo de Visualização</Label>
+              <Label className="text-sm">Modo de Visualização</Label>
               <Select value={viewMode} onValueChange={(value: 'single' | 'multiple') => setViewMode(value)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -338,7 +378,7 @@ const PerformanceDiaria = () => {
 
             {/* Seleção de canais */}
             <div className="space-y-2">
-              <Label>
+              <Label className="text-sm">
                 {viewMode === 'single' ? 'Canal' : 'Canais'}
               </Label>
               {viewMode === 'single' ? (
@@ -397,7 +437,7 @@ const PerformanceDiaria = () => {
             {/* Métricas visíveis (apenas para múltiplos canais) */}
             {viewMode === 'multiple' && (
               <div className="space-y-2">
-                <Label>Métricas Visíveis</Label>
+                <Label className="text-sm">Métricas Visíveis</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
@@ -430,185 +470,113 @@ const PerformanceDiaria = () => {
               </div>
             )}
           </div>
-
-          {/* Botões de ação */}
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Exportar Excel
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Exportar CSV
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Conteúdo principal */}
+      {/* Tabela principal (sem ranking lateral) */}
       {selectedChannels.length > 0 && Array.isArray(performanceData) && viewMode === 'single' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Tabela principal */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Performance Diária - {channels.find(c => c.id === selectedChannels[0])?.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2 font-semibold">Dia</th>
-                        <th className="text-right p-2 font-semibold">Meta</th>
-                        <th className="text-right p-2 font-semibold">Realizado</th>
-                        <th className="text-center p-2 font-semibold">% Atingimento</th>
-                        <th className="text-right p-2 font-semibold">Saldo/GAP</th>
-                        <th className="text-right p-2 font-semibold">Ritmo Acum.</th>
-                        <th className="text-center p-2 font-semibold">% Acum. Meta</th>
-                        <th className="text-center p-2 font-semibold">Variação</th>
-                        <th className="text-center p-2 font-semibold">Obs.</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {performanceData.map((day: ChannelPerformance, index: number) => (
-                        <tr key={index} className="border-b hover:bg-muted/50">
-                          <td className="p-2">
-                            <div>
-                              <div className="font-medium">
-                                {day.formattedDate}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {day.dayOfWeek}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="text-right p-2">{formatCurrency(day.target)}</td>
-                          <td className="text-right p-2 font-medium">{formatCurrency(day.sales)}</td>
-                          <td className="text-center p-2">
-                            <Badge className={cn("text-xs", getPerformanceClass(day.percentage))}>
-                              {day.percentage.toFixed(1)}%
-                            </Badge>
-                          </td>
-                            <td className={cn(
-                              "text-right p-2 font-medium",
-                              day.gap >= 0 ? "text-green-600" : "text-red-600"
-                            )}>
-                              <div className="flex items-center justify-end gap-1 text-sm">
-                                {day.gap >= 0 ? (
-                                  <>
-                                    <span className="text-green-600 font-bold">+</span>
-                                    <span>{formatCurrency(day.gap)}</span>
-                                    <span className="text-xs opacity-70 ml-1">(excedente)</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="text-red-600 font-bold">-</span>
-                                    <span>{formatCurrency(Math.abs(day.gap))}</span>
-                                    <span className="text-xs opacity-70 ml-1">(faltam)</span>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          <td className="text-right p-2">{formatCurrency(day.accumulatedAverage)}</td>
-                          <td className="text-center p-2">
-                            <Badge variant={day.accumulatedPercentage >= 100 ? "default" : "secondary"}>
-                              {day.accumulatedPercentage.toFixed(1)}%
-                            </Badge>
-                          </td>
-                          <td className="text-center p-2">
-                            <div className="flex items-center justify-center gap-1">
-                              {day.variation > 0 ? (
-                                <ArrowUp className="w-3 h-3 text-green-600" />
-                              ) : day.variation < 0 ? (
-                                <ArrowDown className="w-3 h-3 text-red-600" />
-                              ) : null}
-                              <span className={cn(
-                                "text-xs",
-                                day.variation > 0 ? "text-green-600" : day.variation < 0 ? "text-red-600" : "text-muted-foreground"
-                              )}>
-                                {Math.abs(day.variationPercent).toFixed(1)}%
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-center p-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => openObservationModal(
-                                    selectedChannels[0], 
-                                    format(day.date, 'yyyy-MM-dd'),
-                                    day.observation
-                                  )}
-                                >
-                                  <StickyNote className={cn(
-                                    "w-3 h-3",
-                                    day.observation ? "text-blue-600" : "text-muted-foreground"
-                                  )} />
-                                </Button>
-                              </TooltipTrigger>
-                              {day.observation && (
-                                <TooltipContent>
-                                  <p className="max-w-48">{day.observation}</p>
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Card de ranking */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5" />
-                  Ranking do Período
-                </CardTitle>
-                <CardDescription>
-                  Performance média dos canais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {channelRanking.map((item, index) => (
-                    <div key={item?.channelId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
-                      <div className="flex-shrink-0">
-                        {index === 0 && <span className="text-xl">🥇</span>}
-                        {index === 1 && <span className="text-xl">🥈</span>}
-                        {index === 2 && <span className="text-xl">🥉</span>}
-                        {index > 2 && (
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                            {index + 1}
+        <Card className="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 dark:bg-gray-800">
+                    <TableHead className="w-32 py-3 px-4 text-sm font-medium">
+                      <div>
+                        <div>Dia</div>
+                        <div className="text-xs font-normal text-muted-foreground">Ranking</div>
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">Meta</TableHead>
+                    <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">Realizado</TableHead>
+                    <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">% Atingimento</TableHead>
+                    <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">Saldo/GAP</TableHead>
+                    <TableHead className="w-24 text-right py-3 px-4 text-sm font-medium">Ritmo</TableHead>
+                    <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">% Acum</TableHead>
+                    <TableHead className="w-20 text-center py-3 px-4 text-sm font-medium">Variação</TableHead>
+                    <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">Obs</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {performanceData.map((day: ChannelPerformance, index: number) => (
+                    <TableRow key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <TableCell className="py-3 px-4">
+                        <div>
+                          <div className="font-medium text-sm">
+                            {day.formattedDate}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {item?.channelName}
+                          <div className="text-xs text-muted-foreground">
+                            {day.dayOfWeek} • #{index + 1}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {item?.averagePercentage.toFixed(1)}% média
+                      </TableCell>
+                      <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.target)}</TableCell>
+                      <TableCell className="text-right py-3 px-4 text-sm font-medium">{formatCompactCurrency(day.sales)}</TableCell>
+                      <TableCell className="text-center py-3 px-4">
+                        <Badge className={cn("text-xs px-2 py-0.5", getPerformanceClass(day.percentage))}>
+                          {day.percentage.toFixed(1)}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={cn(
+                        "text-right py-3 px-4 text-sm",
+                        day.gap >= 0 ? "text-emerald-600" : "text-red-500"
+                      )}>
+                        {day.gap >= 0 ? '+' : '-'}{formatCompactCurrency(Math.abs(day.gap))}
+                      </TableCell>
+                      <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.accumulatedAverage)}</TableCell>
+                      <TableCell className="text-center py-3 px-4">
+                        <Badge variant={day.accumulatedPercentage >= 100 ? "default" : "secondary"} className="text-xs">
+                          {day.accumulatedPercentage.toFixed(1)}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center py-3 px-4">
+                        <div className="flex items-center justify-center gap-1">
+                          {day.variation > 0 ? (
+                            <ArrowUp className="w-3 h-3 text-emerald-600" />
+                          ) : day.variation < 0 ? (
+                            <ArrowDown className="w-3 h-3 text-red-500" />
+                          ) : null}
+                          <span className={cn(
+                            "text-xs",
+                            day.variation > 0 ? "text-emerald-600" : day.variation < 0 ? "text-red-500" : "text-muted-foreground"
+                          )}>
+                            {Math.abs(day.variationPercent).toFixed(1)}%
+                          </span>
                         </div>
-                      </div>
-                    </div>
+                      </TableCell>
+                      <TableCell className="text-center py-3 px-4">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => openObservationModal(
+                                selectedChannels[0], 
+                                format(day.date, 'yyyy-MM-dd'),
+                                day.observation
+                              )}
+                            >
+                              <StickyNote className={cn(
+                                "w-3 h-3",
+                                day.observation ? "text-blue-600" : "text-muted-foreground"
+                              )} />
+                            </Button>
+                          </TooltipTrigger>
+                          {day.observation && (
+                            <TooltipContent>
+                              <p className="max-w-48">{day.observation}</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Modal de observação */}
