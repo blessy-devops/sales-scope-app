@@ -93,7 +93,7 @@ const PerformanceDiaria = () => {
     rhythm: false,
     accumulatedPercentage: false,
     variation: false,
-    observations: true
+    observations: false
   });
   const [viewMode, setViewMode] = useState<'single' | 'multiple'>('single');
   const [observations, setObservations] = useState<DailyObservation[]>([]);
@@ -431,7 +431,33 @@ const PerformanceDiaria = () => {
             {/* Modo de visualização */}
             <div className="space-y-2">
               <Label className="text-sm">Modo de Visualização</Label>
-              <Select value={viewMode} onValueChange={(value: 'single' | 'multiple') => setViewMode(value)}>
+              <Select value={viewMode} onValueChange={(value: 'single' | 'multiple') => {
+                setViewMode(value);
+                // Resetar métricas quando mudar modo
+                if (value === 'multiple') {
+                  setSelectedMetrics({
+                    target: true,
+                    sales: true,
+                    percentage: true,
+                    gap: true,
+                    rhythm: false,
+                    accumulatedPercentage: false,
+                    variation: false,
+                    observations: false
+                  });
+                } else {
+                  setSelectedMetrics({
+                    target: true,
+                    sales: true,
+                    percentage: true,
+                    gap: true,
+                    rhythm: false,
+                    accumulatedPercentage: false,
+                    variation: false,
+                    observations: true
+                  });
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
