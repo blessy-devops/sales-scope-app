@@ -278,6 +278,21 @@ const PerformanceDiaria = () => {
     return 'bg-blue-600 text-white';
   };
 
+  // Função para obter cores de fundo para colunas dos canais
+  const getChannelColumnClass = (channelIndex: number) => {
+    const colors = [
+      'bg-blue-50 dark:bg-blue-950/20',
+      'bg-green-50 dark:bg-green-950/20',
+      'bg-purple-50 dark:bg-purple-950/20',
+      'bg-orange-50 dark:bg-orange-950/20',
+      'bg-pink-50 dark:bg-pink-950/20',
+      'bg-indigo-50 dark:bg-indigo-950/20',
+      'bg-yellow-50 dark:bg-yellow-950/20',
+      'bg-red-50 dark:bg-red-950/20'
+    ];
+    return colors[channelIndex % colors.length];
+  };
+
   // Salvar observação
   const saveObservation = async () => {
     if (!editingObservation || !newObservation.trim()) return;
@@ -875,16 +890,19 @@ const PerformanceDiaria = () => {
                               ));
                             }
                             
+                            const channelIndex = selectedChannels.findIndex(id => id === channelId);
+                            const channelBgClass = getChannelColumnClass(channelIndex);
+                            
                             return (
                               <React.Fragment key={channelId}>
                                 {selectedMetrics.target && (
-                                  <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(channelPerformance.target)}</TableCell>
+                                  <TableCell className={cn("text-right py-3 px-4 text-sm", channelBgClass)}>{formatCompactCurrency(channelPerformance.target)}</TableCell>
                                 )}
                                 {selectedMetrics.sales && (
-                                  <TableCell className="text-right py-3 px-4 text-sm font-medium">{formatCompactCurrency(channelPerformance.sales)}</TableCell>
+                                  <TableCell className={cn("text-right py-3 px-4 text-sm font-medium", channelBgClass)}>{formatCompactCurrency(channelPerformance.sales)}</TableCell>
                                 )}
                                 {selectedMetrics.percentage && (
-                                  <TableCell className="text-center py-3 px-4">
+                                  <TableCell className={cn("text-center py-3 px-4", channelBgClass)}>
                                     <Badge className={cn("text-xs px-2 py-0.5", getPerformanceClass(channelPerformance.percentage))}>
                                       {channelPerformance.percentage.toFixed(1)}%
                                     </Badge>
@@ -893,23 +911,24 @@ const PerformanceDiaria = () => {
                                 {selectedMetrics.gap && (
                                   <TableCell className={cn(
                                     "text-right py-3 px-4 text-sm",
+                                    channelBgClass,
                                     channelPerformance.gap >= 0 ? "text-emerald-600" : "text-red-500"
                                   )}>
                                     {channelPerformance.gap >= 0 ? '+' : '-'}{formatCompactCurrency(Math.abs(channelPerformance.gap))}
                                   </TableCell>
                                 )}
                                 {selectedMetrics.rhythm && (
-                                  <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(channelPerformance.accumulatedAverage)}</TableCell>
+                                  <TableCell className={cn("text-right py-3 px-4 text-sm", channelBgClass)}>{formatCompactCurrency(channelPerformance.accumulatedAverage)}</TableCell>
                                 )}
                                 {selectedMetrics.accumulatedPercentage && (
-                                  <TableCell className="text-center py-3 px-4">
+                                  <TableCell className={cn("text-center py-3 px-4", channelBgClass)}>
                                     <Badge variant={channelPerformance.accumulatedPercentage >= 100 ? "default" : "secondary"} className="text-xs">
                                       {channelPerformance.accumulatedPercentage.toFixed(1)}%
                                     </Badge>
                                   </TableCell>
                                 )}
                                 {selectedMetrics.variation && (
-                                  <TableCell className="text-center py-3 px-4">
+                                  <TableCell className={cn("text-center py-3 px-4", channelBgClass)}>
                                     <div className="flex items-center justify-center gap-1">
                                       {channelPerformance.variation > 0 ? (
                                         <ArrowUp className="w-3 h-3 text-emerald-600" />
@@ -925,7 +944,7 @@ const PerformanceDiaria = () => {
                                     </div>
                                   </TableCell>
                                 )}
-                                <TableCell className="text-center py-3 px-4">
+                                <TableCell className={cn("text-center py-3 px-4", channelBgClass)}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
