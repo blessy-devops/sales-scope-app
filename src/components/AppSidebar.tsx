@@ -125,16 +125,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                          : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
                      )}
                    >
-                     <div className="flex items-center gap-2">
-                       <IconComponent className={cn(
-                         "flex-shrink-0 transition-all duration-200",
-                         "w-5 h-5",
-                         active ? "text-indigo-600 dark:text-indigo-400" : ""
-                       )} />
-                       {collapsed && (
-                         <HelpCircle className="w-3 h-3 opacity-50" />
-                       )}
-                     </div>
+                      <IconComponent className={cn(
+                        "flex-shrink-0 transition-all duration-200",
+                        "w-5 h-5",
+                        active ? "text-indigo-600 dark:text-indigo-400" : ""
+                      )} />
                      {!collapsed && (
                        <span className="font-semibold truncate text-sm">
                          {item.title}
@@ -164,16 +159,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                  collapsed ? "justify-center" : "justify-start"
                )}
              >
-               <div className="flex items-center gap-2">
-                 {theme === 'dark' ? (
-                   <Sun className="w-5 h-5" />
-                 ) : (
-                   <Moon className="w-5 h-5" />
-                 )}
-                 {collapsed && (
-                   <HelpCircle className="w-3 h-3 opacity-50" />
-                 )}
-               </div>
+                {theme === 'dark' ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
                {!collapsed && (
                  <span className="font-semibold text-sm">
                    {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
@@ -195,15 +185,10 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                    : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
                )}
              >
-               <div className="flex items-center gap-2">
-                 <Settings className={cn(
-                   "w-5 h-5",
-                   isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
-                 )} />
-                 {collapsed && (
-                   <HelpCircle className="w-3 h-3 opacity-50" />
-                 )}
-               </div>
+                <Settings className={cn(
+                  "w-5 h-5",
+                  isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
+                )} />
                {!collapsed && (
                  <span className="font-semibold text-sm">Configurações</span>
                )}
@@ -224,12 +209,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                  collapsed ? "justify-center" : "justify-start"
                )}
              >
-               <div className="flex items-center gap-2">
-                 <LogOut className="w-5 h-5" />
-                 {collapsed && (
-                   <HelpCircle className="w-3 h-3 opacity-50" />
-                 )}
-               </div>
+                <LogOut className="w-5 h-5" />
                {!collapsed && (
                  <span className="font-semibold text-sm">Sair</span>
                )}
@@ -247,16 +227,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                  collapsed ? "justify-center" : "justify-start"
                )}
              >
-               <div className="flex items-center gap-2">
-                 {collapsed ? (
-                   <ChevronRight className="w-5 h-5" />
-                 ) : (
-                   <ChevronLeft className="w-5 h-5" />
-                 )}
-                 {collapsed && (
-                   <HelpCircle className="w-3 h-3 opacity-50" />
-                 )}
-               </div>
+                {collapsed ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
                {!collapsed && (
                  <span className="font-medium text-sm">Recolher</span>
                )}

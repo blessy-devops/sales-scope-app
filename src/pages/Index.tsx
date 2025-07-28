@@ -42,7 +42,8 @@ import {
   Award,
   TrendingDown as TrendingDownIcon,
   Calculator,
-  Eye
+  Eye,
+  HelpCircle
 } from 'lucide-react';
 
 type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
@@ -399,7 +400,10 @@ const Index = () => {
                       } ${viewFilter !== 'global' ? 'border-accent/30 bg-gradient-to-br from-accent/5 to-accent/10' : ''}`}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <IconComponent className={`w-5 h-5 ${metric.color}`} />
+                          <div className="flex items-center gap-2">
+                            <IconComponent className={`w-5 h-5 ${metric.color}`} />
+                            <HelpCircle className="w-3 h-3 text-muted-foreground/60" />
+                          </div>
                           {viewFilter !== 'global' && (
                             <Badge variant="outline" className="text-xs px-1 py-0 h-4">
                               {selectedChannel?.name || 'Canal'}
