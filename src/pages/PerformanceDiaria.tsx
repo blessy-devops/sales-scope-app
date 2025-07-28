@@ -70,6 +70,7 @@ interface SelectedMetrics {
   rhythm: boolean;
   accumulatedPercentage: boolean;
   variation: boolean;
+  observations: boolean;
 }
 
 const PerformanceDiaria = () => {
@@ -91,7 +92,8 @@ const PerformanceDiaria = () => {
     gap: true,
     rhythm: false,
     accumulatedPercentage: false,
-    variation: false
+    variation: false,
+    observations: true
   });
   const [viewMode, setViewMode] = useState<'single' | 'multiple'>('single');
   const [observations, setObservations] = useState<DailyObservation[]>([]);
@@ -505,33 +507,39 @@ const PerformanceDiaria = () => {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
-                      Configurar colunas
+                      Métricas Visíveis
                       <ChevronDown className="w-4 h-4 ml-auto" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48">
-                     <div className="space-y-2">
-                       {Object.entries(selectedMetrics).map(([key, value]) => (
-                         <div key={key} className="flex items-center space-x-2">
-                           <Checkbox
-                             id={key}
-                             checked={value}
-                             onCheckedChange={(checked) => 
-                               setSelectedMetrics(prev => ({ ...prev, [key]: !!checked }))
-                             }
-                           />
-                           <Label htmlFor={key} className="text-sm">
-                             {key === 'target' && 'Meta'}
-                             {key === 'sales' && 'Realizado'}
-                             {key === 'percentage' && '% Atingimento'}
-                             {key === 'gap' && 'Saldo/GAP'}
-                             {key === 'rhythm' && 'Ritmo'}
-                             {key === 'accumulatedPercentage' && '% Acum'}
-                             {key === 'variation' && 'Variação'}
-                           </Label>
-                         </div>
-                       ))}
-                     </div>
+                  <PopoverContent className="w-64">
+                    <div className="space-y-2">
+                      {[
+                        { key: 'target', label: 'Meta' },
+                        { key: 'sales', label: 'Realizado' },
+                        { key: 'percentage', label: '% Atingimento' },
+                        { key: 'gap', label: 'Saldo/GAP' },
+                        { key: 'rhythm', label: 'Ritmo' },
+                        { key: 'accumulatedPercentage', label: '% Acum' },
+                        { key: 'variation', label: 'Variação' },
+                        { key: 'observations', label: 'Obs' }
+                      ].map(metric => (
+                        <div key={metric.key} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={metric.key}
+                            checked={selectedMetrics[metric.key as keyof SelectedMetrics]}
+                            onCheckedChange={(checked) => {
+                              setSelectedMetrics(prev => ({
+                                ...prev,
+                                [metric.key]: checked
+                              }));
+                            }}
+                          />
+                          <Label htmlFor={metric.key} className="text-sm">
+                            {metric.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </PopoverContent>
                 </Popover>
               </div>
@@ -552,8 +560,9 @@ const PerformanceDiaria = () => {
                     <thead>
                       <tr>
                         <th className="w-32 py-2 px-4"></th>
-                        {selectedChannels.map(channelId => {
+                        {selectedChannels.map((channelId, channelIndex) => {
                           const channel = channels.find(c => c.id === channelId);
+                          const channelBgClass = getChannelColumnClass(channelIndex);
                           const colSpan = 
                             (selectedMetrics.target ? 1 : 0) +
                             (selectedMetrics.sales ? 1 : 0) +
@@ -561,11 +570,12 @@ const PerformanceDiaria = () => {
                             (selectedMetrics.gap ? 1 : 0) +
                             (selectedMetrics.rhythm ? 1 : 0) +
                             (selectedMetrics.accumulatedPercentage ? 1 : 0) +
-                            (selectedMetrics.variation ? 1 : 0) + 1; // +1 para observações
+                            (selectedMetrics.variation ? 1 : 0) +
+                            (selectedMetrics.observations ? 1 : 0);
                           
                           return (
-                            <th key={channelId} className="py-2 px-4 text-center bg-blue-50 dark:bg-blue-900/20 border-b" colSpan={colSpan}>
-                              <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                            <th key={channelId} className={cn("py-2 px-4 text-center border-b", channelBgClass)} colSpan={colSpan}>
+                              <div className="text-sm font-semibold">
                                 {channel?.name || 'Canal'}
                               </div>
                             </th>
@@ -681,16 +691,18 @@ const PerformanceDiaria = () => {
                                 </Tooltip>
                               </TableHead>
                             )}
-                            <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="cursor-help">Obs</div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Observações do dia</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TableHead>
+                            {selectedMetrics.observations && (
+                              <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">Obs</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Observações do dia</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
                           </React.Fragment>
                         ))
                       ) : (
@@ -766,16 +778,18 @@ const PerformanceDiaria = () => {
                               </TooltipContent>
                             </Tooltip>
                           </TableHead>
-                          <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="cursor-help">Obs</div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Observações do dia</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TableHead>
+                          {selectedMetrics.observations && (
+                            <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="cursor-help">Obs</div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Observações do dia</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TableHead>
+                          )}
                         </>
                       )}
                     </TableRow>
@@ -828,32 +842,34 @@ const PerformanceDiaria = () => {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center py-3 px-4">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => openObservationModal(
-                                    selectedChannels[0], 
-                                    format(day.date, 'yyyy-MM-dd'),
-                                    day.observation
-                                  )}
-                                >
-                                  <StickyNote className={cn(
-                                    "w-3 h-3",
-                                    day.observation ? "text-blue-600" : "text-muted-foreground"
-                                  )} />
-                                </Button>
-                              </TooltipTrigger>
-                              {day.observation && (
-                                <TooltipContent>
-                                  <p className="max-w-48">{day.observation}</p>
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          </TableCell>
+                          {selectedMetrics.observations && (
+                            <TableCell className="text-center py-3 px-4">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => openObservationModal(
+                                      selectedChannels[0], 
+                                      format(day.date, 'yyyy-MM-dd'),
+                                      day.observation
+                                    )}
+                                  >
+                                    <StickyNote className={cn(
+                                      "w-3 h-3",
+                                      day.observation ? "text-blue-600" : "text-muted-foreground"
+                                    )} />
+                                  </Button>
+                                </TooltipTrigger>
+                                {day.observation && (
+                                  <TooltipContent>
+                                    <p className="max-w-48">{day.observation}</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))
                     ) : viewMode === 'multiple' && Array.isArray(performanceData) ? (
@@ -883,7 +899,8 @@ const PerformanceDiaria = () => {
                                 (selectedMetrics.gap ? 1 : 0) +
                                 (selectedMetrics.rhythm ? 1 : 0) +
                                 (selectedMetrics.accumulatedPercentage ? 1 : 0) +
-                                (selectedMetrics.variation ? 1 : 0) + 1; // +1 para observações
+                                (selectedMetrics.variation ? 1 : 0) +
+                                (selectedMetrics.observations ? 1 : 0);
                               
                               return Array.from({ length: emptyCells }, (_, i) => (
                                 <TableCell key={`${channelId}-empty-${i}`} className="py-3 px-4 text-center text-muted-foreground">-</TableCell>
@@ -944,32 +961,34 @@ const PerformanceDiaria = () => {
                                     </div>
                                   </TableCell>
                                 )}
-                                <TableCell className={cn("text-center py-3 px-4", channelBgClass)}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() => openObservationModal(
-                                          channelId, 
-                                          format(channelPerformance.date, 'yyyy-MM-dd'),
-                                          channelPerformance.observation
-                                        )}
-                                      >
-                                        <StickyNote className={cn(
-                                          "w-3 h-3",
-                                          channelPerformance.observation ? "text-blue-600" : "text-muted-foreground"
-                                        )} />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    {channelPerformance.observation && (
-                                      <TooltipContent>
-                                        <p className="max-w-48">{channelPerformance.observation}</p>
-                                      </TooltipContent>
-                                    )}
-                                  </Tooltip>
-                                </TableCell>
+                                {selectedMetrics.observations && (
+                                  <TableCell className={cn("text-center py-3 px-4", channelBgClass)}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0"
+                                          onClick={() => openObservationModal(
+                                            channelId, 
+                                            format(channelPerformance.date, 'yyyy-MM-dd'),
+                                            channelPerformance.observation
+                                          )}
+                                        >
+                                          <StickyNote className={cn(
+                                            "w-3 h-3",
+                                            channelPerformance.observation ? "text-blue-600" : "text-muted-foreground"
+                                          )} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      {channelPerformance.observation && (
+                                        <TooltipContent>
+                                          <p className="max-w-48">{channelPerformance.observation}</p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
+                                  </TableCell>
+                                )}
                               </React.Fragment>
                             );
                           })}
