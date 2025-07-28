@@ -365,8 +365,18 @@ const PerformanceDiaria = () => {
                   <Calendar
                     mode="range"
                     selected={dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined}
-                    onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
+                    onSelect={(range) => {
+                      if (range?.from) {
+                        setDateRange({
+                          from: range.from,
+                          to: range.to || range.from
+                        });
+                      } else {
+                        setDateRange({ from: undefined, to: undefined });
+                      }
+                    }}
                     className="pointer-events-auto"
+                    numberOfMonths={2}
                   />
                 </PopoverContent>
               </Popover>
