@@ -263,10 +263,10 @@ const Index = () => {
     {
       key: 'showSaldoMeta',
       title: 'Saldo Meta',
-      value: `${formatCurrency(Math.abs(remainingTargetValue))} (${Math.abs(remainingTargetPercent).toFixed(1)}%)`,
+      value: `${remainingTargetValue >= 0 ? '' : '+'}${formatCurrency(remainingTargetValue >= 0 ? remainingTargetValue : Math.abs(remainingTargetValue))} (${remainingTargetValue >= 0 ? '' : '+'}${(remainingTargetValue >= 0 ? remainingTargetPercent : Math.abs(remainingTargetPercent)).toFixed(1)}%)`,
       icon: Target,
-      color: 'text-slate-600',
-      tooltip: 'Quanto falta para atingir a meta total do mês'
+      color: remainingTargetValue >= 0 ? 'text-red-500' : 'text-emerald-600',
+      tooltip: remainingTargetValue >= 0 ? 'Quanto falta para atingir a meta total do mês' : 'Quanto excedeu a meta total do mês'
     },
     {
       key: 'showMetaDiariaOriginal',
