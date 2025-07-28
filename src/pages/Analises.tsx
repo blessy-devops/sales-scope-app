@@ -11,7 +11,8 @@ import {
   Users,
   Target,
   ArrowRight,
-  Clock
+  Clock,
+  Activity
 } from 'lucide-react';
 
 const Analises = () => {
@@ -28,6 +29,17 @@ const Analises = () => {
       color: 'bg-gradient-to-br from-blue-500 to-blue-600',
       iconBg: 'bg-blue-100 dark:bg-blue-900/30',
       iconColor: 'text-blue-600 dark:text-blue-400'
+    },
+    {
+      id: 'sazonalidade',
+      title: 'Análise de Sazonalidade por Canal',
+      description: 'Analise padrões de vendas por dia da semana e do mês',
+      icon: Activity,
+      available: true,
+      path: '/analises/sazonalidade',
+      color: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+      iconBg: 'bg-indigo-100 dark:bg-indigo-900/30',
+      iconColor: 'text-indigo-600 dark:text-indigo-400'
     },
     {
       id: 'comparativo-mensal',
