@@ -159,11 +159,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                  collapsed ? "justify-center" : "justify-start"
                )}
              >
-                {theme === 'dark' ? (
-                  <Sun className="w-5 h-5" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                )}
+                 {theme === 'dark' ? (
+                   <Sun className="w-5 h-5 flex-shrink-0" />
+                 ) : (
+                   <Moon className="w-5 h-5 flex-shrink-0" />
+                 )}
                {!collapsed && (
                  <span className="font-semibold text-sm">
                    {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
@@ -185,10 +185,10 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                    : "text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
                )}
              >
-                <Settings className={cn(
-                  "w-5 h-5",
-                  isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
-                )} />
+                 <Settings className={cn(
+                   "w-5 h-5 flex-shrink-0",
+                   isActive('/settings') ? "text-indigo-600 dark:text-indigo-400" : ""
+                 )} />
                {!collapsed && (
                  <span className="font-semibold text-sm">Configurações</span>
                )}
@@ -209,7 +209,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                  collapsed ? "justify-center" : "justify-start"
                )}
              >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-5 h-5 flex-shrink-0" />
                {!collapsed && (
                  <span className="font-semibold text-sm">Sair</span>
                )}
@@ -227,11 +227,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                  collapsed ? "justify-center" : "justify-start"
                )}
              >
-                {collapsed ? (
-                  <ChevronRight className="w-5 h-5" />
-                ) : (
-                  <ChevronLeft className="w-5 h-5" />
-                )}
+                 {collapsed ? (
+                   <ChevronRight className="w-5 h-5 flex-shrink-0" />
+                 ) : (
+                   <ChevronLeft className="w-5 h-5 flex-shrink-0" />
+                 )}
                {!collapsed && (
                  <span className="font-medium text-sm">Recolher</span>
                )}
