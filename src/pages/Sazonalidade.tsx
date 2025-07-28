@@ -215,7 +215,7 @@ export default function Sazonalidade() {
 
   // Calcular cards de resumo
   const summaryCards = useMemo(() => {
-    if (weeklySeasonalityData.length === 0) return null;
+    if (weeklySeasonalityData.length === 0 || selectedChannels.length === 0) return null;
 
     const globalAverages = weeklySeasonalityData.map(day => {
       const dayTotal = selectedChannels.reduce((sum, channelId) => sum + (day[channelId] || 0), 0);
@@ -226,8 +226,12 @@ export default function Sazonalidade() {
     const worstDayIndex = globalAverages.indexOf(Math.min(...globalAverages));
     const overallAverage = globalAverages.reduce((sum, val) => sum + val, 0) / globalAverages.length;
 
-    const bestDayImprovement = ((globalAverages[bestDayIndex] - overallAverage) / overallAverage * 100);
-    const worstDayDrop = ((globalAverages[worstDayIndex] - overallAverage) / overallAverage * 100);
+    const bestDayImprovement = overallAverage > 0 
+      ? ((globalAverages[bestDayIndex] - overallAverage) / overallAverage * 100)
+      : 0;
+    const worstDayDrop = overallAverage > 0
+      ? ((globalAverages[worstDayIndex] - overallAverage) / overallAverage * 100)
+      : 0;
 
     // Calcular consistência dos canais
     const channelVariations = selectedChannels.map(channelId => {
@@ -244,21 +248,26 @@ export default function Sazonalidade() {
       };
     });
 
-    const mostConsistent = channelVariations.reduce((min, curr) => 
-      curr.variation < min.variation ? curr : min
-    );
+    // Verificar se há dados antes de usar reduce
+    const mostConsistent = channelVariations.length > 0 
+      ? channelVariations.reduce((min, curr) => 
+          curr.variation < min.variation ? curr : min
+        )
+      : { channelName: 'N/A', variation: 0 };
     
-    const mostSeasonal = channelVariations.reduce((max, curr) => 
-      curr.variation > max.variation ? curr : max
-    );
+    const mostSeasonal = channelVariations.length > 0
+      ? channelVariations.reduce((max, curr) => 
+          curr.variation > max.variation ? curr : max
+        )
+      : { channelName: 'N/A', variation: 0 };
 
     return {
       bestDay: {
-        name: dayNames[bestDayIndex],
+        name: dayNames[bestDayIndex] || 'N/A',
         improvement: bestDayImprovement
       },
       worstDay: {
-        name: dayNames[worstDayIndex],
+        name: dayNames[worstDayIndex] || 'N/A',
         drop: worstDayDrop
       },
       mostConsistent,
