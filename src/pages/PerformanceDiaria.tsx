@@ -492,26 +492,26 @@ const PerformanceDiaria = () => {
                               {day.percentage.toFixed(1)}%
                             </Badge>
                           </td>
-                           <td className={cn(
-                             "text-right p-2 font-medium",
-                             day.gap >= 0 ? "text-green-600" : "text-red-600"
-                           )}>
-                             <div className="flex items-center justify-end gap-1">
-                               {day.gap >= 0 ? (
-                                 <>
-                                   <span className="text-xs">+</span>
-                                   <span>{formatCurrency(day.gap)}</span>
-                                   <span className="text-xs opacity-70">(excedente)</span>
-                                 </>
-                               ) : (
-                                 <>
-                                   <span className="text-xs">-</span>
-                                   <span>{formatCurrency(Math.abs(day.gap))}</span>
-                                   <span className="text-xs opacity-70">(faltam)</span>
-                                 </>
-                               )}
-                             </div>
-                           </td>
+                            <td className={cn(
+                              "text-right p-2 font-medium",
+                              day.gap >= 0 ? "text-green-600" : "text-red-600"
+                            )}>
+                              <div className="flex items-center justify-end gap-1 text-sm">
+                                {day.gap >= 0 ? (
+                                  <>
+                                    <span className="text-green-600 font-bold">+</span>
+                                    <span>{formatCurrency(day.gap)}</span>
+                                    <span className="text-xs opacity-70 ml-1">(excedente)</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-red-600 font-bold">-</span>
+                                    <span>{formatCurrency(Math.abs(day.gap))}</span>
+                                    <span className="text-xs opacity-70 ml-1">(faltam)</span>
+                                  </>
+                                )}
+                              </div>
+                            </td>
                           <td className="text-right p-2">{formatCurrency(day.accumulatedAverage)}</td>
                           <td className="text-center p-2">
                             <Badge variant={day.accumulatedPercentage >= 100 ? "default" : "secondary"}>
