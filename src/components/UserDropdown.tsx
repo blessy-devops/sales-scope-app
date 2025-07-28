@@ -25,7 +25,15 @@ export function UserDropdown() {
     return email.split('@')[0].slice(0, 2).toUpperCase();
   };
 
-  const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
+  // Extrair apenas primeiro e segundo nome
+  const getShortName = (fullName: string) => {
+    const names = fullName.trim().split(' ');
+    if (names.length === 1) return names[0];
+    return `${names[0]} ${names[1]}`;
+  };
+
+  const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
+  const displayName = user.user_metadata?.full_name ? getShortName(fullName) : fullName;
   const initials = getInitials(user.email || 'U');
 
   return (
@@ -40,7 +48,6 @@ export function UserDropdown() {
           </Avatar>
           <div className="hidden sm:flex flex-col items-start">
             <span className="text-sm font-medium">{displayName}</span>
-            <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
         </Button>
       </DropdownMenuTrigger>
@@ -48,7 +55,6 @@ export function UserDropdown() {
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium">{displayName}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
