@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,9 @@ interface SelectedMetrics {
   sales: boolean;
   percentage: boolean;
   gap: boolean;
+  rhythm: boolean;
+  accumulatedPercentage: boolean;
+  variation: boolean;
 }
 
 const PerformanceDiaria = () => {
@@ -85,7 +88,10 @@ const PerformanceDiaria = () => {
     target: true,
     sales: true,
     percentage: true,
-    gap: true
+    gap: true,
+    rhythm: false,
+    accumulatedPercentage: false,
+    variation: false
   });
   const [viewMode, setViewMode] = useState<'single' | 'multiple'>('single');
   const [observations, setObservations] = useState<DailyObservation[]>([]);
@@ -182,11 +188,34 @@ const PerformanceDiaria = () => {
     if (viewMode === 'single') {
       return calculateDailyPerformance(selectedChannels[0]);
     } else {
-      // Para múltiplos canais, retorna um objeto com dados de cada canal
-      const result: any = {};
-      selectedChannels.forEach(channelId => {
-        result[channelId] = calculateDailyPerformance(channelId);
+      // Para múltiplos canais, criar estrutura consolidada por data
+      if (!dateRange.from || !dateRange.to) return [];
+      
+      const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+      const result: any[] = [];
+      
+      days.forEach(day => {
+        const dayData: any = {
+          date: day,
+          dayOfWeek: format(day, 'EEE', { locale: ptBR }),
+          formattedDate: format(day, 'dd/MMM', { locale: ptBR }),
+          channels: {}
+        };
+        
+        selectedChannels.forEach(channelId => {
+          const channelPerformance = calculateDailyPerformance(channelId);
+          const dayPerformance = channelPerformance.find(perf => 
+            format(perf.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+          );
+          
+          if (dayPerformance) {
+            dayData.channels[channelId] = dayPerformance;
+          }
+        });
+        
+        result.push(dayData);
       });
+      
       return result;
     }
   }, [selectedChannels, viewMode, dateRange, observations]);
@@ -466,25 +495,28 @@ const PerformanceDiaria = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-48">
-                    <div className="space-y-2">
-                      {Object.entries(selectedMetrics).map(([key, value]) => (
-                        <div key={key} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={key}
-                            checked={value}
-                            onCheckedChange={(checked) => 
-                              setSelectedMetrics(prev => ({ ...prev, [key]: !!checked }))
-                            }
-                          />
-                          <Label htmlFor={key} className="text-sm">
-                            {key === 'target' && 'Meta'}
-                            {key === 'sales' && 'Realizado'}
-                            {key === 'percentage' && '% Atingimento'}
-                            {key === 'gap' && 'Saldo/GAP'}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+                     <div className="space-y-2">
+                       {Object.entries(selectedMetrics).map(([key, value]) => (
+                         <div key={key} className="flex items-center space-x-2">
+                           <Checkbox
+                             id={key}
+                             checked={value}
+                             onCheckedChange={(checked) => 
+                               setSelectedMetrics(prev => ({ ...prev, [key]: !!checked }))
+                             }
+                           />
+                           <Label htmlFor={key} className="text-sm">
+                             {key === 'target' && 'Meta'}
+                             {key === 'sales' && 'Realizado'}
+                             {key === 'percentage' && '% Atingimento'}
+                             {key === 'gap' && 'Saldo/GAP'}
+                             {key === 'rhythm' && 'Ritmo'}
+                             {key === 'accumulatedPercentage' && '% Acum'}
+                             {key === 'variation' && 'Variação'}
+                           </Label>
+                         </div>
+                       ))}
+                     </div>
                   </PopoverContent>
                 </Popover>
               </div>
@@ -500,6 +532,34 @@ const PerformanceDiaria = () => {
             <div className="overflow-x-auto">
               <TooltipProvider>
                 <Table>
+                  {/* Header para múltiplos canais */}
+                  {viewMode === 'multiple' && selectedChannels.length > 0 && (
+                    <thead>
+                      <tr>
+                        <th className="w-32 py-2 px-4"></th>
+                        {selectedChannels.map(channelId => {
+                          const channel = channels.find(c => c.id === channelId);
+                          const colSpan = 
+                            (selectedMetrics.target ? 1 : 0) +
+                            (selectedMetrics.sales ? 1 : 0) +
+                            (selectedMetrics.percentage ? 1 : 0) +
+                            (selectedMetrics.gap ? 1 : 0) +
+                            (selectedMetrics.rhythm ? 1 : 0) +
+                            (selectedMetrics.accumulatedPercentage ? 1 : 0) +
+                            (selectedMetrics.variation ? 1 : 0) + 1; // +1 para observações
+                          
+                          return (
+                            <th key={channelId} className="py-2 px-4 text-center bg-blue-50 dark:bg-blue-900/20 border-b" colSpan={colSpan}>
+                              <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                                {channel?.name || 'Canal'}
+                              </div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                  )}
+                  
                   <TableHeader>
                     <TableRow className="bg-gray-50 dark:bg-gray-800">
                       <TableHead className="w-32 py-3 px-4 text-sm font-medium">
@@ -507,102 +567,202 @@ const PerformanceDiaria = () => {
                           <TooltipTrigger asChild>
                             <div className="cursor-help">
                               <div>Dia</div>
-                              <div className="text-xs font-normal text-muted-foreground">Ranking</div>
+                              {viewMode === 'single' && (
+                                <div className="text-xs font-normal text-muted-foreground">Ranking</div>
+                              )}
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Data do dia e posição no ranking diário</p>
+                            <p>Data do dia {viewMode === 'single' ? 'e posição no ranking diário' : ''}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TableHead>
-                      {(viewMode === 'single' || selectedMetrics.target) && (
-                        <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">Meta</div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Meta diária de vendas do canal</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableHead>
+                      
+                      {viewMode === 'multiple' ? (
+                        // Headers para múltiplos canais - repetir para cada canal
+                        selectedChannels.map(channelId => (
+                          <React.Fragment key={channelId}>
+                            {selectedMetrics.target && (
+                              <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">Meta</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Meta diária de vendas do canal</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            {selectedMetrics.sales && (
+                              <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">Realizado</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Valor de vendas realizado no dia</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            {selectedMetrics.percentage && (
+                              <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">% Atingimento</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Percentual de atingimento da meta diária</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            {selectedMetrics.gap && (
+                              <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">Saldo/GAP</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Diferença entre realizado e meta (gap)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            {selectedMetrics.rhythm && (
+                              <TableHead className="w-24 text-right py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">Ritmo</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Média acumulada de vendas diárias</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            {selectedMetrics.accumulatedPercentage && (
+                              <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">% Acum</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Percentual acumulado de atingimento da meta</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            {selectedMetrics.variation && (
+                              <TableHead className="w-20 text-center py-3 px-4 text-sm font-medium">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-help">Variação</div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Variação percentual vs dia anterior</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableHead>
+                            )}
+                            <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="cursor-help">Obs</div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Observações do dia</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TableHead>
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        // Headers para canal único
+                        <>
+                          <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">Meta</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Meta diária de vendas do canal</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">Realizado</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Valor de vendas realizado no dia</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">% Atingimento</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Percentual de atingimento da meta diária</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">Saldo/GAP</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Diferença entre realizado e meta (gap)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-24 text-right py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">Ritmo</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Média acumulada de vendas diárias</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">% Acum</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Percentual acumulado de atingimento da meta</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-20 text-center py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">Variação</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Variação percentual vs dia anterior</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                          <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">Obs</div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Observações do dia</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableHead>
+                        </>
                       )}
-                      {(viewMode === 'single' || selectedMetrics.sales) && (
-                        <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">Realizado</div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Valor de vendas realizado no dia</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableHead>
-                      )}
-                      {(viewMode === 'single' || selectedMetrics.percentage) && (
-                        <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">% Atingimento</div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Percentual de atingimento da meta diária</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableHead>
-                      )}
-                      {(viewMode === 'single' || selectedMetrics.gap) && (
-                        <TableHead className="w-28 text-right py-3 px-4 text-sm font-medium">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">Saldo/GAP</div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Diferença entre realizado e meta (gap)</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableHead>
-                      )}
-                      <TableHead className="w-24 text-right py-3 px-4 text-sm font-medium">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-help">Ritmo</div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Média acumulada de vendas diárias</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableHead>
-                      <TableHead className="w-24 text-center py-3 px-4 text-sm font-medium">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-help">% Acum</div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Percentual acumulado de atingimento da meta</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableHead>
-                      <TableHead className="w-20 text-center py-3 px-4 text-sm font-medium">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-help">Variação</div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Variação percentual vs dia anterior</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableHead>
-                      <TableHead className="w-12 text-center py-3 px-4 text-sm font-medium">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-help">Obs</div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Observações do dia</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -619,27 +779,19 @@ const PerformanceDiaria = () => {
                               </div>
                             </div>
                           </TableCell>
-                          {(viewMode === 'single' || selectedMetrics.target) && (
-                            <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.target)}</TableCell>
-                          )}
-                          {(viewMode === 'single' || selectedMetrics.sales) && (
-                            <TableCell className="text-right py-3 px-4 text-sm font-medium">{formatCompactCurrency(day.sales)}</TableCell>
-                          )}
-                          {(viewMode === 'single' || selectedMetrics.percentage) && (
-                            <TableCell className="text-center py-3 px-4">
-                              <Badge className={cn("text-xs px-2 py-0.5", getPerformanceClass(day.percentage))}>
-                                {day.percentage.toFixed(1)}%
-                              </Badge>
-                            </TableCell>
-                          )}
-                          {(viewMode === 'single' || selectedMetrics.gap) && (
-                            <TableCell className={cn(
-                              "text-right py-3 px-4 text-sm",
-                              day.gap >= 0 ? "text-emerald-600" : "text-red-500"
-                            )}>
-                              {day.gap >= 0 ? '+' : '-'}{formatCompactCurrency(Math.abs(day.gap))}
-                            </TableCell>
-                          )}
+                          <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.target)}</TableCell>
+                          <TableCell className="text-right py-3 px-4 text-sm font-medium">{formatCompactCurrency(day.sales)}</TableCell>
+                          <TableCell className="text-center py-3 px-4">
+                            <Badge className={cn("text-xs px-2 py-0.5", getPerformanceClass(day.percentage))}>
+                              {day.percentage.toFixed(1)}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={cn(
+                            "text-right py-3 px-4 text-sm",
+                            day.gap >= 0 ? "text-emerald-600" : "text-red-500"
+                          )}>
+                            {day.gap >= 0 ? '+' : '-'}{formatCompactCurrency(Math.abs(day.gap))}
+                          </TableCell>
                           <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.accumulatedAverage)}</TableCell>
                           <TableCell className="text-center py-3 px-4">
                             <Badge variant={day.accumulatedPercentage >= 100 ? "default" : "secondary"} className="text-xs">
@@ -689,96 +841,124 @@ const PerformanceDiaria = () => {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : viewMode === 'multiple' && typeof performanceData === 'object' ? (
-                      // Renderizar tabela para múltiplos canais
-                      Object.entries(performanceData).map(([channelId, channelData]: [string, any]) => {
-                        const channel = channels.find(c => c.id === channelId);
-                        return channelData.map((day: ChannelPerformance, index: number) => (
-                          <TableRow key={`${channelId}-${index}`} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                            <TableCell className="py-3 px-4">
-                              <div>
-                                <div className="font-medium text-sm">
-                                  {day.formattedDate}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {channel?.name} • {day.dayOfWeek}
-                                </div>
+                    ) : viewMode === 'multiple' && Array.isArray(performanceData) ? (
+                      // Renderizar tabela para múltiplos canais - uma linha por dia
+                      performanceData.map((dayData: any, index: number) => (
+                        <TableRow key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                          <TableCell className="py-3 px-4">
+                            <div>
+                              <div className="font-medium text-sm">
+                                {dayData.formattedDate}
                               </div>
-                            </TableCell>
-                            {selectedMetrics.target && (
-                              <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.target)}</TableCell>
-                            )}
-                            {selectedMetrics.sales && (
-                              <TableCell className="text-right py-3 px-4 text-sm font-medium">{formatCompactCurrency(day.sales)}</TableCell>
-                            )}
-                            {selectedMetrics.percentage && (
-                              <TableCell className="text-center py-3 px-4">
-                                <Badge className={cn("text-xs px-2 py-0.5", getPerformanceClass(day.percentage))}>
-                                  {day.percentage.toFixed(1)}%
-                                </Badge>
-                              </TableCell>
-                            )}
-                            {selectedMetrics.gap && (
-                              <TableCell className={cn(
-                                "text-right py-3 px-4 text-sm",
-                                day.gap >= 0 ? "text-emerald-600" : "text-red-500"
-                              )}>
-                                {day.gap >= 0 ? '+' : '-'}{formatCompactCurrency(Math.abs(day.gap))}
-                              </TableCell>
-                            )}
-                            <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(day.accumulatedAverage)}</TableCell>
-                            <TableCell className="text-center py-3 px-4">
-                              <Badge variant={day.accumulatedPercentage >= 100 ? "default" : "secondary"} className="text-xs">
-                                {day.accumulatedPercentage.toFixed(1)}%
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center py-3 px-4">
-                              <div className="flex items-center justify-center gap-1">
-                                {day.variation > 0 ? (
-                                  <ArrowUp className="w-3 h-3 text-emerald-600" />
-                                ) : day.variation < 0 ? (
-                                  <ArrowDown className="w-3 h-3 text-red-500" />
-                                ) : null}
-                                <span className={cn(
-                                  "text-xs",
-                                  day.variation > 0 ? "text-emerald-600" : day.variation < 0 ? "text-red-500" : "text-muted-foreground"
-                                )}>
-                                  {Math.abs(day.variationPercent).toFixed(1)}%
-                                </span>
+                              <div className="text-xs text-muted-foreground">
+                                {dayData.dayOfWeek}
                               </div>
-                            </TableCell>
-                            <TableCell className="text-center py-3 px-4">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0"
-                                    onClick={() => openObservationModal(
-                                      channelId, 
-                                      format(day.date, 'yyyy-MM-dd'),
-                                      day.observation
-                                    )}
-                                  >
-                                    <StickyNote className={cn(
-                                      "w-3 h-3",
-                                      day.observation ? "text-blue-600" : "text-muted-foreground"
-                                    )} />
-                                  </Button>
-                                </TooltipTrigger>
-                                {day.observation && (
-                                  <TooltipContent>
-                                    <p className="max-w-48">{day.observation}</p>
-                                  </TooltipContent>
+                            </div>
+                          </TableCell>
+                          
+                          {/* Dados de cada canal lado a lado */}
+                          {selectedChannels.map(channelId => {
+                            const channelPerformance = dayData.channels[channelId];
+                            if (!channelPerformance) {
+                              // Se não há dados para o canal neste dia, preencher com células vazias
+                              const emptyCells = 
+                                (selectedMetrics.target ? 1 : 0) +
+                                (selectedMetrics.sales ? 1 : 0) +
+                                (selectedMetrics.percentage ? 1 : 0) +
+                                (selectedMetrics.gap ? 1 : 0) +
+                                (selectedMetrics.rhythm ? 1 : 0) +
+                                (selectedMetrics.accumulatedPercentage ? 1 : 0) +
+                                (selectedMetrics.variation ? 1 : 0) + 1; // +1 para observações
+                              
+                              return Array.from({ length: emptyCells }, (_, i) => (
+                                <TableCell key={`${channelId}-empty-${i}`} className="py-3 px-4 text-center text-muted-foreground">-</TableCell>
+                              ));
+                            }
+                            
+                            return (
+                              <React.Fragment key={channelId}>
+                                {selectedMetrics.target && (
+                                  <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(channelPerformance.target)}</TableCell>
                                 )}
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ));
-                      })
+                                {selectedMetrics.sales && (
+                                  <TableCell className="text-right py-3 px-4 text-sm font-medium">{formatCompactCurrency(channelPerformance.sales)}</TableCell>
+                                )}
+                                {selectedMetrics.percentage && (
+                                  <TableCell className="text-center py-3 px-4">
+                                    <Badge className={cn("text-xs px-2 py-0.5", getPerformanceClass(channelPerformance.percentage))}>
+                                      {channelPerformance.percentage.toFixed(1)}%
+                                    </Badge>
+                                  </TableCell>
+                                )}
+                                {selectedMetrics.gap && (
+                                  <TableCell className={cn(
+                                    "text-right py-3 px-4 text-sm",
+                                    channelPerformance.gap >= 0 ? "text-emerald-600" : "text-red-500"
+                                  )}>
+                                    {channelPerformance.gap >= 0 ? '+' : '-'}{formatCompactCurrency(Math.abs(channelPerformance.gap))}
+                                  </TableCell>
+                                )}
+                                {selectedMetrics.rhythm && (
+                                  <TableCell className="text-right py-3 px-4 text-sm">{formatCompactCurrency(channelPerformance.accumulatedAverage)}</TableCell>
+                                )}
+                                {selectedMetrics.accumulatedPercentage && (
+                                  <TableCell className="text-center py-3 px-4">
+                                    <Badge variant={channelPerformance.accumulatedPercentage >= 100 ? "default" : "secondary"} className="text-xs">
+                                      {channelPerformance.accumulatedPercentage.toFixed(1)}%
+                                    </Badge>
+                                  </TableCell>
+                                )}
+                                {selectedMetrics.variation && (
+                                  <TableCell className="text-center py-3 px-4">
+                                    <div className="flex items-center justify-center gap-1">
+                                      {channelPerformance.variation > 0 ? (
+                                        <ArrowUp className="w-3 h-3 text-emerald-600" />
+                                      ) : channelPerformance.variation < 0 ? (
+                                        <ArrowDown className="w-3 h-3 text-red-500" />
+                                      ) : null}
+                                      <span className={cn(
+                                        "text-xs",
+                                        channelPerformance.variation > 0 ? "text-emerald-600" : channelPerformance.variation < 0 ? "text-red-500" : "text-muted-foreground"
+                                      )}>
+                                        {Math.abs(channelPerformance.variationPercent).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                )}
+                                <TableCell className="text-center py-3 px-4">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => openObservationModal(
+                                          channelId, 
+                                          format(channelPerformance.date, 'yyyy-MM-dd'),
+                                          channelPerformance.observation
+                                        )}
+                                      >
+                                        <StickyNote className={cn(
+                                          "w-3 h-3",
+                                          channelPerformance.observation ? "text-blue-600" : "text-muted-foreground"
+                                        )} />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    {channelPerformance.observation && (
+                                      <TooltipContent>
+                                        <p className="max-w-48">{channelPerformance.observation}</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TableCell>
+                              </React.Fragment>
+                            );
+                          })}
+                        </TableRow>
+                      ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={20} className="text-center py-8 text-muted-foreground">
                           Selecione os filtros e clique em "Aplicar Filtros" para visualizar os dados
                         </TableCell>
                       </TableRow>
