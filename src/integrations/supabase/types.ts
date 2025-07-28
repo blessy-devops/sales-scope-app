@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_observations: {
+        Row: {
+          channel_id: string
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          observation: string
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          created_by: string
+          date: string
+          id?: string
+          observation: string
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          observation?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_sales: {
         Row: {
           amount: number

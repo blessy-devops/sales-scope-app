@@ -14,6 +14,7 @@ import Targets from "./pages/Targets";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
 import Analises from "./pages/Analises";
+import PerformanceDiaria from "./pages/PerformanceDiaria";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ChangePassword from "./pages/ChangePassword";
@@ -92,6 +93,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Analises />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/analises/performance-diaria" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PerformanceDiaria />
                   </Layout>
                 </ProtectedRoute>
               } />
