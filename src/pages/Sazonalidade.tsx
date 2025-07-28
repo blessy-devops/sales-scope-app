@@ -12,6 +12,9 @@ import { useDailySales } from '@/hooks/useDailySales';
 import { format, startOfDay, endOfDay, differenceInDays, getDay } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
 import { Calendar, TrendingUp, TrendingDown, BarChart3, Target, ChevronDown, AlertTriangle, Activity, Radar as RadarIcon } from 'lucide-react';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 interface SeasonalityData {
   weekday: number;
@@ -45,11 +48,16 @@ export default function Sazonalidade() {
   const { channels } = useChannels();
   const { sales } = useDailySales();
   
-  const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+    to: new Date()
+  });
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [showOnlyActiveDays, setShowOnlyActiveDays] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('radar');
+
+  const startDate = dateRange?.from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const endDate = dateRange?.to || new Date();
 
   useEffect(() => {
     if (channels.length > 0 && selectedChannels.length === 0) {
@@ -323,20 +331,36 @@ export default function Sazonalidade() {
             {/* Período */}
             <div className="space-y-2">
               <Label>Período</Label>
-              <div className="flex gap-2">
-                <DatePicker
-                  date={startDate}
-                  onDateChange={setStartDate}
-                  placeholder="Início"
-                  className="flex-1"
-                />
-                <DatePicker
-                  date={endDate}
-                  onDateChange={setEndDate}
-                  placeholder="Fim"
-                  className="flex-1"
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yyyy")} -{" "}
+                          {format(dateRange.to, "dd/MM/yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy")
+                      )
+                    ) : (
+                      <span>Selecionar período</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Canais */}
