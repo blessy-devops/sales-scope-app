@@ -104,51 +104,6 @@ const Analises = () => {
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total de Relatórios</p>
-                <p className="text-2xl font-bold">{reports.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Disponíveis</p>
-                <p className="text-2xl font-bold">{reports.filter(r => r.available).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-l-4 border-l-orange-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Em Desenvolvimento</p>
-                <p className="text-2xl font-bold">{reports.filter(r => !r.available).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Reports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {reports.map((report) => {
