@@ -462,10 +462,10 @@ const Index = () => {
          )}
 
         {/* INDICADOR DE MODO DE CÁLCULO */}
-        <div className="flex items-center justify-center">
-          <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            <span>
+        <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-lg border text-sm text-muted-foreground">
+            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">
               Dados {mode === 'd0' ? 'incluindo hoje' : 'atualizados até'} {format(dataReferencia, 'dd/MM/yyyy', { locale: ptBR })}
             </span>
             <Tooltip>
@@ -473,7 +473,7 @@ const Index = () => {
                 <HelpCircle className="w-4 h-4 flex-shrink-0" />
               </TooltipTrigger>
               <TooltipContent>
-                <div className="text-xs">
+                <div className="text-xs space-y-1">
                   <p>Modo {mode === 'd0' ? 'D0' : 'D-1'} ativo</p>
                   <p>Calculado com base em {diasPassados} dias de dados</p>
                   <p>{mode === 'd0' ? 'Inclui o dia atual nos cálculos' : 'Considera apenas dias com dados completos'}</p>
