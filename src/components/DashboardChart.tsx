@@ -8,6 +8,7 @@ import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useChannels } from '@/hooks/useChannels';
+import { useDataReferencia } from '@/hooks/useDataReferencia';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface DashboardChartProps {
@@ -20,6 +21,7 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
   const { getTargetsForMonth } = useTargets();
   const { channels } = useChannels();
   const { getPreference, setPreference } = useUserPreferences();
+  const { dataReferencia, diasPassados, totalDiasDoMes, mode } = useDataReferencia();
   
   const isCollapsed = getPreference('dashboard_chart_collapsed', false);
 
@@ -42,17 +44,14 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
     
     const totalMonthlyTarget = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
     
-    // Calcular meta diária baseada nos dias do mês
+    // Calcular meta diária baseada nos dias do mês usando data de referência
     const startMonth = startOfMonth(currentDate);
-    const endMonth = endOfMonth(currentDate);
-    const daysInMonth = endMonth.getDate();
-    const dailyTarget = totalMonthlyTarget / daysInMonth;
+    const dailyTarget = totalMonthlyTarget / totalDiasDoMes;
     
-    // Calcular ritmo atual (vendas acumuladas até hoje / dias passados)
+    // Calcular ritmo atual (vendas acumuladas até data de referência / dias passados)
     let totalSalesUntilToday = 0;
-    const daysPassedSoFar = currentDate.getDate();
     
-    for (let i = 1; i <= daysPassedSoFar; i++) {
+    for (let i = 1; i <= diasPassados; i++) {
       const pastDate = new Date(currentYear, currentMonth - 1, i);
       const dateStr = format(pastDate, 'yyyy-MM-dd');
       
@@ -65,13 +64,13 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
       }
     }
     
-    const currentPace = daysPassedSoFar > 0 ? totalSalesUntilToday / daysPassedSoFar : 0;
+    const currentPace = diasPassados > 0 ? totalSalesUntilToday / diasPassados : 0;
     
-    // Sempre mostrar dados do mês atual
-    const daysToShow = Math.min(currentDate.getDate(), 30);
+    // Mostrar dados até a data de referência
+    const daysToShow = Math.min(diasPassados, 30);
     
     for (let i = daysToShow - 1; i >= 0; i--) {
-      const date = subDays(currentDate, i);
+      const date = subDays(dataReferencia, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       
       // Calcular vendas conforme filtro de visão

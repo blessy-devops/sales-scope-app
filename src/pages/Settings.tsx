@@ -15,7 +15,8 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from 'next-themes';
-import { Plus, Trash2, Key, User } from 'lucide-react';
+import { Plus, Trash2, Key, User, Calendar } from 'lucide-react';
+import { useDataReferencia } from '@/hooks/useDataReferencia';
 
 interface DashboardConfig {
   showTotalSales: boolean;
@@ -41,6 +42,7 @@ export default function Settings() {
   const { setPreference, getPreference, loading } = useUserPreferences();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { mode, saveCalculationMode } = useDataReferencia();
   
   // Dashboard preferences state
   const [config, setConfig] = useState<DashboardConfig>({
@@ -286,6 +288,22 @@ export default function Settings() {
     }
   };
 
+  const handleCalculationModeChange = async (newMode: 'd-1' | 'd0') => {
+    try {
+      await saveCalculationMode(newMode);
+      toast({
+        title: 'Sucesso',
+        description: 'Modo de cálculo atualizado com sucesso!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o modo de cálculo.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const configItems = [
     {
       key: 'showTotalSales' as keyof DashboardConfig,
@@ -376,6 +394,47 @@ export default function Settings() {
               <Button onClick={saveConfiguration} className="w-full">
                 Salvar Configurações
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Calculation Mode Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Modo de Cálculo de Dados
+              </CardTitle>
+              <CardDescription>
+                Configure como os cálculos do dashboard são realizados
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="calculation-mode"
+                    checked={mode === 'd0'}
+                    onCheckedChange={(checked) => handleCalculationModeChange(checked ? 'd0' : 'd-1')}
+                  />
+                  <Label htmlFor="calculation-mode" className="text-sm font-medium">
+                    {mode === 'd0' ? 'Até hoje (D0)' : 'Até ontem (D-1)'}
+                  </Label>
+                </div>
+                <div className="text-sm text-muted-foreground pl-6">
+                  {mode === 'd0' 
+                    ? 'Inclui o dia atual nos cálculos - útil para acompanhamento em tempo real'
+                    : 'Considera apenas dias com dados completos - mais conservador'
+                  }
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg text-sm">
+                  <p className="font-medium mb-1">Como isso afeta os cálculos:</p>
+                  <ul className="text-muted-foreground space-y-1 text-xs">
+                    <li>• <strong>Ritmo Atual:</strong> Vendas realizadas ÷ dias {mode === 'd0' ? 'passados (incluindo hoje)' : 'completos'}</li>
+                    <li>• <strong>Meta Esperada:</strong> Baseada nos dias {mode === 'd0' ? 'passados' : 'completos'}</li>
+                    <li>• <strong>Projeção:</strong> Considera {mode === 'd0' ? 'dados atuais' : 'histórico completo'}</li>
+                  </ul>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

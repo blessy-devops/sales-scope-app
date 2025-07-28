@@ -19,6 +19,7 @@ import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
 import { useChannels } from '@/hooks/useChannels';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useDataReferencia } from '@/hooks/useDataReferencia';
 import { format, startOfMonth, endOfMonth, subDays, getDaysInMonth, differenceInDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -55,6 +56,7 @@ const Index = () => {
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
   const { getPreference } = useUserPreferences();
+  const { dataReferencia, diasPassados, diasRestantes, totalDiasDoMes, mode, hoje } = useDataReferencia();
   
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('mes');
   const [customStartDate, setCustomStartDate] = useState<Date>();
@@ -74,7 +76,7 @@ const Index = () => {
     localStorage.setItem('dashboard-view-filter', viewFilter);
   }, [viewFilter]);
   
-  const currentDate = new Date();
+  const currentDate = hoje;
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
   
@@ -92,13 +94,13 @@ const Index = () => {
   
   const totalTargetMonth = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
   
-  // Calcular vendas do mês atual filtradas conforme visão
+  // Calcular vendas do mês atual filtradas conforme visão baseado na data de referência
   const startMonth = startOfMonth(currentDate);
-  const endMonth = endOfMonth(currentDate);
+  const endDataReferencia = dataReferencia;
   let totalSalesMonth = 0;
   
-  // Iterar por todos os dias do mês para somar as vendas
-  for (let d = new Date(startMonth); d <= endMonth; d.setDate(d.getDate() + 1)) {
+  // Iterar do início do mês até a data de referência para somar as vendas
+  for (let d = new Date(startMonth); d <= endDataReferencia; d.setDate(d.getDate() + 1)) {
     const dateStr = format(d, 'yyyy-MM-dd');
     const daySales = getSalesForDate(dateStr);
     
@@ -109,17 +111,14 @@ const Index = () => {
     }
   }
   
-  // NOVOS CÁLCULOS
-  const daysInMonth = getDaysInMonth(currentDate);
-  const daysPassed = currentDate.getDate();
+  // NOVOS CÁLCULOS USANDO DATA DE REFERÊNCIA
+  // Meta esperada até data de referência = (Meta Mensal / Dias do Mês) × Dias passados
+  const expectedTargetToday = (totalTargetMonth / totalDiasDoMes) * diasPassados;
   
-  // Meta esperada até hoje = (Meta Mensal / Dias do Mês) × Dias passados
-  const expectedTargetToday = (totalTargetMonth / daysInMonth) * daysPassed;
-  
-  // Desempenho R$ = Realizado - Meta esperada até hoje
+  // Desempenho R$ = Realizado - Meta esperada até data de referência
   const performanceValue = totalSalesMonth - expectedTargetToday;
   
-  // Desempenho % = (Desempenho R$ / Meta esperada até hoje) × 100
+  // Desempenho % = (Desempenho R$ / Meta esperada até data de referência) × 100
   const performancePercent = expectedTargetToday > 0 ? (performanceValue / expectedTargetToday) * 100 : 0;
   
   // Saldo Meta R$ = Meta Mensal - Realizado
@@ -128,15 +127,14 @@ const Index = () => {
   // Saldo Meta % = (Saldo Meta R$ / Meta Mensal) × 100
   const remainingTargetPercent = totalTargetMonth > 0 ? (remainingTargetValue / totalTargetMonth) * 100 : 0;
   
-  const remainingDays = Math.max(0, daysInMonth - currentDate.getDate());
-  const originalDailyTarget = totalTargetMonth / daysInMonth;
-  const adjustedDailyTarget = remainingDays > 0 ? Math.max(0, remainingTargetValue) / remainingDays : 0;
+  const originalDailyTarget = totalTargetMonth / totalDiasDoMes;
+  const adjustedDailyTarget = diasRestantes > 0 ? Math.max(0, remainingTargetValue) / diasRestantes : 0;
 
-  // CÁLCULOS DE RITMO
-  const currentPace = daysPassed > 0 ? totalSalesMonth / daysPassed : 0; // Ritmo atual
-  const projectedTotal = currentPace * daysInMonth; // Projetado
+// CÁLCULOS DE RITMO USANDO DATA DE REFERÊNCIA
+  const currentPace = diasPassados > 0 ? totalSalesMonth / diasPassados : 0; // Ritmo atual
+  const projectedTotal = currentPace * totalDiasDoMes; // Projetado
   const projectedPercent = totalTargetMonth > 0 ? (projectedTotal / totalTargetMonth) * 100 : 0;
-  const requiredPace = remainingDays > 0 ? Math.max(0, remainingTargetValue) / remainingDays : 0; // Ritmo necessário
+  const requiredPace = diasRestantes > 0 ? Math.max(0, remainingTargetValue) / diasRestantes : 0; // Ritmo necessário
   
   const [simulatedPace, setSimulatedPace] = useState<number[]>([currentPace || 0]);
 
@@ -150,14 +148,14 @@ const Index = () => {
     }
   };
 
-  // Calcular dados dos canais baseado apenas no mês atual (não impactado pelos filtros)
+  // Calcular dados dos canais baseado na data de referência
   const getChannelData = () => {
     return channels.filter(c => c.is_active).map(channel => {
       let channelSales = 0;
       let channelTarget = 0;
       
-      // Sempre usar dados do mês atual para os cards de canal
-      for (let d = new Date(startMonth); d <= endMonth; d.setDate(d.getDate() + 1)) {
+      // Usar dados até a data de referência para os cards de canal
+      for (let d = new Date(startMonth); d <= endDataReferencia; d.setDate(d.getDate() + 1)) {
         const dateStr = format(d, 'yyyy-MM-dd');
         channelSales += getSaleAmount(channel.id, dateStr);
       }
@@ -167,16 +165,16 @@ const Index = () => {
       
       const progress = channelTarget > 0 ? (channelSales / channelTarget) * 100 : 0;
       // Calcular desempenho do canal com a nova fórmula
-      const channelExpectedTarget = (channelTarget / daysInMonth) * daysPassed;
+      const channelExpectedTarget = (channelTarget / totalDiasDoMes) * diasPassados;
       const channelPerformanceValue = channelSales - channelExpectedTarget;
       const channelPerformancePercent = channelExpectedTarget > 0 ? (channelPerformanceValue / channelExpectedTarget) * 100 : 0;
       
       // Cálculos de ritmo do canal
-      const channelCurrentPace = daysPassed > 0 ? channelSales / daysPassed : 0;
-      const channelProjectedTotal = channelCurrentPace * daysInMonth;
+      const channelCurrentPace = diasPassados > 0 ? channelSales / diasPassados : 0;
+      const channelProjectedTotal = channelCurrentPace * totalDiasDoMes;
       const channelProjectedPercent = channelTarget > 0 ? (channelProjectedTotal / channelTarget) * 100 : 0;
       const channelRemainingTarget = channelTarget - channelSales;
-      const channelRequiredPace = remainingDays > 0 ? Math.max(0, channelRemainingTarget) / remainingDays : 0;
+      const channelRequiredPace = diasRestantes > 0 ? Math.max(0, channelRemainingTarget) / diasRestantes : 0;
       
       return {
         ...channel,
@@ -461,7 +459,29 @@ const Index = () => {
              );
              })}
           </div>
-        )}
+         )}
+
+        {/* INDICADOR DE MODO DE CÁLCULO */}
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border text-sm text-muted-foreground">
+            <Calendar className="w-4 h-4" />
+            <span>
+              Dados {mode === 'd0' ? 'incluindo hoje' : 'atualizados até'} {format(dataReferencia, 'dd/MM/yyyy', { locale: ptBR })}
+            </span>
+            <Tooltip>
+              <TooltipTrigger>
+                <HelpCircle className="w-4 h-4 flex-shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  <p>Modo {mode === 'd0' ? 'D0' : 'D-1'} ativo</p>
+                  <p>Calculado com base em {diasPassados} dias de dados</p>
+                  <p>{mode === 'd0' ? 'Inclui o dia atual nos cálculos' : 'Considera apenas dias com dados completos'}</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
 
         {/* GRÁFICO */}
         {dashboardConfig.showChart && (
@@ -612,11 +632,11 @@ const Index = () => {
                         const dataProjetada = addDays(new Date(), diasParaMeta);
                         
                         if (currentPace >= requiredPace) {
-                          return `Meta será atingida ${diasParaMeta <= remainingDays ? 
+                          return `Meta será atingida ${diasParaMeta <= diasRestantes ? 
                             `em ${format(dataProjetada, 'dd/MM')}` : 
                             'dentro do prazo ✅'}`;
                         } else {
-                          const deficitProjetado = remainingTargetValue - (currentPace * remainingDays);
+                          const deficitProjetado = remainingTargetValue - (currentPace * diasRestantes);
                           return `Projeção: R$ ${deficitProjetado.toFixed(0)} abaixo da meta ⚠️`;
                         }
                       })()}
@@ -720,7 +740,7 @@ const Index = () => {
                       
                       <div className="bg-background/60 rounded-lg p-4 border border-border/50">
                         {(() => {
-                          const simulatedTotal = simulatedPace[0] * daysInMonth;
+                          const simulatedTotal = simulatedPace[0] * totalDiasDoMes;
                           const simulatedPercent = totalTargetMonth > 0 ? (simulatedTotal / totalTargetMonth) * 100 : 0;
                           const difference = simulatedTotal - totalTargetMonth;
                           const isAboveTarget = simulatedPercent >= 100;
