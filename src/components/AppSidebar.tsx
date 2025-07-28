@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  BarChart3
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
@@ -24,6 +25,7 @@ const menuItems = [
   { title: 'Canais de Venda', url: '/channels', icon: Store },
   { title: 'Metas', url: '/targets', icon: Target },
   { title: 'Lançar Vendas', url: '/sales', icon: DollarSign },
+  { title: 'Análises', url: '/analises', icon: BarChart3 },
 ];
 
 interface AppSidebarProps {
