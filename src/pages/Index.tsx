@@ -7,11 +7,8 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/DatePicker';
 import { DashboardChart } from '@/components/DashboardChart';
 import { LoadingCard } from '@/components/LoadingCard';
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
@@ -47,7 +44,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
+type PeriodFilter = 'hoje' | '7dias' | 'mes';
 
 const Index = () => {
   const [loading, setLoading] = useState(false);
@@ -59,8 +56,6 @@ const Index = () => {
   const { dataReferencia, diasPassados, diasRestantes, totalDiasDoMes, mode, hoje } = useDataReferencia();
   
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('mes');
-  const [customStartDate, setCustomStartDate] = useState<Date>();
-  const [customEndDate, setCustomEndDate] = useState<Date>();
   const [expandedAnalysis, setExpandedAnalysis] = useState(false);
   const [viewFilter, setViewFilter] = useState<string>('global');
 
@@ -464,7 +459,7 @@ const Index = () => {
         {/* INDICADOR DE MODO DE CÁLCULO */}
         <div className="flex items-center justify-center mb-6">
           <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-lg border text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <CalendarIcon className="w-4 h-4 flex-shrink-0" />
             <span className="whitespace-nowrap">
               Dados {mode === 'd0' ? 'incluindo hoje' : 'atualizados até'} {format(dataReferencia, 'dd/MM/yyyy', { locale: ptBR })}
             </span>
