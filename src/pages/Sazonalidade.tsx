@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePicker } from '@/components/DatePicker';
 import { useChannels } from '@/hooks/useChannels';
 import { useDailySales } from '@/hooks/useDailySales';
 import { format, startOfDay, endOfDay, differenceInDays, getDay, getDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Calendar, TrendingUp, TrendingDown, BarChart3, Target } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, BarChart3, Target, ChevronDown } from 'lucide-react';
 
 interface SeasonalityData {
   weekday: number;
@@ -322,26 +323,47 @@ export default function Sazonalidade() {
             {/* Canais */}
             <div className="space-y-2">
               <Label>Canais para Comparar</Label>
-              <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
-                {channels.map(channel => (
-                  <div key={channel.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={channel.id}
-                      checked={selectedChannels.includes(channel.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedChannels([...selectedChannels, channel.id]);
-                        } else {
-                          setSelectedChannels(selectedChannels.filter(id => id !== channel.id));
-                        }
-                      }}
-                    />
-                    <label htmlFor={channel.id} className="text-sm">
-                      {channel.name}
-                    </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between text-left font-normal"
+                  >
+                    <span>
+                      {selectedChannels.length === 0 
+                        ? "Selecionar canais" 
+                        : `${selectedChannels.length} ${selectedChannels.length === 1 ? 'canal selecionado' : 'canais selecionados'}`
+                      }
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <div className="p-4 space-y-3 max-h-64 overflow-y-auto bg-background border rounded-md shadow-lg">
+                    {channels.map(channel => (
+                      <div key={channel.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={channel.id}
+                          checked={selectedChannels.includes(channel.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedChannels([...selectedChannels, channel.id]);
+                            } else {
+                              setSelectedChannels(selectedChannels.filter(id => id !== channel.id));
+                            }
+                          }}
+                        />
+                        <label 
+                          htmlFor={channel.id} 
+                          className="text-sm cursor-pointer flex-1 py-1"
+                        >
+                          {channel.name}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Toggle */}
