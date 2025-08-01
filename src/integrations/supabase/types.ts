@@ -99,7 +99,6 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          parent_id: string | null
           type: string
           updated_at: string | null
         }
@@ -109,7 +108,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          parent_id?: string | null
           type: string
           updated_at?: string | null
         }
@@ -119,19 +117,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          parent_id?: string | null
           type?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "channels_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "channels"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       daily_observations: {
         Row: {

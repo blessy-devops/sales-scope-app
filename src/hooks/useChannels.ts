@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Channel, CreateChannelData } from '@/types/channel';
-import { ChannelHierarchy } from '@/types/annual-plan';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useChannels() {
@@ -92,68 +91,11 @@ export function useChannels() {
     }
   };
 
-  const buildChannelHierarchy = (channels: Channel[]): ChannelHierarchy[] => {
-    const channelMap = new Map<string, ChannelHierarchy>();
-    const rootChannels: ChannelHierarchy[] = [];
-
-    // Primeiro, criar todos os nós
-    channels.forEach(channel => {
-      channelMap.set(channel.id, {
-        id: channel.id,
-        name: channel.name,
-        parent_id: channel.parent_id,
-        children: [],
-        level: 0,
-        is_expanded: true
-      });
-    });
-
-    // Depois, construir a hierarquia
-    channels.forEach(channel => {
-      const node = channelMap.get(channel.id)!;
-      
-      if (channel.parent_id) {
-        const parent = channelMap.get(channel.parent_id);
-        if (parent) {
-          parent.children.push(node);
-          node.level = parent.level + 1;
-        }
-      } else {
-        rootChannels.push(node);
-      }
-    });
-
-    return rootChannels;
-  };
-
-  const getChannelHierarchy = (): ChannelHierarchy[] => {
-    return buildChannelHierarchy(channels);
-  };
-
-  // Função para retornar apenas os canais específicos para as páginas de vendas e metas
-  const getSalesChannels = (): Channel[] => {
-    const specificChannelNames = [
-      'E-COMMERCE',
-      'B4You', 
-      'Payt',
-      'Amazon',
-      'RD Saúde',
-      'Mercado Livre',
-      'TIKTOK SHOP'
-    ];
-    
-    return channels.filter(channel => 
-      specificChannelNames.includes(channel.name) && channel.is_active
-    );
-  };
-
   return {
     channels,
     loading,
     createChannel,
     updateChannel,
     deleteChannel,
-    getChannelHierarchy,
-    getSalesChannels,
   };
 }
