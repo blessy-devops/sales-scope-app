@@ -27,7 +27,7 @@ import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Sales() {
-  const { channels } = useChannels();
+  const { getSalesChannels } = useChannels();
   const { 
     getSalesForDate,
     saveDailySales, 
@@ -46,7 +46,7 @@ export default function Sales() {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
-  const activeChannels = channels.filter(c => c.is_active);
+  const activeChannels = getSalesChannels();
   const currentSales = getSalesForDate(dateStr);
   const summary = getSalesSummary(dateStr);
 

@@ -27,7 +27,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Targets() {
-  const { channels } = useChannels();
+  const { getSalesChannels } = useChannels();
   const { 
     getTargetsForMonth, 
     getPreviousMonthTargets,
@@ -45,7 +45,7 @@ export default function Targets() {
   const month = selectedDate.getMonth() + 1;
   const year = selectedDate.getFullYear();
   
-  const activeChannels = channels.filter(c => c.is_active);
+  const activeChannels = getSalesChannels();
   const currentTargets = getTargetsForMonth(month, year);
   const previousTargets = getPreviousMonthTargets(month, year);
   const history = getHistoryForMonth(month, year);

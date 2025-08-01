@@ -130,6 +130,23 @@ export function useChannels() {
     return buildChannelHierarchy(channels);
   };
 
+  // Função para retornar apenas os canais específicos para as páginas de vendas e metas
+  const getSalesChannels = (): Channel[] => {
+    const specificChannelNames = [
+      'E-COMMERCE',
+      'B4You', 
+      'Payt',
+      'Amazon',
+      'RD Saúde',
+      'Mercado Livre',
+      'TIKTOK SHOP'
+    ];
+    
+    return channels.filter(channel => 
+      specificChannelNames.includes(channel.name) && channel.is_active
+    );
+  };
+
   return {
     channels,
     loading,
@@ -137,5 +154,6 @@ export function useChannels() {
     updateChannel,
     deleteChannel,
     getChannelHierarchy,
+    getSalesChannels,
   };
 }
