@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Channel, CreateChannelData } from '@/types/channel';
+import { ChannelHierarchy } from '@/types/annual-plan';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useChannels() {
@@ -91,11 +92,50 @@ export function useChannels() {
     }
   };
 
+  const buildChannelHierarchy = (channels: Channel[]): ChannelHierarchy[] => {
+    const channelMap = new Map<string, ChannelHierarchy>();
+    const rootChannels: ChannelHierarchy[] = [];
+
+    // Primeiro, criar todos os nós
+    channels.forEach(channel => {
+      channelMap.set(channel.id, {
+        id: channel.id,
+        name: channel.name,
+        parent_id: channel.parent_id,
+        children: [],
+        level: 0,
+        is_expanded: true
+      });
+    });
+
+    // Depois, construir a hierarquia
+    channels.forEach(channel => {
+      const node = channelMap.get(channel.id)!;
+      
+      if (channel.parent_id) {
+        const parent = channelMap.get(channel.parent_id);
+        if (parent) {
+          parent.children.push(node);
+          node.level = parent.level + 1;
+        }
+      } else {
+        rootChannels.push(node);
+      }
+    });
+
+    return rootChannels;
+  };
+
+  const getChannelHierarchy = (): ChannelHierarchy[] => {
+    return buildChannelHierarchy(channels);
+  };
+
   return {
     channels,
     loading,
     createChannel,
     updateChannel,
     deleteChannel,
+    getChannelHierarchy,
   };
 }

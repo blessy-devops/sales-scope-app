@@ -125,7 +125,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
 
 export default function PlanoAnual() {
   const { toast } = useToast();
-  const { channels } = useChannels();
+  const { channels, getChannelHierarchy } = useChannels();
   const {
     saveYearlyTarget,
     saveQuarterlyDistribution,
@@ -311,33 +311,11 @@ export default function PlanoAnual() {
     return formatCurrency(value);
   };
 
-  // Funções para hierarquia de canais
-  const buildChannelHierarchy = (): ChannelHierarchy[] => {
-    const channelMap = new Map<string, ChannelHierarchy>();
-    const rootChannels: ChannelHierarchy[] = [];
-
-    // Criar mapa de canais
-    channels.forEach(channel => {
-      channelMap.set(channel.id, {
-        id: channel.id,
-        name: channel.name,
-        parent_id: undefined, // Por enquanto todos são root
-        children: [],
-        level: 0,
-        is_expanded: expandedChannels.has(channel.id),
-      });
-    });
-
-    // Por enquanto, todos os canais são root (sem hierarquia)
-    channels.forEach(channel => {
-      const hierarchyChannel = channelMap.get(channel.id);
-      if (hierarchyChannel) {
-        rootChannels.push(hierarchyChannel);
-      }
-    });
-
-    return rootChannels;
-  };
+  // Usar a hierarquia do hook useChannels
+  const channelHierarchy = getChannelHierarchy().map(channel => ({
+    ...channel,
+    is_expanded: expandedChannels.has(channel.id),
+  }));
 
   const toggleChannelExpansion = (channelId: string) => {
     const newExpanded = new Set(expandedChannels);
@@ -395,7 +373,6 @@ export default function PlanoAnual() {
   };
 
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear + i);
-  const channelHierarchy = buildChannelHierarchy();
 
   const months = [
     { name: 'Jan', number: 1, quarter: 1 },

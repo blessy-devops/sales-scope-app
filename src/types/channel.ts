@@ -6,6 +6,7 @@ export interface Channel {
   type: ChannelType;
   icon_url?: string;
   is_active: boolean;
+  parent_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -15,4 +16,5 @@ export interface CreateChannelData {
   type: ChannelType;
   icon_url?: string;
   is_active: boolean;
+  parent_id?: string;
 }
