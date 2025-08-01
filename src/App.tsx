@@ -11,6 +11,7 @@ import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Channels from "./pages/Channels";
 import Targets from "./pages/Targets";
+import PlanoAnual from "./pages/PlanoAnual";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
 import Analises from "./pages/Analises";
@@ -70,6 +71,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Targets />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/plano-anual" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PlanoAnual />
                   </Layout>
                 </ProtectedRoute>
               } />
