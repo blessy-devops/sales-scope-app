@@ -118,6 +118,19 @@ export default function PlanoAnual() {
     );
   };
 
+  const isValidDistribution = () => {
+    return Math.abs(getTotalRevenuePercentage() - 100) < 0.01; // Permite pequena diferença por arredondamento
+  };
+
+  const distributeEqually = () => {
+    setQuarterlyDistribution({
+      1: { revenuePercentage: '25', marginPercentage: '25' },
+      2: { revenuePercentage: '25', marginPercentage: '25' },
+      3: { revenuePercentage: '25', marginPercentage: '25' },
+      4: { revenuePercentage: '25', marginPercentage: '25' },
+    });
+  };
+
   const getTotalMargin = () => {
     return [1, 2, 3, 4].reduce((sum, quarter) => sum + calculateQuarterlyMargin(quarter), 0);
   };
@@ -344,11 +357,16 @@ export default function PlanoAnual() {
 
         <TabsContent value="setup" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Distribuição Trimestral</CardTitle>
-              <CardDescription>
-                Configure como a receita e margem serão distribuídas ao longo do ano
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Distribuição Trimestral</CardTitle>
+                <CardDescription>
+                  Configure como a receita e margem serão distribuídas ao longo do ano
+                </CardDescription>
+              </div>
+              <Button variant="outline" onClick={distributeEqually}>
+                Distribuir Igualmente
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="overflow-x-auto">
@@ -370,7 +388,9 @@ export default function PlanoAnual() {
                           <div className="flex items-center justify-end gap-1">
                             <Input
                               type="number"
-                              className="w-20 text-right h-8"
+                              className={`w-20 text-right h-8 ${
+                                !isValidDistribution() ? 'border-destructive focus:border-destructive' : ''
+                              }`}
                               value={quarterlyDistribution[quarter]?.revenuePercentage || ''}
                               onChange={(e) => updateDistribution(quarter, 'revenue', e.target.value)}
                               min="0"
@@ -407,7 +427,11 @@ export default function PlanoAnual() {
                     <tr className="border-t-2 border-border">
                       <td className="p-3">Total</td>
                       <td className="p-3 text-right">
-                        <span className={getTotalRevenuePercentage() !== 100 ? 'text-destructive' : 'text-foreground'}>
+                        <span className={`font-bold ${
+                          !isValidDistribution() 
+                            ? 'text-destructive' 
+                            : 'text-foreground'
+                        }`}>
                           {getTotalRevenuePercentage().toFixed(1)}%
                         </span>
                       </td>
@@ -419,16 +443,32 @@ export default function PlanoAnual() {
                 </table>
               </div>
 
-              {getTotalRevenuePercentage() !== 100 && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                  <span className="text-yellow-600 dark:text-yellow-400 text-sm">
-                    ⚠️ A soma dos percentuais de receita deve ser 100%. Atual: {getTotalRevenuePercentage().toFixed(1)}%
+              {!isValidDistribution() && (
+                <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                  <span className="text-destructive text-sm font-medium">
+                    ⚠️ Atenção: A soma dos percentuais de receita deve ser 100%. 
+                    Atual: <strong>{getTotalRevenuePercentage().toFixed(1)}%</strong>
                   </span>
                 </div>
               )}
 
-              <div className="flex justify-end">
-                <Button onClick={handleSaveQuarterly}>
+              {isValidDistribution() && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <span className="text-green-600 dark:text-green-400 text-sm">
+                    ✅ Distribuição válida: {getTotalRevenuePercentage().toFixed(1)}%
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  Os valores são recalculados automaticamente conforme você edita os percentuais.
+                </p>
+                <Button 
+                  onClick={handleSaveQuarterly}
+                  disabled={!isValidDistribution()}
+                  variant={isValidDistribution() ? "default" : "secondary"}
+                >
                   <Save className="h-4 w-4 mr-2" />
                   Salvar Distribuição
                 </Button>
