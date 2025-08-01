@@ -13,8 +13,7 @@ import {
   ChevronRight,
   LogOut,
   HelpCircle,
-  BarChart3,
-  Calendar
+  BarChart3
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
@@ -25,7 +24,6 @@ const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Canais de Venda', url: '/channels', icon: Store },
   { title: 'Metas', url: '/targets', icon: Target },
-  { title: 'Plano Anual', url: '/plano-anual', icon: Calendar },
   { title: 'Lançar Vendas', url: '/sales', icon: DollarSign },
   { title: 'Análises', url: '/analises', icon: BarChart3 },
 ];

@@ -62,36 +62,6 @@ export type Database = {
         }
         Relationships: []
       }
-      channel_distribution: {
-        Row: {
-          channel_id: string
-          created_at: string
-          id: string
-          is_subchannel: boolean
-          parent_channel_id: string | null
-          percentage: number
-          year: number
-        }
-        Insert: {
-          channel_id: string
-          created_at?: string
-          id?: string
-          is_subchannel?: boolean
-          parent_channel_id?: string | null
-          percentage?: number
-          year: number
-        }
-        Update: {
-          channel_id?: string
-          created_at?: string
-          id?: string
-          is_subchannel?: boolean
-          parent_channel_id?: string | null
-          percentage?: number
-          year?: number
-        }
-        Relationships: []
-      }
       channels: {
         Row: {
           created_at: string | null
@@ -99,7 +69,6 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          parent_id: string | null
           type: string
           updated_at: string | null
         }
@@ -109,7 +78,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          parent_id?: string | null
           type: string
           updated_at?: string | null
         }
@@ -119,19 +87,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          parent_id?: string | null
           type?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "channels_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "channels"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       daily_observations: {
         Row: {
@@ -197,66 +156,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      monthly_targets: {
-        Row: {
-          channel_id: string
-          created_at: string
-          id: string
-          margin_target: number
-          month: number
-          quarter: number
-          revenue_target: number
-          year: number
-        }
-        Insert: {
-          channel_id: string
-          created_at?: string
-          id?: string
-          margin_target?: number
-          month: number
-          quarter: number
-          revenue_target?: number
-          year: number
-        }
-        Update: {
-          channel_id?: string
-          created_at?: string
-          id?: string
-          margin_target?: number
-          month?: number
-          quarter?: number
-          revenue_target?: number
-          year?: number
-        }
-        Relationships: []
-      }
-      quarterly_distribution: {
-        Row: {
-          created_at: string
-          id: string
-          margin_percentage: number
-          quarter: number
-          revenue_percentage: number
-          year: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          margin_percentage?: number
-          quarter: number
-          revenue_percentage?: number
-          year: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          margin_percentage?: number
-          quarter?: number
-          revenue_percentage?: number
-          year?: number
-        }
-        Relationships: []
       }
       sales_targets: {
         Row: {
@@ -412,36 +311,6 @@ export type Database = {
           first_login?: boolean | null
           full_name?: string
           id?: string
-        }
-        Relationships: []
-      }
-      yearly_targets: {
-        Row: {
-          created_at: string
-          id: string
-          margin_percentage: number
-          total_margin_target: number
-          total_revenue_target: number
-          updated_at: string
-          year: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          margin_percentage?: number
-          total_margin_target?: number
-          total_revenue_target?: number
-          updated_at?: string
-          year: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          margin_percentage?: number
-          total_margin_target?: number
-          total_revenue_target?: number
-          updated_at?: string
-          year?: number
         }
         Relationships: []
       }
