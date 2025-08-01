@@ -10,14 +10,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useAnnualPlan } from '@/hooks/useAnnualPlan';
 import { useToast } from '@/hooks/use-toast';
-import { AnnualPlanFormData } from '@/types/annual-plan';
+import { AnnualPlanFormData, QuarterlyDistribution } from '@/types/annual-plan';
 import { Copy, Save, Download } from 'lucide-react';
+
+interface QuarterlyDistributionState {
+  [quarter: number]: {
+    revenuePercentage: string;
+    marginPercentage: string;
+  };
+}
 
 export default function PlanoAnual() {
   const { toast } = useToast();
   const {
     saveYearlyTarget,
+    saveQuarterlyDistribution,
     getYearlyTarget,
+    getQuarterlyDistributionForYear,
     copyFromPreviousYear,
     loading
   } = useAnnualPlan();
@@ -32,6 +41,29 @@ export default function PlanoAnual() {
   });
 
   const yearlyTarget = getYearlyTarget(selectedYear);
+  const quarterlyData = getQuarterlyDistributionForYear(selectedYear);
+
+  // Estado para distribuição trimestral
+  const [quarterlyDistribution, setQuarterlyDistribution] = useState<QuarterlyDistributionState>({
+    1: { revenuePercentage: '25', marginPercentage: '25' },
+    2: { revenuePercentage: '25', marginPercentage: '25' },
+    3: { revenuePercentage: '25', marginPercentage: '25' },
+    4: { revenuePercentage: '25', marginPercentage: '25' },
+  });
+
+  // Sincronizar dados da distribuição trimestral quando disponível
+  React.useEffect(() => {
+    if (quarterlyData.length > 0) {
+      const newDistribution: QuarterlyDistributionState = {};
+      quarterlyData.forEach((q) => {
+        newDistribution[q.quarter] = {
+          revenuePercentage: q.revenue_percentage.toString(),
+          marginPercentage: q.margin_percentage.toString(),
+        };
+      });
+      setQuarterlyDistribution(newDistribution);
+    }
+  }, [quarterlyData]);
 
   React.useEffect(() => {
     if (yearlyTarget) {
@@ -55,6 +87,62 @@ export default function PlanoAnual() {
     const revenue = parseFloat(formData.total_revenue_target) || 0;
     const marginPercentage = parseFloat(formData.margin_percentage) || 0;
     return (revenue * marginPercentage) / 100;
+  };
+
+  // Funções para distribuição trimestral
+  const updateDistribution = (quarter: number, field: 'revenue' | 'margin', value: string) => {
+    setQuarterlyDistribution(prev => ({
+      ...prev,
+      [quarter]: {
+        ...prev[quarter],
+        [field === 'revenue' ? 'revenuePercentage' : 'marginPercentage']: value,
+      },
+    }));
+  };
+
+  const calculateQuarterlyRevenue = (quarter: number) => {
+    const revenue = parseFloat(formData.total_revenue_target) || 0;
+    const percentage = parseFloat(quarterlyDistribution[quarter]?.revenuePercentage) || 0;
+    return (revenue * percentage) / 100;
+  };
+
+  const calculateQuarterlyMargin = (quarter: number) => {
+    const quarterRevenue = calculateQuarterlyRevenue(quarter);
+    const marginPercentage = parseFloat(quarterlyDistribution[quarter]?.marginPercentage) || 0;
+    return (quarterRevenue * marginPercentage) / 100;
+  };
+
+  const getTotalRevenuePercentage = () => {
+    return Object.values(quarterlyDistribution).reduce((sum, q) => 
+      sum + (parseFloat(q.revenuePercentage) || 0), 0
+    );
+  };
+
+  const getTotalMargin = () => {
+    return [1, 2, 3, 4].reduce((sum, quarter) => sum + calculateQuarterlyMargin(quarter), 0);
+  };
+
+  const handleSaveQuarterly = async () => {
+    try {
+      const distributions = Object.entries(quarterlyDistribution).map(([quarter, data]) => ({
+        quarter: parseInt(quarter),
+        revenue_percentage: parseFloat(data.revenuePercentage) || 0,
+        margin_percentage: parseFloat(data.marginPercentage) || 0,
+      }));
+
+      await saveQuarterlyDistribution(selectedYear, distributions);
+
+      toast({
+        title: "Distribuição salva com sucesso",
+        description: `A distribuição trimestral para ${selectedYear} foi salva.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar a distribuição trimestral.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -254,16 +342,97 @@ export default function PlanoAnual() {
           </div>
         </TabsContent>
 
-        <TabsContent value="setup">
+        <TabsContent value="setup" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Setup Financeiro</CardTitle>
+              <CardTitle>Distribuição Trimestral</CardTitle>
               <CardDescription>
-                Configurações financeiras e distribuições
+                Configure como a receita e margem serão distribuídas ao longo do ano
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Em desenvolvimento...</p>
+            <CardContent className="space-y-6">
+              <div className="overflow-x-auto">
+                <table className="w-full max-w-4xl mx-auto border-collapse">
+                  <thead>
+                    <tr className="text-sm border-b-2 border-border">
+                      <th className="text-left p-3 font-semibold">Trimestre</th>
+                      <th className="text-right p-3 font-semibold">% da Receita Anual</th>
+                      <th className="text-right p-3 font-semibold">% Margem do Trimestre</th>
+                      <th className="text-right p-3 font-semibold">Receita (R$)</th>
+                      <th className="text-right p-3 font-semibold">Margem (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4].map(quarter => (
+                      <tr key={quarter} className="border-b border-border hover:bg-muted/50">
+                        <td className="p-3 font-medium">Q{quarter}</td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <Input
+                              type="number"
+                              className="w-20 text-right h-8"
+                              value={quarterlyDistribution[quarter]?.revenuePercentage || ''}
+                              onChange={(e) => updateDistribution(quarter, 'revenue', e.target.value)}
+                              min="0"
+                              max="100"
+                              step="0.1"
+                            />
+                            <span className="text-sm text-muted-foreground">%</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <Input
+                              type="number"
+                              className="w-20 text-right h-8"
+                              value={quarterlyDistribution[quarter]?.marginPercentage || ''}
+                              onChange={(e) => updateDistribution(quarter, 'margin', e.target.value)}
+                              min="0"
+                              max="100"
+                              step="0.1"
+                            />
+                            <span className="text-sm text-muted-foreground">%</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-right font-medium">
+                          {formatCurrency(calculateQuarterlyRevenue(quarter))}
+                        </td>
+                        <td className="p-3 text-right font-medium">
+                          {formatCurrency(calculateQuarterlyMargin(quarter))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="font-bold bg-muted/30">
+                    <tr className="border-t-2 border-border">
+                      <td className="p-3">Total</td>
+                      <td className="p-3 text-right">
+                        <span className={getTotalRevenuePercentage() !== 100 ? 'text-destructive' : 'text-foreground'}>
+                          {getTotalRevenuePercentage().toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">-</td>
+                      <td className="p-3 text-right">{formatCurrency(parseFloat(formData.total_revenue_target) || 0)}</td>
+                      <td className="p-3 text-right">{formatCurrency(getTotalMargin())}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {getTotalRevenuePercentage() !== 100 && (
+                <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <span className="text-yellow-600 dark:text-yellow-400 text-sm">
+                    ⚠️ A soma dos percentuais de receita deve ser 100%. Atual: {getTotalRevenuePercentage().toFixed(1)}%
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button onClick={handleSaveQuarterly}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar Distribuição
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

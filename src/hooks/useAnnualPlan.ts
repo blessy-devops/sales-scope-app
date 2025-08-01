@@ -89,6 +89,29 @@ export const useAnnualPlan = () => {
     await fetchYearlyTargets();
   };
 
+  const saveQuarterlyDistribution = async (year: number, distributions: Array<{quarter: number, revenue_percentage: number, margin_percentage: number}>) => {
+    // Delete existing distributions for the year
+    await supabase
+      .from('quarterly_distribution')
+      .delete()
+      .eq('year', year);
+
+    // Insert new distributions
+    const { error } = await supabase
+      .from('quarterly_distribution')
+      .insert(
+        distributions.map(dist => ({
+          year,
+          quarter: dist.quarter,
+          revenue_percentage: dist.revenue_percentage,
+          margin_percentage: dist.margin_percentage,
+        }))
+      );
+
+    if (error) throw error;
+    await fetchQuarterlyDistribution();
+  };
+
   const getYearlyTarget = (year: number): YearlyTarget | undefined => {
     return yearlyTargets.find(target => target.year === year);
   };
@@ -146,6 +169,7 @@ export const useAnnualPlan = () => {
     channelDistribution,
     loading,
     saveYearlyTarget,
+    saveQuarterlyDistribution,
     getYearlyTarget,
     getQuarterlyDistributionForYear,
     getMonthlyTargetsForYear,
