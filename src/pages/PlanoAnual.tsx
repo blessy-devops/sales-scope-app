@@ -9,9 +9,11 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useAnnualPlan } from '@/hooks/useAnnualPlan';
+import { useChannels } from '@/hooks/useChannels';
 import { useToast } from '@/hooks/use-toast';
-import { AnnualPlanFormData, QuarterlyDistribution } from '@/types/annual-plan';
-import { Copy, Save, Download } from 'lucide-react';
+import { AnnualPlanFormData, QuarterlyDistribution, ChannelHierarchy, MonthlyChannelDistribution } from '@/types/annual-plan';
+import { ChannelRow } from '@/components/ChannelRow';
+import { Copy, Save, Download, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface QuarterlyDistributionState {
   [quarter: number]: {
@@ -20,8 +22,17 @@ interface QuarterlyDistributionState {
   };
 }
 
+interface MonthlyDistributionState {
+  [channelId: string]: {
+    [month: number]: {
+      percentage: string;
+    };
+  };
+}
+
 export default function PlanoAnual() {
   const { toast } = useToast();
+  const { channels } = useChannels();
   const {
     saveYearlyTarget,
     saveQuarterlyDistribution,
@@ -50,6 +61,10 @@ export default function PlanoAnual() {
     3: { revenuePercentage: '25', marginPercentage: '25' },
     4: { revenuePercentage: '25', marginPercentage: '25' },
   });
+
+  // Estado para distribuição mensal por canal
+  const [monthlyDistribution, setMonthlyDistribution] = useState<MonthlyDistributionState>({});
+  const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
 
   // Sincronizar dados da distribuição trimestral quando disponível
   React.useEffect(() => {
@@ -194,7 +209,122 @@ export default function PlanoAnual() {
     }).format(value);
   };
 
+  const formatCompactCurrency = (value: number): string => {
+    if (value >= 1000000) {
+      return `R$ ${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `R$ ${(value / 1000).toFixed(1)}K`;
+    }
+    return formatCurrency(value);
+  };
+
+  // Funções para hierarquia de canais
+  const buildChannelHierarchy = (): ChannelHierarchy[] => {
+    const channelMap = new Map<string, ChannelHierarchy>();
+    const rootChannels: ChannelHierarchy[] = [];
+
+    // Criar mapa de canais
+    channels.forEach(channel => {
+      channelMap.set(channel.id, {
+        id: channel.id,
+        name: channel.name,
+        parent_id: undefined, // Por enquanto todos são root
+        children: [],
+        level: 0,
+        is_expanded: expandedChannels.has(channel.id),
+      });
+    });
+
+    // Por enquanto, todos os canais são root (sem hierarquia)
+    channels.forEach(channel => {
+      const hierarchyChannel = channelMap.get(channel.id);
+      if (hierarchyChannel) {
+        rootChannels.push(hierarchyChannel);
+      }
+    });
+
+    return rootChannels;
+  };
+
+  const toggleChannelExpansion = (channelId: string) => {
+    const newExpanded = new Set(expandedChannels);
+    if (newExpanded.has(channelId)) {
+      newExpanded.delete(channelId);
+    } else {
+      newExpanded.add(channelId);
+    }
+    setExpandedChannels(newExpanded);
+  };
+
+  // Funções para distribuição mensal
+  const updateMonthlyDistribution = (channelId: string, month: number, percentage: string) => {
+    setMonthlyDistribution(prev => ({
+      ...prev,
+      [channelId]: {
+        ...prev[channelId],
+        [month]: { percentage },
+      },
+    }));
+  };
+
+  const getMonthlyPercentage = (channelId: string, month: number): string => {
+    return monthlyDistribution[channelId]?.[month]?.percentage || '';
+  };
+
+  const calculateMonthlyRevenue = (channelId: string, month: number): number => {
+    const percentage = parseFloat(getMonthlyPercentage(channelId, month)) || 0;
+    const quarter = Math.ceil(month / 3);
+    const quarterlyRevenue = calculateQuarterlyRevenue(quarter);
+    return (quarterlyRevenue * percentage) / 100;
+  };
+
+  const calculateMonthlyMargin = (channelId: string, month: number): number => {
+    const revenue = calculateMonthlyRevenue(channelId, month);
+    const quarter = Math.ceil(month / 3);
+    const marginPercentage = parseFloat(quarterlyDistribution[quarter]?.marginPercentage) || 0;
+    return (revenue * marginPercentage) / 100;
+  };
+
+  const getChannelTotalPercentage = (channelId: string): number => {
+    let total = 0;
+    for (let month = 1; month <= 12; month++) {
+      total += parseFloat(getMonthlyPercentage(channelId, month)) || 0;
+    }
+    return total;
+  };
+
+  const getValidationColor = (channelId: string): string => {
+    const total = getChannelTotalPercentage(channelId);
+    if (total > 100) return 'bg-red-50 border-red-200';
+    if (total >= 95 && total < 100) return 'bg-yellow-50 border-yellow-200';
+    if (total === 100) return 'bg-green-50 border-green-200';
+    return '';
+  };
+
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear + i);
+  const channelHierarchy = buildChannelHierarchy();
+
+  const months = [
+    { name: 'Jan', number: 1, quarter: 1 },
+    { name: 'Fev', number: 2, quarter: 1 },
+    { name: 'Mar', number: 3, quarter: 1 },
+    { name: 'Abr', number: 4, quarter: 2 },
+    { name: 'Mai', number: 5, quarter: 2 },
+    { name: 'Jun', number: 6, quarter: 2 },
+    { name: 'Jul', number: 7, quarter: 3 },
+    { name: 'Ago', number: 8, quarter: 3 },
+    { name: 'Set', number: 9, quarter: 3 },
+    { name: 'Out', number: 10, quarter: 4 },
+    { name: 'Nov', number: 11, quarter: 4 },
+    { name: 'Dez', number: 12, quarter: 4 },
+  ];
+
+  const quarterColors = {
+    1: 'bg-blue-50 border-blue-200',
+    2: 'bg-green-50 border-green-200', 
+    3: 'bg-orange-50 border-orange-200',
+    4: 'bg-purple-50 border-purple-200',
+  };
 
   return (
     <div className="space-y-6">
@@ -477,16 +607,85 @@ export default function PlanoAnual() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="desdobramento">
+        <TabsContent value="desdobramento" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Desdobramento Mensal</CardTitle>
+              <CardTitle>Desdobramento Mensal por Canal</CardTitle>
               <CardDescription>
-                Distribuição das metas por trimestre e mês
+                Configure como cada canal contribuirá para as metas mensais
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Em desenvolvimento...</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs whitespace-nowrap border-collapse">
+                  <thead>
+                    {/* Header de trimestres */}
+                    <tr>
+                      <th className="sticky left-0 bg-background p-2 border-b-2 z-10" rowSpan={2}>
+                        Canal
+                      </th>
+                      {[1, 2, 3, 4].map(quarter => (
+                        <th 
+                          key={quarter} 
+                          colSpan={3} 
+                          className={`text-center border-l-2 p-1 ${quarterColors[quarter as keyof typeof quarterColors]}`}
+                        >
+                          Q{quarter}
+                        </th>
+                      ))}
+                    </tr>
+                    {/* Header de meses */}
+                    <tr>
+                      {months.map(month => (
+                        <th 
+                          key={month.number} 
+                          className={`text-center p-1 border-r min-w-24 ${quarterColors[month.quarter as keyof typeof quarterColors]}`}
+                        >
+                          <div className="font-medium">{month.name}</div>
+                          <div className="text-muted-foreground text-xs">% | Meta</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {channelHierarchy.map(channel => (
+                      <ChannelRow 
+                        key={channel.id} 
+                        channel={channel}
+                        months={months}
+                        getMonthlyPercentage={getMonthlyPercentage}
+                        updateMonthlyDistribution={updateMonthlyDistribution}
+                        calculateMonthlyRevenue={calculateMonthlyRevenue}
+                        formatCompactCurrency={formatCompactCurrency}
+                        getValidationColor={getValidationColor}
+                        toggleChannelExpansion={toggleChannelExpansion}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                <h4 className="font-medium mb-2">Legenda de Cores:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-50 border border-green-200 rounded"></div>
+                    <span>100% atingido</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded"></div>
+                    <span>95-99%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
+                    <span>Acima de 100%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-background border rounded"></div>
+                    <span>Abaixo de 95%</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

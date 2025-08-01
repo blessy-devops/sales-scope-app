@@ -44,3 +44,20 @@ export interface AnnualPlanFormData {
   growth_percentage?: string;
   use_growth: boolean;
 }
+
+export interface MonthlyChannelDistribution {
+  channel_id: string;
+  month: number;
+  percentage: number;
+  revenue_target: number;
+  margin_target: number;
+}
+
+export interface ChannelHierarchy {
+  id: string;
+  name: string;
+  parent_id?: string;
+  children: ChannelHierarchy[];
+  level: number;
+  is_expanded: boolean;
+}
