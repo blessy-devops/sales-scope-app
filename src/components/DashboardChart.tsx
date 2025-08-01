@@ -14,9 +14,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface DashboardChartProps {
   viewFilter?: string;
   selectedChannel?: { id: string; name: string } | null;
+  selectedDate?: Date;
 }
 
-export function DashboardChart({ viewFilter = 'global', selectedChannel }: DashboardChartProps) {
+export function DashboardChart({ viewFilter = 'global', selectedChannel, selectedDate = new Date() }: DashboardChartProps) {
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
   const { channels } = useChannels();
@@ -33,11 +34,11 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
   const generateChartData = () => {
     const data = [];
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
+    const selectedMonth = selectedDate.getMonth() + 1;
+    const selectedYear = selectedDate.getFullYear();
     
     // Buscar metas do mês filtradas por canal
-    const monthlyTargets = getTargetsForMonth(currentMonth, currentYear);
+    const monthlyTargets = getTargetsForMonth(selectedMonth, selectedYear);
     const filteredTargets = viewFilter === 'global' 
       ? monthlyTargets 
       : monthlyTargets.filter(t => t.channel_id === viewFilter);
@@ -45,14 +46,15 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel }: Dashb
     const totalMonthlyTarget = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
     
     // Calcular meta diária baseada nos dias do mês usando data de referência
-    const startMonth = startOfMonth(currentDate);
-    const dailyTarget = totalMonthlyTarget / totalDiasDoMes;
+    const startMonth = startOfMonth(selectedDate);
+    const selectedTotalDiasDoMes = new Date(selectedYear, selectedMonth, 0).getDate();
+    const dailyTarget = totalMonthlyTarget / selectedTotalDiasDoMes;
     
     // Calcular ritmo atual (vendas acumuladas até data de referência / dias passados)
     let totalSalesUntilToday = 0;
     
     for (let i = 1; i <= diasPassados; i++) {
-      const pastDate = new Date(currentYear, currentMonth - 1, i);
+      const pastDate = new Date(selectedYear, selectedMonth - 1, i);
       const dateStr = format(pastDate, 'yyyy-MM-dd');
       
       if (viewFilter === 'global') {
