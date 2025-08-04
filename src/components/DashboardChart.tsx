@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, eachMonthOfInterval, getDaysInMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useDailySales } from '@/hooks/useDailySales';
@@ -14,10 +14,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface DashboardChartProps {
   viewFilter?: string;
   selectedChannel?: { id: string; name: string } | null;
-  selectedDate?: Date;
+  dateRange?: { from: Date; to: Date };
 }
 
-export function DashboardChart({ viewFilter = 'global', selectedChannel, selectedDate = new Date() }: DashboardChartProps) {
+export function DashboardChart({ viewFilter = 'global', selectedChannel, dateRange }: DashboardChartProps) {
   const { getSalesForDate, getSaleAmount } = useDailySales();
   const { getTargetsForMonth } = useTargets();
   const { channels } = useChannels();
@@ -30,67 +30,99 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel, selecte
     setPreference('dashboard_chart_collapsed', !isCollapsed);
   };
 
+  // Usar período padrão se não especificado
+  const currentRange = dateRange || {
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date())
+  };
+
   // Gerar dados reais do gráfico
   const generateChartData = () => {
     const data = [];
     const currentDate = new Date();
-    const selectedMonth = selectedDate.getMonth() + 1;
-    const selectedYear = selectedDate.getFullYear();
+    const months = eachMonthOfInterval({ start: currentRange.from, end: currentRange.to });
     
-    // Buscar metas do mês filtradas por canal
-    const monthlyTargets = getTargetsForMonth(selectedMonth, selectedYear);
+    // Buscar metas do período filtradas por canal
+    const periodTargets = months.flatMap(month => {
+      const monthNum = month.getMonth() + 1;
+      const yearNum = month.getFullYear();
+      return getTargetsForMonth(monthNum, yearNum);
+    });
+    
     const filteredTargets = viewFilter === 'global' 
-      ? monthlyTargets 
-      : monthlyTargets.filter(t => t.channel_id === viewFilter);
+      ? periodTargets 
+      : periodTargets.filter(t => t.channel_id === viewFilter);
     
-    const totalMonthlyTarget = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
+    const totalPeriodTarget = filteredTargets.reduce((sum, target) => sum + target.target_amount, 0);
     
-    // Calcular meta diária baseada nos dias do mês usando data de referência
-    const startMonth = startOfMonth(selectedDate);
-    const selectedTotalDiasDoMes = new Date(selectedYear, selectedMonth, 0).getDate();
-    const dailyTarget = totalMonthlyTarget / selectedTotalDiasDoMes;
+    // Calcular total de dias do período
+    const totalDiasDoPeriodo = months.reduce((total, month) => {
+      return total + getDaysInMonth(month);
+    }, 0);
     
-    // Calcular ritmo atual (vendas acumuladas até data de referência / dias passados)
+    const dailyTarget = totalPeriodTarget / totalDiasDoPeriodo;
+    
+    // Calcular vendas acumuladas e ritmo
     let totalSalesUntilToday = 0;
+    let diasPassadosPeriodo = 0;
     
-    for (let i = 1; i <= diasPassados; i++) {
-      const pastDate = new Date(selectedYear, selectedMonth - 1, i);
-      const dateStr = format(pastDate, 'yyyy-MM-dd');
+    for (const month of months) {
+      const monthNum = month.getMonth() + 1;
+      const yearNum = month.getFullYear();
+      const isCurrentMonth = monthNum === (currentDate.getMonth() + 1) && yearNum === currentDate.getFullYear();
       
-      if (viewFilter === 'global') {
-        totalSalesUntilToday += channels
-          .filter(c => c.is_active)
-          .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
-      } else {
-        totalSalesUntilToday += getSaleAmount(viewFilter, dateStr);
+      const startDate = startOfMonth(month);
+      const endDate = isCurrentMonth && month <= currentDate
+        ? (mode === 'd-1' ? subDays(currentDate, 1) : currentDate)
+        : endOfMonth(month);
+      
+      if (month <= currentDate) {
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const dateStr = format(d, 'yyyy-MM-dd');
+          diasPassadosPeriodo++;
+          
+          if (viewFilter === 'global') {
+            totalSalesUntilToday += channels
+              .filter(c => c.is_active)
+              .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
+          } else {
+            totalSalesUntilToday += getSaleAmount(viewFilter, dateStr);
+          }
+        }
       }
     }
     
-    const currentPace = diasPassados > 0 ? totalSalesUntilToday / diasPassados : 0;
+    const currentPace = diasPassadosPeriodo > 0 ? totalSalesUntilToday / diasPassadosPeriodo : 0;
     
-    // Mostrar dados até a data de referência
-    const daysToShow = Math.min(diasPassados, 30);
+    // Mostrar últimos 30 dias do período ou do período inteiro se menor
+    const daysToShow = Math.min(diasPassadosPeriodo, 30);
     
-    for (let i = daysToShow - 1; i >= 0; i--) {
-      const date = subDays(dataReferencia, i);
-      const dateStr = format(date, 'yyyy-MM-dd');
-      
-      // Calcular vendas conforme filtro de visão
-      let totalDaySales = 0;
-      if (viewFilter === 'global') {
-        totalDaySales = channels
-          .filter(c => c.is_active)
-          .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
-      } else {
-        totalDaySales = getSaleAmount(viewFilter, dateStr);
+    if (daysToShow > 0) {
+      for (let i = daysToShow - 1; i >= 0; i--) {
+        const date = subDays(dataReferencia, i);
+        
+        // Verificar se a data está dentro do período selecionado
+        if (date >= currentRange.from && date <= currentRange.to) {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          
+          // Calcular vendas conforme filtro de visão
+          let totalDaySales = 0;
+          if (viewFilter === 'global') {
+            totalDaySales = channels
+              .filter(c => c.is_active)
+              .reduce((sum, channel) => sum + getSaleAmount(channel.id, dateStr), 0);
+          } else {
+            totalDaySales = getSaleAmount(viewFilter, dateStr);
+          }
+          
+          data.push({
+            date: format(date, 'dd/MM', { locale: ptBR }),
+            realizado: totalDaySales,
+            meta: dailyTarget,
+            projetado: currentPace,
+          });
+        }
       }
-      
-      data.push({
-        date: format(date, 'dd/MM', { locale: ptBR }),
-        realizado: totalDaySales,
-        meta: dailyTarget,
-        projetado: currentPace, // Linha constante do ritmo atual
-      });
     }
     
     return data;
@@ -105,7 +137,9 @@ export function DashboardChart({ viewFilter = 'global', selectedChannel, selecte
           <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <CardTitle className="text-lg">Vendas vs Meta (Este mês)</CardTitle>
+                 <CardTitle className="text-lg">
+                  Vendas vs Meta {currentRange && eachMonthOfInterval({ start: currentRange.from, end: currentRange.to }).length === 1 ? '(Este mês)' : `(Período customizado)`}
+                </CardTitle>
                 {selectedChannel && (
                   <span className="text-sm text-muted-foreground mt-1">
                     Canal: {selectedChannel.name}
