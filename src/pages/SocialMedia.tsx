@@ -1,15 +1,21 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   Instagram, 
   TrendingUp, 
   Users, 
   ShoppingCart,
   Target,
-  ArrowRight
+  ArrowRight,
+  Settings
 } from 'lucide-react';
+import { GoalsModal } from '@/components/GoalsModal';
+import { useState } from 'react';
 
 const SocialMedia = () => {
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  
   const kpis = [
     {
       id: 'followers',
@@ -61,18 +67,25 @@ const SocialMedia = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-xl">
-            <Instagram className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-xl">
+              <Instagram className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                Análise de Social Media
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Acompanhe o desempenho das suas redes sociais e vendas
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Análise de Social Media
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Acompanhe o desempenho das suas redes sociais e vendas
-            </p>
-          </div>
+          
+          <Button onClick={() => setGoalsModalOpen(true)} className="gap-2">
+            <Target className="w-4 h-4" />
+            Definir Metas
+          </Button>
         </div>
       </div>
 
@@ -144,6 +157,9 @@ const SocialMedia = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Goals Modal */}
+      <GoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
     </div>
   );
 };
