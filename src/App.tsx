@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Analises from "./pages/Analises";
 import PerformanceDiaria from "./pages/PerformanceDiaria";
 import Sazonalidade from "./pages/Sazonalidade";
+import SocialMedia from "./pages/SocialMedia";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ChangePassword from "./pages/ChangePassword";
@@ -110,6 +111,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Sazonalidade />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/analises/social-media" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SocialMedia />
                   </Layout>
                 </ProtectedRoute>
               } />

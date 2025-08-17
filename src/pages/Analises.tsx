@@ -13,7 +13,8 @@ import {
   Target,
   ArrowRight,
   Clock,
-  Activity
+  Activity,
+  Instagram
 } from 'lucide-react';
 
 const Analises = () => {
@@ -41,6 +42,17 @@ const Analises = () => {
       color: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
       iconBg: 'bg-indigo-100 dark:bg-indigo-900/30',
       iconColor: 'text-indigo-600 dark:text-indigo-400'
+    },
+    {
+      id: 'social-media',
+      title: 'Análise de Social Media',
+      description: 'Acompanhe métricas de seguidores, cupons e vendas das redes sociais',
+      icon: Instagram,
+      available: true,
+      path: '/analises/social-media',
+      color: 'bg-gradient-to-br from-pink-500 to-pink-600',
+      iconBg: 'bg-pink-100 dark:bg-pink-900/30',
+      iconColor: 'text-pink-600 dark:text-pink-400'
     },
     {
       id: 'comparativo-mensal',
