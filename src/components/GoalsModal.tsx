@@ -1,23 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Target, Save, X } from 'lucide-react';
+import { Target, Save, X, History, Calendar } from 'lucide-react';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { MonthYearPicker } from '@/components/MonthYearPicker';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface GoalsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedDate: Date;
 }
 
-export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange }) => {
+export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange, selectedDate }) => {
   const [followerGoal, setFollowerGoal] = useState('');
   const [salesGoal, setSalesGoal] = useState('');
   const [loading, setLoading] = useState(false);
+  const [targetDate, setTargetDate] = useState(selectedDate);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch current goals for the selected month
+  const { data: currentGoals, refetch: refetchGoals } = useQuery({
+    queryKey: ['monthly-goals', targetDate.getFullYear(), targetDate.getMonth() + 1],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('goals-social-media', {
+        body: {
+          action: 'get',
+          month: targetDate.getMonth() + 1,
+          year: targetDate.getFullYear()
+        }
+      });
+      
+      if (error) throw error;
+      return data?.data;
+    },
+    enabled: open
+  });
+
+  // Fetch goals history
+  const { data: goalsHistory } = useQuery({
+    queryKey: ['monthly-goals-history'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('goals-social-media', {
+        body: { action: 'history' }
+      });
+      
+      if (error) throw error;
+      return data?.data || [];
+    },
+    enabled: open
+  });
+
+  // Update form when current goals change or modal opens
+  useEffect(() => {
+    if (open) {
+      setTargetDate(selectedDate);
+    }
+  }, [open, selectedDate]);
+
+  useEffect(() => {
+    if (currentGoals) {
+      setFollowerGoal(currentGoals.follower_goal?.toString() || '');
+      setSalesGoal(currentGoals.sales_goal ? (currentGoals.sales_goal / 100).toFixed(2).replace('.', ',') : '');
+    } else {
+      setFollowerGoal('');
+      setSalesGoal('');
+    }
+  }, [currentGoals]);
+
+  // Refetch goals when target date changes
+  useEffect(() => {
+    if (open) {
+      refetchGoals();
+    }
+  }, [targetDate, refetchGoals, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +100,11 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange }) =>
     try {
       const { data, error } = await supabase.functions.invoke('goals-social-media', {
         body: {
+          action: 'save',
           follower_goal: parseInt(followerGoal),
-          sales_goal: parseFloat(salesGoal.replace(/[^\d,]/g, '').replace(',', '.'))
+          sales_goal: parseFloat(salesGoal.replace(/[^\d,]/g, '').replace(',', '.')) * 100, // Convert to cents
+          month: targetDate.getMonth() + 1,
+          year: targetDate.getFullYear()
         }
       });
 
@@ -47,12 +114,15 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange }) =>
 
       toast({
         title: "Sucesso",
-        description: "Metas salvas com sucesso!"
+        description: `Metas salvas para ${format(targetDate, "MMMM 'de' yyyy", { locale: ptBR })}!`
       });
 
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['monthly-goals'] });
+      queryClient.invalidateQueries({ queryKey: ['followers-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-analytics'] });
+
       onOpenChange(false);
-      setFollowerGoal('');
-      setSalesGoal('');
     } catch (error) {
       console.error('Error saving goals:', error);
       toast({
@@ -65,62 +135,128 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange }) =>
     }
   };
 
+  const handleLoadGoalsFromHistory = (goals: any) => {
+    setFollowerGoal(goals.follower_goal?.toString() || '');
+    setSalesGoal(goals.sales_goal ? (goals.sales_goal / 100).toFixed(2).replace('.', ',') : '');
+  };
+
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value / 100);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <Target className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <DialogTitle>Definir Metas do Mês</DialogTitle>
+              <DialogTitle>Definir Metas</DialogTitle>
               <DialogDescription>
-                Configure as metas de seguidores e vendas para o mês atual
+                Configure as metas de seguidores e vendas para qualquer mês
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-6">
+          {/* Month Selector */}
           <div className="space-y-2">
-            <Label htmlFor="follower-goal">Meta de Seguidores (mês)</Label>
-            <Input
-              id="follower-goal"
-              type="number"
-              placeholder="Ex: 1000"
-              value={followerGoal}
-              onChange={(e) => setFollowerGoal(e.target.value)}
-              min="0"
+            <Label className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Mês de Referência
+            </Label>
+            <MonthYearPicker 
+              date={targetDate} 
+              onDateChange={setTargetDate}
+              className="w-full"
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="sales-goal">Meta de Vendas com Cupom (mês)</Label>
-            <CurrencyInput
-              id="sales-goal"
-              value={salesGoal}
-              onValueChange={setSalesGoal}
-              placeholder="R$ 0,00"
-            />
-          </div>
-          
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Salvando...' : 'Salvar Metas'}
-            </Button>
-          </DialogFooter>
-        </form>
+
+          {/* Goals Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="follower-goal">Meta de Seguidores</Label>
+              <Input
+                id="follower-goal"
+                type="number"
+                placeholder="Ex: 1000"
+                value={followerGoal}
+                onChange={(e) => setFollowerGoal(e.target.value)}
+                min="0"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sales-goal">Meta de Vendas com Cupom</Label>
+              <CurrencyInput
+                id="sales-goal"
+                value={salesGoal}
+                onValueChange={setSalesGoal}
+                placeholder="R$ 0,00"
+              />
+            </div>
+            
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                <Save className="w-4 h-4 mr-2" />
+                {loading ? 'Salvando...' : 'Salvar Metas'}
+              </Button>
+            </DialogFooter>
+          </form>
+
+          {/* Goals History */}
+          {goalsHistory && goalsHistory.length > 0 && (
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <History className="w-4 h-4" />
+                Metas Anteriores
+              </Label>
+              <div className="grid gap-2 max-h-48 overflow-y-auto">
+                {goalsHistory.map((goals: any) => {
+                  const goalDate = new Date(goals.month + 'T00:00:00');
+                  return (
+                    <Card key={goals.id} className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">
+                            {format(goalDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                          </p>
+                          <div className="text-xs text-muted-foreground space-y-0.5">
+                            <p>Seguidores: {goals.follower_goal?.toLocaleString('pt-BR') || 'N/A'}</p>
+                            <p>Vendas: {goals.sales_goal ? formatCurrency(goals.sales_goal) : 'N/A'}</p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleLoadGoalsFromHistory(goals)}
+                          disabled={loading}
+                        >
+                          Usar
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

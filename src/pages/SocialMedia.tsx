@@ -62,7 +62,7 @@ export default function SocialMedia() {
       </div>
 
       {/* Modals */}
-      <GoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
+      <GoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} selectedDate={selectedDate} />
       
       <CouponsModal open={couponsModalOpen} onOpenChange={setCouponsModalOpen} />
     </div>;
