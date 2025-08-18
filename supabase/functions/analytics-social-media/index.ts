@@ -27,14 +27,31 @@ Deno.serve(async (req) => {
     const url = new URL(req.url)
     const path = url.pathname.split('/').pop()
 
-    if (req.method === 'GET') {
-      if (path === 'followers') {
-        // Get current month's goal
-        const now = new Date()
-        const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const monthString = currentMonth.toISOString().split('T')[0]
+    // Get parameters from either query string (GET) or body (POST)
+    let year: number, month: number
+    
+    if (req.method === 'POST') {
+      const body = await req.json()
+      year = body.year
+      month = body.month
+    } else {
+      year = parseInt(url.searchParams.get('year') || '')
+      month = parseInt(url.searchParams.get('month') || '')
+    }
 
-        console.log('Fetching followers analytics for month:', monthString)
+    // Default to current month/year if not provided
+    const now = new Date()
+    if (!year || isNaN(year)) year = now.getFullYear()
+    if (!month || isNaN(month)) month = now.getMonth() + 1
+
+    if (req.method === 'GET' || req.method === 'POST') {
+      if (path === 'followers') {
+        // Create date range for selected month
+        const startOfMonth = new Date(year, month - 1, 1)
+        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999)
+        const monthString = startOfMonth.toISOString().split('T')[0]
+
+        console.log('Fetching followers analytics for:', { year, month, monthString })
 
         // Get monthly goal
         const { data: goalData, error: goalError } = await supabaseAdmin
@@ -55,23 +72,33 @@ Deno.serve(async (req) => {
         }
 
         // Get start of month followers count
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
         const { data: startData, error: startError } = await supabaseAdmin
           .from('instagram_metrics')
-          .select('followers_count')
+          .select('followers_count, created_at')
           .gte('created_at', startOfMonth.toISOString())
+          .lte('created_at', endOfMonth.toISOString())
           .order('created_at', { ascending: true })
           .limit(1)
 
-        // Get latest followers count
+        // Get latest followers count within the month
         const { data: latestData, error: latestError } = await supabaseAdmin
           .from('instagram_metrics')
-          .select('followers_count')
+          .select('followers_count, created_at')
+          .gte('created_at', startOfMonth.toISOString())
+          .lte('created_at', endOfMonth.toISOString())
           .order('created_at', { ascending: false })
           .limit(1)
 
-        if (startError || latestError) {
-          console.error('Error fetching metrics:', { startError, latestError })
+        // Get all metrics for daily series
+        const { data: dailyData, error: dailyError } = await supabaseAdmin
+          .from('instagram_metrics')
+          .select('followers_count, created_at')
+          .gte('created_at', startOfMonth.toISOString())
+          .lte('created_at', endOfMonth.toISOString())
+          .order('created_at', { ascending: true })
+
+        if (startError || latestError || dailyError) {
+          console.error('Error fetching metrics:', { startError, latestError, dailyError })
           return new Response(
             JSON.stringify({ error: 'Error fetching Instagram metrics' }),
             { 
@@ -86,14 +113,36 @@ Deno.serve(async (req) => {
         const latestCount = latestData?.[0]?.followers_count || 0
         const currentGrowth = latestCount - startOfMonthCount
 
-        console.log('Followers analytics:', { goal, startOfMonthCount, latestCount, currentGrowth })
+        // Build daily series
+        const dailySeries = []
+        const dailyMap = new Map()
+        
+        // Group by date and get last value of each day
+        if (dailyData) {
+          for (const record of dailyData) {
+            const date = new Date(record.created_at).toISOString().split('T')[0]
+            dailyMap.set(date, record.followers_count)
+          }
+        }
+
+        // Fill all days of the month
+        let lastKnownCount = startOfMonthCount
+        for (let day = 1; day <= endOfMonth.getDate(); day++) {
+          const date = new Date(year, month - 1, day).toISOString().split('T')[0]
+          const count = dailyMap.get(date) || lastKnownCount
+          dailySeries.push({ date, followers_count: count })
+          lastKnownCount = count
+        }
+
+        console.log('Followers analytics:', { goal, startOfMonthCount, latestCount, currentGrowth, dailySeriesLength: dailySeries.length })
 
         return new Response(
           JSON.stringify({
             goal,
             current_growth: currentGrowth,
             start_of_month_count: startOfMonthCount,
-            latest_count: latestCount
+            latest_count: latestCount,
+            daily_series: dailySeries
           }),
           { 
             status: 200, 
@@ -103,12 +152,12 @@ Deno.serve(async (req) => {
       }
 
       if (path === 'sales') {
-        // Get current month's goal and sales
-        const now = new Date()
-        const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const monthString = currentMonth.toISOString().split('T')[0]
+        // Create date range for selected month
+        const startOfMonth = new Date(year, month - 1, 1)
+        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999)
+        const monthString = startOfMonth.toISOString().split('T')[0]
 
-        console.log('Fetching sales analytics for month:', monthString)
+        console.log('Fetching sales analytics for:', { year, month, monthString })
 
         // Get monthly goal
         const { data: goalData, error: goalError } = await supabaseAdmin
@@ -128,13 +177,10 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Get current month's sales total
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
-
+        // Get month's sales data
         const { data: salesData, error: salesError } = await supabaseAdmin
           .from('social_media_sales')
-          .select('total_price')
+          .select('total_price, order_created_at')
           .gte('order_created_at', startOfMonth.toISOString())
           .lte('order_created_at', endOfMonth.toISOString())
 
@@ -152,12 +198,33 @@ Deno.serve(async (req) => {
         const goal = goalData?.sales_goal || 0
         const currentSalesTotal = salesData?.reduce((sum, sale) => sum + Number(sale.total_price), 0) || 0
 
-        console.log('Sales analytics:', { goal, currentSalesTotal })
+        // Build daily series
+        const dailySeries = []
+        const dailyMap = new Map()
+        
+        // Group sales by date
+        if (salesData) {
+          for (const sale of salesData) {
+            const date = new Date(sale.order_created_at).toISOString().split('T')[0]
+            const current = dailyMap.get(date) || 0
+            dailyMap.set(date, current + Number(sale.total_price))
+          }
+        }
+
+        // Fill all days of the month
+        for (let day = 1; day <= endOfMonth.getDate(); day++) {
+          const date = new Date(year, month - 1, day).toISOString().split('T')[0]
+          const total = dailyMap.get(date) || 0
+          dailySeries.push({ date, total })
+        }
+
+        console.log('Sales analytics:', { goal, currentSalesTotal, dailySeriesLength: dailySeries.length })
 
         return new Response(
           JSON.stringify({
             goal,
-            current_sales_total: currentSalesTotal
+            current_sales_total: currentSalesTotal,
+            daily_series: dailySeries
           }),
           { 
             status: 200, 
