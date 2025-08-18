@@ -12,6 +12,7 @@ interface SalesAnalytics {
   goal: number;
   current_sales_total: number;
   daily_series: Array<{ date: string; total: number }>;
+  metric_used?: 'subtotal_price' | 'total_price';
 }
 
 interface SalesMetricsSectionProps {
@@ -115,7 +116,11 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
         {/* Card 2: Vendas Realizadas */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vendas Realizadas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {data?.metric_used === 'total_price' 
+                ? 'Vendas Realizadas (Total com Frete)' 
+                : 'Vendas Realizadas (Produtos)'}
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -152,7 +157,11 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
         {/* Card 4: Vendas Diárias (Gráfico) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vendas Diárias</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {data?.metric_used === 'total_price' 
+                ? 'Vendas Diárias (Total com Frete)' 
+                : 'Vendas Diárias (Produtos)'}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

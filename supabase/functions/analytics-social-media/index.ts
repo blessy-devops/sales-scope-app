@@ -159,6 +159,18 @@ Deno.serve(async (req) => {
 
         console.log('Fetching sales analytics for:', { year, month, monthString })
 
+        // Get user's sales metric preference
+        const { data: settingData, error: settingError } = await supabaseAdmin
+          .from('dashboard_settings')
+          .select('setting_value')
+          .eq('setting_key', 'sales_metric_preference')
+          .single()
+
+        const metricPreference = settingData?.setting_value || 'subtotal_price'
+        const columnToSum = metricPreference === 'total_price' ? 'total_price' : 'subtotal_price'
+        
+        console.log('Using sales metric:', { metricPreference, columnToSum })
+
         // Get monthly goal
         const { data: goalData, error: goalError } = await supabaseAdmin
           .from('monthly_goals')
@@ -177,10 +189,10 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Get month's sales data
+        // Get month's sales data - select both columns for dynamic calculation
         const { data: salesData, error: salesError } = await supabaseAdmin
           .from('social_media_sales')
-          .select('total_price, order_created_at')
+          .select('total_price, subtotal_price, order_created_at')
           .gte('order_created_at', startOfMonth.toISOString())
           .lte('order_created_at', endOfMonth.toISOString())
 
@@ -196,18 +208,22 @@ Deno.serve(async (req) => {
         }
 
         const goal = goalData?.sales_goal || 0
-        const currentSalesTotal = salesData?.reduce((sum, sale) => sum + Number(sale.total_price), 0) || 0
+        const currentSalesTotal = salesData?.reduce((sum, sale) => {
+          const saleValue = Number(sale[columnToSum]) || 0
+          return sum + saleValue
+        }, 0) || 0
 
         // Build daily series
         const dailySeries = []
         const dailyMap = new Map()
         
-        // Group sales by date
+        // Group sales by date using the chosen metric
         if (salesData) {
           for (const sale of salesData) {
             const date = new Date(sale.order_created_at).toISOString().split('T')[0]
             const current = dailyMap.get(date) || 0
-            dailyMap.set(date, current + Number(sale.total_price))
+            const saleValue = Number(sale[columnToSum]) || 0
+            dailyMap.set(date, current + saleValue)
           }
         }
 
@@ -218,13 +234,14 @@ Deno.serve(async (req) => {
           dailySeries.push({ date, total })
         }
 
-        console.log('Sales analytics:', { goal, currentSalesTotal, dailySeriesLength: dailySeries.length })
+        console.log('Sales analytics:', { goal, currentSalesTotal, metricUsed: metricPreference, dailySeriesLength: dailySeries.length })
 
         return new Response(
           JSON.stringify({
             goal,
             current_sales_total: currentSalesTotal,
-            daily_series: dailySeries
+            daily_series: dailySeries,
+            metric_used: metricPreference
           }),
           { 
             status: 200, 
