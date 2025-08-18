@@ -252,7 +252,7 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
                   />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
                   <Tooltip 
-                    labelFormatter={(value) => `Dia ${new Date(value).getDate()}`}
+                    labelFormatter={(value) => new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                     formatter={(value: number, name: string) => [
                       formatCurrency(value),
                       name === 'realizado' ? 'Vendas Realizadas' : 'Meta Diária'

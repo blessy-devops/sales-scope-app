@@ -252,7 +252,7 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
                   />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
                   <Tooltip 
-                    labelFormatter={(value) => `Dia ${new Date(value).getDate()}`}
+                    labelFormatter={(value) => new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                     formatter={(value: number, name: string) => [
                       formatNumber(value),
                       name === 'realizado' ? 'Crescimento Realizado' : 'Meta Diária'
