@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, RefreshCw, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FollowersAnalytics {
@@ -11,8 +12,14 @@ interface FollowersAnalytics {
   latest_count: number;
 }
 
-export function FollowersGrowthCard() {
-  const { data, isLoading, error } = useQuery({
+interface FollowersGrowthCardProps {
+  onOpenGoals?: () => void;
+}
+
+export function FollowersGrowthCard({ onOpenGoals }: FollowersGrowthCardProps) {
+  const queryClient = useQueryClient();
+  
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['followers-analytics'],
     queryFn: async (): Promise<FollowersAnalytics> => {
       const { data, error } = await supabase.functions.invoke('analytics-social-media/followers');
@@ -25,7 +32,12 @@ export function FollowersGrowthCard() {
       return data;
     },
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchOnWindowFocus: true,
   });
+
+  const handleRefresh = () => {
+    refetch();
+  };
 
   if (isLoading) {
     return (
@@ -50,16 +62,64 @@ export function FollowersGrowthCard() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Crescimento de Seguidores (Mês)</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              className="h-8 w-8 p-0"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-destructive">Erro ao carregar dados</p>
+          <p className="text-sm text-destructive mb-3">Erro ao carregar dados</p>
+          <Button onClick={() => refetch()} variant="outline" size="sm" className="w-full">
+            Tentar Novamente
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   const { goal, current_growth } = data || { goal: 0, current_growth: 0 };
+  
+  // Check if no goal is defined
+  if (goal === 0) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Crescimento de Seguidores (Mês)</CardTitle>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              className="h-8 w-8 p-0"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">
+            <Target className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-3">
+              Defina suas metas para começar a acompanhar
+            </p>
+            <Button onClick={onOpenGoals} variant="outline" size="sm" className="w-full">
+              <Target className="w-4 h-4 mr-2" />
+              Definir Metas
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const percentage = goal > 0 ? Math.min((current_growth / goal) * 100, 100) : 0;
   const progressValue = Math.max(0, percentage);
 
@@ -67,7 +127,17 @@ export function FollowersGrowthCard() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Crescimento de Seguidores (Mês)</CardTitle>
-        <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-8 w-8 p-0"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold mb-2">

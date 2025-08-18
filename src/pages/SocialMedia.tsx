@@ -8,17 +8,25 @@ import {
   ShoppingCart,
   Target,
   ArrowRight,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 import { GoalsModal } from '@/components/GoalsModal';
 import { CouponsModal } from '@/components/CouponsModal';
 import { FollowersGrowthCard } from '@/components/FollowersGrowthCard';
 import { SalesCouponsCard } from '@/components/SalesCouponsCard';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const SocialMedia = () => {
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   const [couponsModalOpen, setCouponsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleRefreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['followers-analytics'] });
+    queryClient.invalidateQueries({ queryKey: ['sales-analytics'] });
+  };
   
   const kpis = [
     {
@@ -86,10 +94,18 @@ const SocialMedia = () => {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => setGoalsModalOpen(true)} className="gap-2">
               <Target className="w-4 h-4" />
               Definir Metas
+            </Button>
+            <Button
+              onClick={handleRefreshAll}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Atualizar
             </Button>
             <Button 
               onClick={() => setCouponsModalOpen(true)}
@@ -104,9 +120,9 @@ const SocialMedia = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <FollowersGrowthCard />
-        <SalesCouponsCard />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <FollowersGrowthCard onOpenGoals={() => setGoalsModalOpen(true)} />
+        <SalesCouponsCard onOpenGoals={() => setGoalsModalOpen(true)} />
         {kpis.slice(2).map((kpi) => {
           const IconComponent = kpi.icon;
           

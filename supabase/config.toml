@@ -2,3 +2,6 @@ project_id = "uvqugawzhtcajucqbvro"
 
 [functions.process-anomalies]
 verify_jwt = false
+
+[functions.analytics-social-media]
+verify_jwt = false
