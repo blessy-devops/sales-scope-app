@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { GoalsModal } from '@/components/GoalsModal';
 import { CouponsModal } from '@/components/CouponsModal';
+import { FollowersGrowthCard } from '@/components/FollowersGrowthCard';
+import { SalesCouponsCard } from '@/components/SalesCouponsCard';
 import { useState } from 'react';
 
 const SocialMedia = () => {
@@ -103,7 +105,9 @@ const SocialMedia = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi) => {
+        <FollowersGrowthCard />
+        <SalesCouponsCard />
+        {kpis.slice(2).map((kpi) => {
           const IconComponent = kpi.icon;
           
           return (
