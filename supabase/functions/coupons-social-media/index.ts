@@ -20,80 +20,83 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const url = new URL(req.url);
-    const pathSegments = url.pathname.split('/');
-    const couponId = pathSegments[pathSegments.length - 1];
-
-    if (req.method === 'GET') {
-      console.log('Fetching all coupons');
-      
-      const { data: coupons, error } = await supabaseAdmin
-        .from('social_media_coupons')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching coupons:', error);
-        throw error;
-      }
-
-      return new Response(JSON.stringify({ coupons }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     if (req.method === 'POST') {
-      const { coupon_code, description } = await req.json();
+      const { action, coupon_code, description, id } = await req.json();
       
-      console.log('Creating new coupon:', { coupon_code, description });
+      if (action === 'list') {
+        console.log('Fetching all coupons');
+        
+        const { data: coupons, error } = await supabaseAdmin
+          .from('social_media_coupons')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (!coupon_code) {
-        return new Response(JSON.stringify({ error: 'Coupon code is required' }), {
-          status: 400,
+        if (error) {
+          console.error('Error fetching coupons:', error);
+          throw error;
+        }
+
+        return new Response(JSON.stringify({ coupons }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      const { data: coupon, error } = await supabaseAdmin
-        .from('social_media_coupons')
-        .insert({
-          coupon_code: coupon_code.trim(),
-          description: description?.trim() || null
-        })
-        .select()
-        .single();
+      if (action === 'create') {
+        console.log('Creating new coupon:', { coupon_code, description });
 
-      if (error) {
-        console.error('Error creating coupon:', error);
-        throw error;
-      }
+        if (!coupon_code) {
+          return new Response(JSON.stringify({ error: 'Coupon code is required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
 
-      return new Response(JSON.stringify({ coupon }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+        const { data: coupon, error } = await supabaseAdmin
+          .from('social_media_coupons')
+          .insert({
+            coupon_code: coupon_code.trim(),
+            description: description?.trim() || null
+          })
+          .select()
+          .single();
 
-    if (req.method === 'DELETE') {
-      console.log('Deleting coupon with ID:', couponId);
+        if (error) {
+          console.error('Error creating coupon:', error);
+          throw error;
+        }
 
-      if (!couponId || couponId === 'coupons-social-media') {
-        return new Response(JSON.stringify({ error: 'Coupon ID is required' }), {
-          status: 400,
+        return new Response(JSON.stringify({ coupon }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      const { error } = await supabaseAdmin
-        .from('social_media_coupons')
-        .delete()
-        .eq('id', couponId);
+      if (action === 'delete') {
+        console.log('Deleting coupon with ID:', id);
 
-      if (error) {
-        console.error('Error deleting coupon:', error);
-        throw error;
+        if (!id) {
+          return new Response(JSON.stringify({ error: 'Coupon ID is required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { error } = await supabaseAdmin
+          .from('social_media_coupons')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.error('Error deleting coupon:', error);
+          throw error;
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ error: 'Invalid action' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

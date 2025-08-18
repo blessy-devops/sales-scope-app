@@ -33,7 +33,7 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
     try {
       setLoading(true);
       const { data, error } = await supabase.functions.invoke('coupons-social-media', {
-        method: 'GET'
+        body: { action: 'list' }
       });
 
       if (error) throw error;
@@ -64,8 +64,8 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
     try {
       setAddingCoupon(true);
       const { data, error } = await supabase.functions.invoke('coupons-social-media', {
-        method: 'POST',
         body: {
+          action: 'create',
           coupon_code: newCouponCode.trim(),
           description: newDescription.trim() || null
         }
@@ -73,9 +73,11 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
 
       if (error) throw error;
 
-      setCoupons(prev => [data.coupon, ...prev]);
       setNewCouponCode('');
       setNewDescription('');
+      
+      // Re-fetch to stay in sync with DB
+      await fetchCoupons();
       
       toast({
         title: "Sucesso",
@@ -97,13 +99,14 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
     try {
       setDeletingIds(prev => new Set(prev).add(couponId));
       
-      const { error } = await supabase.functions.invoke(`coupons-social-media/${couponId}`, {
-        method: 'DELETE'
+      const { error } = await supabase.functions.invoke('coupons-social-media', {
+        body: { action: 'delete', id: couponId }
       });
 
       if (error) throw error;
 
-      setCoupons(prev => prev.filter(coupon => coupon.id !== couponId));
+      // Re-fetch to stay in sync with DB
+      await fetchCoupons();
       
       toast({
         title: "Sucesso",
