@@ -43,7 +43,13 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
       currency: 'BRL',
     }).format(value);
 
-  const attainmentPercentage = data?.goal ? Math.round((data.current_sales_total / data.goal) * 100) : 0;
+  const attainmentPercentage = data?.goal ? (data.current_sales_total / data.goal) * 100 : 0;
+  const formatPercentage = (value: number) => {
+    if (value > 0 && value < 1) {
+      return value.toFixed(1) + '%';
+    }
+    return Math.round(value) + '%';
+  };
 
   const chartConfig = {
     total: {
@@ -81,10 +87,6 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
           <DollarSign className="h-6 w-6" />
           💰 Performance de Vendas (Social Media)
         </h2>
-        <Button onClick={() => refetch()} variant="outline" size="sm">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Atualizar
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -138,7 +140,7 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
               <Skeleton className="h-8 w-full" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{attainmentPercentage}%</div>
+                <div className="text-2xl font-bold">{formatPercentage(attainmentPercentage)}</div>
                 {data?.goal && (
                   <Progress value={Math.min(attainmentPercentage, 100)} className="h-2" />
                 )}
