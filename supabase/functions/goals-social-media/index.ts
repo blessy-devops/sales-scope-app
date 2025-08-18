@@ -25,7 +25,8 @@ Deno.serve(async (req) => {
     )
 
     if (req.method === 'POST') {
-      const { action, follower_goal, sales_goal, month, year } = await req.json()
+      const requestBody = await req.json()
+      const { action, follower_goal, sales_goal, month, year } = requestBody
 
       if (action === 'save') {
         // Validate input
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
       }
 
       if (action === 'get') {
-        const { month, year } = await req.json()
+        const { month, year } = requestBody
         
         let monthString
         if (month && year) {

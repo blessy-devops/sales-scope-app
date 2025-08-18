@@ -3,14 +3,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Target, Save, X, History, Calendar } from 'lucide-react';
+import { Target, Save, X, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { MonthYearPicker } from '@/components/MonthYearPicker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface GoalsModalProps {
@@ -69,7 +68,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange, sele
   useEffect(() => {
     if (currentGoals) {
       setFollowerGoal(currentGoals.follower_goal?.toString() || '');
-      setSalesGoal(currentGoals.sales_goal ? (currentGoals.sales_goal / 100).toFixed(2).replace('.', ',') : '');
+      setSalesGoal(currentGoals.sales_goal?.toString() || '');
     } else {
       setFollowerGoal('');
       setSalesGoal('');
@@ -102,7 +101,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange, sele
         body: {
           action: 'save',
           follower_goal: parseInt(followerGoal),
-          sales_goal: parseFloat(salesGoal.replace(/[^\d,]/g, '').replace(',', '.')) * 100, // Convert to cents
+          sales_goal: parseFloat(salesGoal),
           month: targetDate.getMonth() + 1,
           year: targetDate.getFullYear()
         }
@@ -137,14 +136,22 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange, sele
 
   const handleLoadGoalsFromHistory = (goals: any) => {
     setFollowerGoal(goals.follower_goal?.toString() || '');
-    setSalesGoal(goals.sales_goal ? (goals.sales_goal / 100).toFixed(2).replace('.', ',') : '');
+    setSalesGoal(goals.sales_goal?.toString() || '');
   };
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(value / 100);
+    }).format(value);
+
+  const handlePreviousMonth = () => {
+    setTargetDate(subMonths(targetDate, 1));
+  };
+
+  const handleNextMonth = () => {
+    setTargetDate(addMonths(targetDate, 1));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,17 +171,34 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ open, onOpenChange, sele
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Month Selector */}
+          {/* Month Navigation */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Mês de Referência
-            </Label>
-            <MonthYearPicker 
-              date={targetDate} 
-              onDateChange={setTargetDate}
-              className="w-full"
-            />
+            <Label>Mês de Referência</Label>
+            <div className="flex items-center justify-center gap-4 p-2 border rounded-lg">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handlePreviousMonth}
+                className="p-1 h-8 w-8"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <div className="flex-1 text-center font-medium">
+                {format(targetDate, "MMMM 'de' yyyy", { locale: ptBR })}
+              </div>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleNextMonth}
+                className="p-1 h-8 w-8"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Goals Form */}

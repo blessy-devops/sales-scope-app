@@ -23,7 +23,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
       customInput={Input}
       value={value}
       onValueChange={(values) => {
-        onValueChange(values.value);
+        onValueChange(values.floatValue?.toString() || '');
       }}
       thousandSeparator="."
       decimalSeparator=","
