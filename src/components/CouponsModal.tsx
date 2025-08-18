@@ -149,7 +149,7 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="coupon-code" className="pb-[5px]">Código do Cupom</Label>
+                    <Label htmlFor="coupon-code" className="block mb-2">Código do Cupom</Label>
                     <Input
                       id="coupon-code"
                       value={newCouponCode}
@@ -159,7 +159,7 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="description">Descrição (opcional)</Label>
+                    <Label htmlFor="description" className="block mb-2">Descrição (opcional)</Label>
                     <Input
                       id="description"
                       value={newDescription}
