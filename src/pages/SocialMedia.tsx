@@ -11,10 +11,12 @@ import {
   Settings
 } from 'lucide-react';
 import { GoalsModal } from '@/components/GoalsModal';
+import { CouponsModal } from '@/components/CouponsModal';
 import { useState } from 'react';
 
 const SocialMedia = () => {
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  const [couponsModalOpen, setCouponsModalOpen] = useState(false);
   
   const kpis = [
     {
@@ -82,10 +84,20 @@ const SocialMedia = () => {
             </div>
           </div>
           
-          <Button onClick={() => setGoalsModalOpen(true)} className="gap-2">
-            <Target className="w-4 h-4" />
-            Definir Metas
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setGoalsModalOpen(true)} className="gap-2">
+              <Target className="w-4 h-4" />
+              Definir Metas
+            </Button>
+            <Button 
+              onClick={() => setCouponsModalOpen(true)}
+              variant="outline"
+              size="icon"
+              title="Configurações"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -160,6 +172,9 @@ const SocialMedia = () => {
 
       {/* Goals Modal */}
       <GoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
+      
+      {/* Coupons Modal */}
+      <CouponsModal open={couponsModalOpen} onOpenChange={setCouponsModalOpen} />
     </div>
   );
 };
