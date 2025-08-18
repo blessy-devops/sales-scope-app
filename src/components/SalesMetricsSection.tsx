@@ -63,9 +63,9 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+          <h2 className="text-xl font-bold flex items-center gap-2">
             <DollarSign className="h-6 w-6" />
-            💰 Performance de Vendas (Social Media)
+            Performance de Vendas (Social Media)
           </h2>
         </div>
         <Card>
@@ -84,9 +84,9 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
+        <h2 className="text-xl font-bold flex items-center gap-2">
           <DollarSign className="h-6 w-6" />
-          💰 Performance de Vendas (Social Media)
+          Performance de Vendas (Social Media)
         </h2>
       </div>
 
