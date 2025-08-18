@@ -120,6 +120,8 @@ Deno.serve(async (req) => {
               setting_key: 'sales_metric_preference',
               setting_value: value,
               updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'setting_key'
             })
 
           if (error) {
