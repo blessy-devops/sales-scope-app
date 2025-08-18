@@ -44,13 +44,27 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
+      console.log('Fetching coupons from edge function...');
+      
       const { data, error } = await supabase.functions.invoke('coupons-social-media', {
         body: { action: 'list' }
       });
 
-      if (error) throw error;
-
-      setCoupons(data.coupons || []);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+      
+      console.log('Edge function response:', data);
+      
+      // Normalize coupon IDs to numbers
+      const normalizedCoupons = (data.coupons || []).map((coupon: any) => ({
+        ...coupon,
+        id: Number(coupon.id)
+      }));
+      
+      console.log('Normalized coupons:', normalizedCoupons);
+      setCoupons(normalizedCoupons);
     } catch (error) {
       console.error('Error fetching coupons:', error);
       toast({
