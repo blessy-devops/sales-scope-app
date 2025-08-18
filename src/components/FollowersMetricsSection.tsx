@@ -59,9 +59,9 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+          <h2 className="text-xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />
-            📊 Performance de Seguidores
+            Performance de Seguidores
           </h2>
         </div>
         <Card>
@@ -80,9 +80,9 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
+        <h2 className="text-xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6" />
-          📊 Performance de Seguidores
+          Performance de Seguidores
         </h2>
       </div>
 
