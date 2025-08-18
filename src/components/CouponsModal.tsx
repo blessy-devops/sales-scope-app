@@ -143,7 +143,7 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
   const fetchSalesMetricPreference = async () => {
     try {
       setLoadingSettings(true);
-      const { data, error } = await supabase.functions.invoke('settings', {
+      const { data, error } = await supabase.functions.invoke('settings/sales-metric', {
         body: { action: 'get' }
       });
 
@@ -161,7 +161,7 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
   const saveSalesMetricPreference = async () => {
     try {
       setSavingSettings(true);
-      const { error } = await supabase.functions.invoke('settings', {
+      const { error } = await supabase.functions.invoke('settings/sales-metric', {
         body: { action: 'update', value: salesMetricPreference }
       });
 
