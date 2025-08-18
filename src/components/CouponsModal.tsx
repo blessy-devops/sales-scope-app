@@ -201,9 +201,7 @@ export function CouponsModal({ open, onOpenChange }: CouponsModalProps) {
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    console.log('Modal open state changing to:', newOpen);
     if (newOpen) {
-      console.log('Modal opening, fetching coupons and settings...');
       fetchCoupons();
       fetchSalesMetricPreference();
     }
