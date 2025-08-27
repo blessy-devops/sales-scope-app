@@ -71,3 +71,19 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Assistente (Gemini)
+
+Para obter orientação técnica e de produto durante o desenvolvimento, utilize o Gem do Gemini configurado especificamente para este projeto.
+
+### Como usar:
+1. Acesse o [Gemini](https://gemini.google.com/) e carregue o Gem "Blessy Sales Dashboard Mentor"
+2. Consulte as [Instruções do Gem](docs/GEM_INSTRUCOES.md) para entender seu escopo e funcionamento
+3. Compartilhe contexto específico sobre o que você está implementando
+4. Peça orientações sobre arquitetura, segurança, UX ou priorização
+
+### Boas práticas:
+- **Forneça contexto**: Compartilhe código, requisitos ou dúvidas específicas
+- **Seja específico**: Quanto mais detalhes, melhor a orientação
+- **Questione decisões**: Use o Gem para validar suas escolhas técnicas
+- **Planeje antes de implementar**: Consulte sobre arquitetura antes de codificar
