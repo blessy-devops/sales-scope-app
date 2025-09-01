@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Calculator } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function Ferramentas() {
   return (
@@ -19,6 +20,11 @@ export default function Ferramentas() {
                 Calcule a receita estimada de suas campanhas de e-mail com base em um funil de métricas.
               </CardDescription>
             </CardContent>
+            <CardFooter>
+              <Button variant="outline" asChild>
+                <span>Acessar Ferramenta</span>
+              </Button>
+            </CardFooter>
           </Card>
         </Link>
       </div>
