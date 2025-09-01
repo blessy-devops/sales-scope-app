@@ -18,6 +18,7 @@ import PerformanceDiaria from "./pages/PerformanceDiaria";
 import Sazonalidade from "./pages/Sazonalidade";
 import SocialMedia from "./pages/SocialMedia";
 import Ferramentas from "./pages/Ferramentas";
+import FerramentasCalculadoraEmail from "./pages/FerramentasCalculadoraEmail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ChangePassword from "./pages/ChangePassword";
@@ -128,6 +129,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Ferramentas />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/ferramentas/calculadora-email" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <FerramentasCalculadoraEmail />
                   </Layout>
                 </ProtectedRoute>
               } />
