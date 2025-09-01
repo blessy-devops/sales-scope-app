@@ -13,7 +13,8 @@ import {
   ChevronRight,
   LogOut,
   HelpCircle,
-  BarChart3
+  BarChart3,
+  Wrench
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
@@ -26,6 +27,7 @@ const menuItems = [
   { title: 'Metas', url: '/targets', icon: Target },
   { title: 'Lançar Vendas', url: '/sales', icon: DollarSign },
   { title: 'Análises', url: '/analises', icon: BarChart3 },
+  { title: 'Ferramentas', url: '/ferramentas', icon: Wrench },
 ];
 
 interface AppSidebarProps {
