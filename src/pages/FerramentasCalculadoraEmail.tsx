@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
 interface FormState {
   envios: number;
@@ -54,13 +54,13 @@ export default function FerramentasCalculadoraEmail() {
   const formatCurrency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
-    <div>
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
       <h1 className="text-3xl font-bold">Calculadora de Receita de E-mail Marketing</h1>
       
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Coluna da esquerda - Inputs */}
-        <div className="space-y-6">
-          <div>
+        <div>
+          <div className="space-y-2 mb-4">
             <Label htmlFor="envios" className="text-sm font-medium">
               Envios
             </Label>
@@ -75,7 +75,7 @@ export default function FerramentasCalculadoraEmail() {
             />
           </div>
 
-          <div>
+          <div className="space-y-2 mb-4">
             <Label htmlFor="taxaEntrega" className="text-sm font-medium">
               Taxa de Entrega (%)
             </Label>
@@ -91,7 +91,7 @@ export default function FerramentasCalculadoraEmail() {
             />
           </div>
 
-          <div>
+          <div className="space-y-2 mb-4">
             <Label htmlFor="openRate" className="text-sm font-medium">
               Open Rate (%)
             </Label>
@@ -107,7 +107,7 @@ export default function FerramentasCalculadoraEmail() {
             />
           </div>
 
-          <div>
+          <div className="space-y-2 mb-4">
             <Label htmlFor="ctor" className="text-sm font-medium">
               CTOR (%)
             </Label>
@@ -123,7 +123,7 @@ export default function FerramentasCalculadoraEmail() {
             />
           </div>
 
-          <div>
+          <div className="space-y-2 mb-4">
             <Label htmlFor="taxaConversao" className="text-sm font-medium">
               Taxa de Conversão (%)
             </Label>
@@ -139,7 +139,7 @@ export default function FerramentasCalculadoraEmail() {
             />
           </div>
 
-          <div>
+          <div className="space-y-2 mb-4">
             <Label htmlFor="ticketMedio" className="text-sm font-medium">
               Ticket Médio (R$)
             </Label>
@@ -180,16 +180,13 @@ export default function FerramentasCalculadoraEmail() {
               <span className="text-sm text-muted-foreground">Total de vendas:</span>
               <span className="font-medium">{formatInt.format(calculations.totalVendas)}</span>
             </div>
-            
-            <div className="border-t pt-4">
-              <div className="flex justify-between">
-                <span className="text-lg font-semibold">Receita estimada:</span>
-                <span className="text-lg font-bold text-primary">
-                  {formatCurrency.format(calculations.receitaEstimada)}
-                </span>
-              </div>
-            </div>
           </CardContent>
+          <CardFooter className="flex justify-between items-center border-t pt-4">
+            <span className="text-2xl font-bold">Receita estimada:</span>
+            <span className="text-2xl font-bold text-primary">
+              {formatCurrency.format(calculations.receitaEstimada)}
+            </span>
+          </CardFooter>
         </Card>
       </div>
     </div>
