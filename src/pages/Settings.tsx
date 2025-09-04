@@ -15,8 +15,9 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from 'next-themes';
-import { Plus, Trash2, Key, User, Calendar } from 'lucide-react';
+import { Plus, Trash2, Key, User, Calendar, Database } from 'lucide-react';
 import { useDataReferencia } from '@/hooks/useDataReferencia';
+import { fetchMonthlyDebugData } from '@/services/shopifyOrdersService';
 
 interface DashboardConfig {
   showTotalSales: boolean;
@@ -73,6 +74,16 @@ export default function Settings() {
   const [newInviteCode, setNewInviteCode] = useState('');
   const [updatingCode, setUpdatingCode] = useState(false);
 
+  // Shopify integration state
+  const [shopifyDataSource, setShopifyDataSource] = useState<'manual' | 'automatic'>('manual');
+  const [testingIntegration, setTestingIntegration] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    totalManual: number;
+    totalAutomatic: number;
+    difference: number;
+    differencePercent: number;
+  } | null>(null);
+
   useEffect(() => {
     if (!loading) {
       const dashboardConfig = getPreference('dashboardConfig', config);
@@ -83,6 +94,7 @@ export default function Settings() {
   useEffect(() => {
     fetchUsers();
     fetchInviteCode();
+    fetchShopifyDataSource();
   }, []);
 
   const fetchUsers = async () => {
@@ -119,6 +131,22 @@ export default function Settings() {
       setNewInviteCode(data?.value || '');
     } catch (error) {
       console.error('Error fetching invite code:', error);
+    }
+  };
+
+  const fetchShopifyDataSource = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'shopify_data_source')
+        .maybeSingle();
+
+      if (!error && data) {
+        setShopifyDataSource(data.value as 'manual' | 'automatic');
+      }
+    } catch (error) {
+      console.error('Error fetching Shopify data source:', error);
     }
   };
 
@@ -304,6 +332,68 @@ export default function Settings() {
     }
   };
 
+  const handleShopifyDataSourceChange = async (value: 'manual' | 'automatic') => {
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({ 
+          key: 'shopify_data_source', 
+          value: value 
+        }, { 
+          onConflict: 'key' 
+        });
+
+      if (error) throw error;
+
+      setShopifyDataSource(value);
+      toast({
+        title: 'Sucesso',
+        description: 'Fonte de dados do Shopify atualizada com sucesso!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a fonte de dados.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const testShopifyIntegration = async () => {
+    setTestingIntegration(true);
+    setTestResult(null);
+
+    try {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+
+      const monthlyData = await fetchMonthlyDebugData(year, month);
+      
+      // Aggregate totals for the month
+      const totalManual = monthlyData.reduce((sum, day) => sum + day.manual_value, 0);
+      const totalAutomatic = monthlyData.reduce((sum, day) => sum + day.automatic_value, 0);
+      const difference = totalAutomatic - totalManual;
+      const differencePercent = totalManual > 0 ? (difference / totalManual) * 100 : 0;
+
+      setTestResult({
+        totalManual,
+        totalAutomatic,
+        difference,
+        differencePercent
+      });
+
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível testar a integração.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTestingIntegration(false);
+    }
+  };
+
   const configItems = [
     {
       key: 'showTotalSales' as keyof DashboardConfig,
@@ -435,6 +525,58 @@ export default function Settings() {
                   </ul>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Shopify Data Source Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Fonte de Dados dos Canais
+              </CardTitle>
+              <CardDescription>
+                Configure a fonte dos dados de vendas do Shopify
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="shopify-data-source">Fonte de Dados Shopify</Label>
+                <Select value={shopifyDataSource} onValueChange={handleShopifyDataSourceChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a fonte de dados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="automatic">Automático</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={testShopifyIntegration} 
+                disabled={testingIntegration}
+                variant="outline"
+                className="w-full"
+              >
+                {testingIntegration ? 'Testando...' : 'Testar Integração'}
+              </Button>
+
+              {testResult && (
+                <Alert className={testResult.differencePercent <= 5 ? 'border-green-500' : 'border-yellow-500'}>
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      <div className="font-medium">Resultado do Teste de Integração:</div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>Total Manual: R$ {testResult.totalManual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div>Total Automático: R$ {testResult.totalAutomatic.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div>Diferença: R$ {Math.abs(testResult.difference).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div>Variação: {testResult.differencePercent.toFixed(2)}%</div>
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
 
