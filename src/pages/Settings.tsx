@@ -15,7 +15,8 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from 'next-themes';
-import { Plus, Trash2, Key, User, Calendar, Database } from 'lucide-react';
+import { Plus, Trash2, Key, User, Calendar, Database, FlaskConical, ExternalLink, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useDataReferencia } from '@/hooks/useDataReferencia';
 import { fetchMonthlyDebugData } from '@/services/shopifyOrdersService';
 
@@ -83,6 +84,7 @@ export default function Settings() {
     difference: number;
     differencePercent: number;
   } | null>(null);
+  const [testResultsOpen, setTestResultsOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -362,6 +364,7 @@ export default function Settings() {
   const testShopifyIntegration = async () => {
     setTestingIntegration(true);
     setTestResult(null);
+    setTestResultsOpen(false);
 
     try {
       const currentDate = new Date();
@@ -382,6 +385,9 @@ export default function Settings() {
         difference,
         differencePercent
       });
+      
+      // Open results after test completes
+      setTestResultsOpen(true);
 
     } catch (error) {
       toast({
@@ -536,47 +542,118 @@ export default function Settings() {
                 Fonte de Dados dos Canais
               </CardTitle>
               <CardDescription>
-                Configure a fonte dos dados de vendas do Shopify
+                Configure como o sistema obtém os dados de vendas dos seus canais
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="shopify-data-source">Fonte de Dados Shopify</Label>
-                <Select value={shopifyDataSource} onValueChange={handleShopifyDataSourceChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a fonte de dados" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="automatic">Automático</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                onClick={testShopifyIntegration} 
-                disabled={testingIntegration}
-                variant="outline"
-                className="w-full"
-              >
-                {testingIntegration ? 'Testando...' : 'Testar Integração'}
-              </Button>
-
-              {testResult && (
-                <Alert className={testResult.differencePercent <= 5 ? 'border-green-500' : 'border-yellow-500'}>
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <div className="font-medium">Resultado do Teste de Integração:</div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>Total Manual: R$ {testResult.totalManual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                        <div>Total Automático: R$ {testResult.totalAutomatic.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                        <div>Diferença: R$ {Math.abs(testResult.difference).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                        <div>Variação: {testResult.differencePercent.toFixed(2)}%</div>
-                      </div>
+            <CardContent className="space-y-6">
+              {/* Shopify Block */}
+              <div className="bg-muted/30 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-600 rounded-md flex items-center justify-center">
+                      <span className="text-white text-sm font-semibold">S</span>
                     </div>
-                  </AlertDescription>
-                </Alert>
-              )}
+                    <div>
+                      <h4 className="font-medium">Shopify</h4>
+                      <p className="text-sm text-muted-foreground">E-commerce principal</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${shopifyDataSource === 'manual' ? 'bg-blue-500' : 'bg-green-500'}`} />
+                    <Select value={shopifyDataSource} onValueChange={handleShopifyDataSourceChange}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="automatic">Automático</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Mode Description */}
+                {shopifyDataSource === 'manual' ? (
+                  <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                    <AlertDescription className="text-blue-800 dark:text-blue-200">
+                      <strong>Modo Manual:</strong> Você insere os dados de vendas diariamente através da página de vendas.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert className="bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800">
+                    <AlertDescription className="text-green-800 dark:text-green-200">
+                      <strong>Modo Automático:</strong> Os dados são sincronizados automaticamente com a API do Shopify.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    onClick={testShopifyIntegration} 
+                    disabled={testingIntegration}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <FlaskConical className="w-4 h-4 mr-2" />
+                    {testingIntegration ? 'Testando...' : 'Testar Integração'}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => window.open('/shopify-debug', '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Debug Completo
+                  </Button>
+                </div>
+
+                {/* Collapsible Test Results */}
+                {testResult && (
+                  <Collapsible open={testResultsOpen} onOpenChange={setTestResultsOpen}>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-background rounded-lg border hover:bg-muted/50 transition-colors">
+                      <span className="font-medium">Resultado do Teste</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${testResultsOpen ? 'rotate-180' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3">
+                      <Alert className={testResult.differencePercent <= 5 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-amber-500 bg-amber-50 dark:bg-amber-950/30'}>
+                        <AlertDescription>
+                          <div className="space-y-3">
+                            <div className="font-medium text-foreground">Comparação de Dados:</div>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div className="space-y-1">
+                                <div className="text-muted-foreground">Total Manual</div>
+                                <div className="font-medium">R$ {testResult.totalManual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-muted-foreground">Total Automático</div>
+                                <div className="font-medium">R$ {testResult.totalAutomatic.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-muted-foreground">Diferença</div>
+                                <div className="font-medium">R$ {Math.abs(testResult.difference).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-muted-foreground">Variação</div>
+                                <div className={`font-medium ${Math.abs(testResult.differencePercent) <= 5 ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                  {testResult.differencePercent.toFixed(2)}%
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
+
+              {/* Future Channels Note */}
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Próximos canais: Mercado Livre, Amazon, Landing Pages
+                </p>
+              </div>
             </CardContent>
           </Card>
 
