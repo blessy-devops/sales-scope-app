@@ -301,17 +301,13 @@ export default function ShopifyDebug() {
                       {getStatusBadge(day.difference, day.difference_percent)}
                     </TableCell>
                     <TableCell>
-                      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleInvestigateDay(day.date)}
-                          >
-                            <Search className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleInvestigateDay(day.date)}
+                      >
+                        <Search className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -323,7 +319,7 @@ export default function ShopifyDebug() {
 
       {/* Daily Orders Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes dos Pedidos</DialogTitle>
             <DialogDescription>
@@ -336,45 +332,47 @@ export default function ShopifyDebug() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Número do Pedido</TableHead>
-                  <TableHead>Data/Hora (SP)</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Incluído</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dailyOrders.map((order) => (
-                  <TableRow 
-                    key={order.id} 
-                    className={!order.included_in_filter ? 'bg-muted/50' : ''}
-                  >
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.order_number}</TableCell>
-                    <TableCell>{order.created_at_sp}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(order.total_price)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={order.status_debug === 'paid' ? 'default' : 'secondary'}>
-                        {order.status_debug}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {order.included_in_filter ? (
-                        <Badge variant="default">Sim</Badge>
-                      ) : (
-                        <Badge variant="destructive">Não</Badge>
-                      )}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Número do Pedido</TableHead>
+                    <TableHead>Data/Hora (SP)</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Incluído</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {dailyOrders.map((order) => (
+                    <TableRow 
+                      key={order.id} 
+                      className={!order.included_in_filter ? 'bg-muted/50' : ''}
+                    >
+                      <TableCell className="font-medium">{order.id}</TableCell>
+                      <TableCell>{order.order_number}</TableCell>
+                      <TableCell>{order.created_at_sp}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(order.total_price)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={order.status_debug === 'paid' ? 'default' : 'secondary'}>
+                          {order.status_debug}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {order.included_in_filter ? (
+                          <Badge variant="default">Sim</Badge>
+                        ) : (
+                          <Badge variant="destructive">Não</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </DialogContent>
       </Dialog>
