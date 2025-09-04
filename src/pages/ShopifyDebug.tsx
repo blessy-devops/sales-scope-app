@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Search, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Minus, RefreshCw, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -111,22 +111,62 @@ export default function ShopifyDebug() {
 
   const getStatusBadge = (difference: number, percent: number) => {
     if (Math.abs(percent) <= 5) {
-      return <Badge variant="secondary" className="gap-1"><Minus className="w-3 h-3" />OK</Badge>;
+      return <Badge variant="secondary" className="gap-1 bg-green-100 text-green-800 border-green-200"><Minus className="w-3 h-3" />OK</Badge>;
     }
     if (difference > 0) {
-      return <Badge variant="default" className="gap-1"><TrendingUp className="w-3 h-3" />Maior</Badge>;
+      return <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 border-blue-200"><TrendingUp className="w-3 h-3" />Maior</Badge>;
     }
     return <Badge variant="destructive" className="gap-1"><TrendingDown className="w-3 h-3" />Menor</Badge>;
   };
 
+  const getPercentBadge = (percent: number) => {
+    if (Math.abs(percent) <= 5) {
+      return <span className="text-green-600 font-medium">{formatPercent(percent)}</span>;
+    }
+    if (percent > 5) {
+      return <span className="text-yellow-600 font-medium">{formatPercent(percent)}</span>;
+    }
+    return <span className="text-red-600 font-medium">{formatPercent(percent)}</span>;
+  };
+
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Debug de Integração Shopify</h1>
-        <p className="text-muted-foreground mt-2">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Debug de Integração Shopify</h1>
+        <p className="text-muted-foreground">
           Compare os dados manuais com os dados automáticos da integração Shopify
         </p>
       </div>
+
+      {/* Teste Rápido de Integração Card */}
+      <Card className="mb-6">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Teste Rápido de Integração</CardTitle>
+              <CardDescription>
+                Atualizar dados e baixar relatório de comparação
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => loadMonthlyData(selectedDate.getFullYear(), selectedDate.getMonth() + 1)}
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button variant="default" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Baixar
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Month Selector */}
       <div className="mb-6">
@@ -154,41 +194,57 @@ export default function ShopifyDebug() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Manual</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Manual</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(monthlyTotals.manual)}</div>
-            <CardDescription>Dados inseridos manualmente</CardDescription>
+            <div className="text-3xl font-bold">{formatCurrency(monthlyTotals.manual)}</div>
+            <CardDescription className="text-xs">Dados inseridos manualmente</CardDescription>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Automático</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Automático</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(monthlyTotals.automatic)}</div>
-            <CardDescription>Dados da integração Shopify</CardDescription>
+            <div className="text-3xl font-bold">{formatCurrency(monthlyTotals.automatic)}</div>
+            <CardDescription className="text-xs">Dados da integração Shopify</CardDescription>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Diferença Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Diferença Total</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(monthlyTotals.difference)}</div>
-            <CardDescription>Automático - Manual</CardDescription>
+            <div className={`text-3xl font-bold ${
+              monthlyTotals.difference > 0 
+                ? 'text-green-600' 
+                : monthlyTotals.difference < 0 
+                ? 'text-red-600' 
+                : 'text-foreground'
+            }`}>
+              {formatCurrency(monthlyTotals.difference)}
+            </div>
+            <CardDescription className="text-xs">Automático - Manual</CardDescription>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Variação (%)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Variação (%)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPercent(monthlyDifferencePercent)}</div>
-            <CardDescription>Percentual da diferença</CardDescription>
+            <div className={`text-3xl font-bold ${
+              Math.abs(monthlyDifferencePercent) <= 5 
+                ? 'text-green-600' 
+                : monthlyDifferencePercent > 5 
+                ? 'text-yellow-600' 
+                : 'text-red-600'
+            }`}>
+              {formatPercent(monthlyDifferencePercent)}
+            </div>
+            <CardDescription className="text-xs">Percentual da diferença</CardDescription>
           </CardContent>
         </Card>
       </div>
@@ -196,7 +252,7 @@ export default function ShopifyDebug() {
       {/* Daily Comparison Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Comparação Diária</CardTitle>
+          <CardTitle>Dados Diários</CardTitle>
           <CardDescription>
             Detalhamento dia a dia do mês selecionado
           </CardDescription>
@@ -239,7 +295,7 @@ export default function ShopifyDebug() {
                       {formatCurrency(day.difference)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatPercent(day.difference_percent)}
+                      {getPercentBadge(day.difference_percent)}
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(day.difference, day.difference_percent)}
