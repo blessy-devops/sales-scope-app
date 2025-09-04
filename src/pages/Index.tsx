@@ -46,18 +46,15 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-type PeriodFilter = 'hoje' | '7dias' | 'mes';
+type PeriodFilter = 'hoje' | '7dias' | 'mes' | 'customizado';
 
 const Index = () => {
-  const [loading, setLoading] = useState(false);
   const { isConnected, lastUpdate } = useRealTimeUpdates();
   const { channels } = useChannels();
-  const { getSalesForDate, getSaleAmount } = useDailySales();
-  const { getTargetsForMonth } = useTargets();
   const { getPreference } = useUserPreferences();
   const { dataReferencia, diasPassados, diasRestantes, totalDiasDoMes, mode, hoje } = useDataReferencia();
   
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('mes');
+  const [periodo, setPeriodo] = useState<PeriodFilter>('mes');
   const [expandedAnalysis, setExpandedAnalysis] = useState(false);
   const [viewFilter, setViewFilter] = useState<string>('global');
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -67,6 +64,56 @@ const Index = () => {
       to: endOfMonth(currentDate)
     };
   });
+
+  // Calculate date range based on selected period
+  useEffect(() => {
+    const currentDate = new Date();
+    let newDateRange: DateRange;
+
+    switch (periodo) {
+      case 'hoje':
+        newDateRange = {
+          from: currentDate,
+          to: currentDate
+        };
+        break;
+      case '7dias':
+        newDateRange = {
+          from: subDays(currentDate, 6), // Last 7 days including today
+          to: currentDate
+        };
+        break;
+      case 'mes':
+        newDateRange = {
+          from: startOfMonth(currentDate),
+          to: endOfMonth(currentDate)
+        };
+        break;
+      case 'customizado':
+        // Don't update dateRange for custom, let PeriodRangePicker handle it
+        return;
+      default:
+        newDateRange = {
+          from: startOfMonth(currentDate),
+          to: endOfMonth(currentDate)
+        };
+    }
+
+    setDateRange(newDateRange);
+  }, [periodo]);
+
+  // Connect hooks with date range
+  const { getSalesForDate, getSaleAmount, loading: salesLoading } = useDailySales({
+    startDate: dateRange.from,
+    endDate: dateRange.to
+  });
+  const { getTargetsForMonth, loading: targetsLoading } = useTargets({
+    startDate: dateRange.from,
+    endDate: dateRange.to
+  });
+
+  // Combined loading state
+  const loading = salesLoading || targetsLoading;
 
   // Persistência do filtro de visão
   useEffect(() => {
@@ -391,14 +438,26 @@ const Index = () => {
           <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <Tabs value="mes" className="pointer-events-none">
-                  <TabsList className="grid w-full grid-cols-4 sm:w-auto opacity-75">
-                    <TabsTrigger value="hoje" disabled>Hoje</TabsTrigger>
-                    <TabsTrigger value="7dias" disabled>Últimos 7 dias</TabsTrigger>
+                <Tabs value={periodo} onValueChange={(value) => setPeriodo(value as PeriodFilter)}>
+                  <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+                    <TabsTrigger value="hoje">Hoje</TabsTrigger>
+                    <TabsTrigger value="7dias">Últimos 7 dias</TabsTrigger>
                     <TabsTrigger value="mes">Este mês</TabsTrigger>
-                    <TabsTrigger value="customizado" disabled>Customizado</TabsTrigger>
+                    <TabsTrigger value="customizado">Customizado</TabsTrigger>
                   </TabsList>
                 </Tabs>
+                
+                {/* Show date picker only for custom period */}
+                {periodo === 'customizado' && (
+                  <PeriodRangePicker 
+                    dateRange={dateRange}
+                    onDateRangeChange={(range) => {
+                      setDateRange(range);
+                      setPeriodo('customizado');
+                    }}
+                    className="w-56"
+                  />
+                )}
                 
                 {/* DROPDOWN DE VISÃO POR CANAL */}
                 <Select value={viewFilter} onValueChange={setViewFilter}>
@@ -420,11 +479,6 @@ const Index = () => {
               </div>
               
               <div className="flex flex-col items-end gap-2">
-                <PeriodRangePicker 
-                  dateRange={dateRange}
-                  onDateRangeChange={setDateRange}
-                  className="w-56"
-                />
                 {!includesCurrentMonth && (
                   <Badge variant="outline" className="text-xs">
                     Período histórico
