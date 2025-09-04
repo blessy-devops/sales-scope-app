@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
+import { useDailySales } from '@/hooks/useDailySales';
 import * as XLSX from 'xlsx';
 
 interface LayoutProps {
@@ -17,6 +18,7 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { toast } = useToast();
   const location = useLocation();
+  const { lastUpdated, refetchSales } = useDailySales();
 
   const exportToExcel = () => {
     try {
@@ -55,7 +57,11 @@ export function Layout({ children, onNewChannel }: LayoutProps) {
       
       <div className={`min-h-screen flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'pl-16' : 'pl-64'}`}>
         {/* Page Header */}
-        <PageHeader onNewChannel={onNewChannel}>
+        <PageHeader 
+          onNewChannel={onNewChannel}
+          lastUpdated={location.pathname === '/' ? lastUpdated : undefined}
+          onRefresh={location.pathname === '/' ? refetchSales : undefined}
+        >
           <div className="flex items-center gap-2 justify-end w-full">
             
             <div className="flex items-center gap-2">

@@ -12,7 +12,8 @@ import {
   Settings,
   Wifi,
   WifiOff,
-  Plus
+  Plus,
+  RefreshCcw
 } from 'lucide-react';
 
 interface PageHeaderProps {
@@ -20,6 +21,8 @@ interface PageHeaderProps {
   description?: string;
   children?: ReactNode;
   onNewChannel?: () => void;
+  lastUpdated?: Date | null;
+  onRefresh?: () => void;
 }
 
 const pageInfo = {
@@ -50,7 +53,7 @@ const pageInfo = {
   }
 };
 
-export function PageHeader({ title, description, children, onNewChannel }: PageHeaderProps) {
+export function PageHeader({ title, description, children, onNewChannel, lastUpdated, onRefresh }: PageHeaderProps) {
   const location = useLocation();
   const { isConnected, lastUpdate } = useRealTimeUpdates();
   const currentPath = location.pathname;
@@ -72,24 +75,42 @@ export function PageHeader({ title, description, children, onNewChannel }: PageH
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Status de Conexão (apenas no dashboard) */}
+          {/* Status de Conexão ou Atualização (apenas no dashboard) */}
           {currentPath === '/' && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
-              {isConnected ? (
+              {lastUpdated && onRefresh ? (
                 <>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-600 dark:text-green-400 text-sm font-medium">Online</span>
+                  <span className="text-gray-600 dark:text-slate-400 text-sm font-medium">
+                    Atualizado às {format(lastUpdated, 'HH:mm', { locale: ptBR })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onRefresh}
+                    className="h-6 w-6 hover:bg-gray-200 dark:hover:bg-slate-700"
+                  >
+                    <RefreshCcw className="w-3 h-3" />
+                  </Button>
                 </>
               ) : (
                 <>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  <span className="text-gray-500 dark:text-slate-400 text-sm font-medium">Offline</span>
+                  {isConnected ? (
+                    <>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">Online</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      <span className="text-gray-500 dark:text-slate-400 text-sm font-medium">Offline</span>
+                    </>
+                  )}
+                  {lastUpdate && (
+                    <span className="text-gray-500 dark:text-slate-400 text-xs">
+                      · {format(lastUpdate, 'HH:mm', { locale: ptBR })}
+                    </span>
+                  )}
                 </>
-              )}
-              {lastUpdate && (
-                <span className="text-gray-500 dark:text-slate-400 text-xs">
-                  · {format(lastUpdate, 'HH:mm', { locale: ptBR })}
-                </span>
               )}
             </div>
           )}

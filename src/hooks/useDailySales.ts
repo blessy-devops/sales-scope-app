@@ -8,9 +8,19 @@ export function useDailySales() {
   const { channels } = useChannels();
   const [sales, setSales] = useState<DailySale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchSales();
+  }, []);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchSales();
+    }, 300000); // 5 minutes in milliseconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchSales = async () => {
@@ -38,11 +48,16 @@ export function useDailySales() {
       }));
       
       setSales(transformedSales);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching sales:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const refetchSales = () => {
+    fetchSales();
   };
 
   const getSalesForDate = (date: string): DailySale[] => {
@@ -129,6 +144,8 @@ export function useDailySales() {
   return {
     sales,
     loading,
+    lastUpdated,
+    refetchSales,
     getSalesForDate,
     getPreviousDaySales,
     saveDailySales,
