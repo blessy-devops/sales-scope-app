@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -92,6 +92,63 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          address1: string | null
+          address2: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          customer_id: number
+          email: string | null
+          first_name: string | null
+          inserted_at: string | null
+          last_name: string | null
+          orders_count: number | null
+          phone: string | null
+          province: string | null
+          total_spent: number | null
+          updated_at: string | null
+          zip: string | null
+        }
+        Insert: {
+          address1?: string | null
+          address2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          customer_id: number
+          email?: string | null
+          first_name?: string | null
+          inserted_at?: string | null
+          last_name?: string | null
+          orders_count?: number | null
+          phone?: string | null
+          province?: string | null
+          total_spent?: number | null
+          updated_at?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address1?: string | null
+          address2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          customer_id?: number
+          email?: string | null
+          first_name?: string | null
+          inserted_at?: string | null
+          last_name?: string | null
+          orders_count?: number | null
+          phone?: string | null
+          province?: string | null
+          total_spent?: number | null
+          updated_at?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       daily_observations: {
         Row: {
           channel_id: string
@@ -157,6 +214,214 @@ export type Database = {
           },
         ]
       }
+      dashboard_settings: {
+        Row: {
+          id: number
+          setting_key: string
+          setting_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          setting_key: string
+          setting_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      instagram_metrics: {
+        Row: {
+          created_at: string | null
+          followers_count: number
+          id: number
+          posts_count: number
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          followers_count: number
+          id?: number
+          posts_count: number
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          followers_count?: number
+          id?: number
+          posts_count?: number
+          username?: string
+        }
+        Relationships: []
+      }
+      line_items: {
+        Row: {
+          inserted_at: string | null
+          line_item_id: number
+          name: string | null
+          order_id: number | null
+          price: number | null
+          product_id: number | null
+          quantity: number | null
+          sku: string | null
+          title: string | null
+          total_discount: number | null
+          variant_id: number | null
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          inserted_at?: string | null
+          line_item_id: number
+          name?: string | null
+          order_id?: number | null
+          price?: number | null
+          product_id?: number | null
+          quantity?: number | null
+          sku?: string | null
+          title?: string | null
+          total_discount?: number | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          inserted_at?: string | null
+          line_item_id?: number
+          name?: string | null
+          order_id?: number | null
+          price?: number | null
+          product_id?: number | null
+          quantity?: number | null
+          sku?: string | null
+          title?: string | null
+          total_discount?: number | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      monthly_goals: {
+        Row: {
+          created_at: string | null
+          follower_goal: number | null
+          id: number
+          month: string
+          sales_goal: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          follower_goal?: number | null
+          id?: number
+          month: string
+          sales_goal?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          follower_goal?: number | null
+          id?: number
+          month?: string
+          sales_goal?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          currency: string | null
+          customer_id: number | null
+          discount_codes: string[] | null
+          financial_status: string | null
+          fulfillment_status: string | null
+          inserted_at: string | null
+          order_id: number
+          order_number: number
+          payment_gateway_names: string[] | null
+          shipping_price: number | null
+          subtotal_price: number | null
+          total_discounts: number | null
+          total_price: number | null
+          total_tax: number | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at: string
+          currency?: string | null
+          customer_id?: number | null
+          discount_codes?: string[] | null
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          inserted_at?: string | null
+          order_id: number
+          order_number: number
+          payment_gateway_names?: string[] | null
+          shipping_price?: number | null
+          subtotal_price?: number | null
+          total_discounts?: number | null
+          total_price?: number | null
+          total_tax?: number | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_id?: number | null
+          discount_codes?: string[] | null
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          inserted_at?: string | null
+          order_id?: number
+          order_number?: number
+          payment_gateway_names?: string[] | null
+          shipping_price?: number | null
+          subtotal_price?: number | null
+          total_discounts?: number | null
+          total_price?: number | null
+          total_tax?: number | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       sales_targets: {
         Row: {
           channel_id: string
@@ -197,6 +462,225 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shopify_orders_gold: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          channel_bucket: string | null
+          created_at: string | null
+          customer_email: string | null
+          customer_first_name: string | null
+          customer_id: number | null
+          customer_last_name: string | null
+          customer_phone: string | null
+          financial_status: string | null
+          fulfillment_status: string | null
+          id: number
+          is_bundle: boolean | null
+          items: Json
+          items_count: number | null
+          landing_site: string | null
+          name: string | null
+          order_number: number | null
+          payment_auth_code: string | null
+          payment_cc_brand: string | null
+          payment_gateway: string | null
+          payment_installments: number | null
+          payment_method_bucket: string | null
+          payment_method_code: string | null
+          processed_at: string | null
+          referring_site: string | null
+          ship_city: string | null
+          ship_country_code: string | null
+          ship_province: string | null
+          ship_province_code: string | null
+          ship_zip: string | null
+          shipping_amount: number | null
+          shipping_lines: Json
+          subtotal_price: number | null
+          tags: string | null
+          tax_id: string | null
+          test: boolean | null
+          total_discounts: number | null
+          total_line_items_price: number | null
+          total_price: number | null
+          updated_at: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          channel_bucket?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_first_name?: string | null
+          customer_id?: number | null
+          customer_last_name?: string | null
+          customer_phone?: string | null
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          id: number
+          is_bundle?: boolean | null
+          items?: Json
+          items_count?: number | null
+          landing_site?: string | null
+          name?: string | null
+          order_number?: number | null
+          payment_auth_code?: string | null
+          payment_cc_brand?: string | null
+          payment_gateway?: string | null
+          payment_installments?: number | null
+          payment_method_bucket?: string | null
+          payment_method_code?: string | null
+          processed_at?: string | null
+          referring_site?: string | null
+          ship_city?: string | null
+          ship_country_code?: string | null
+          ship_province?: string | null
+          ship_province_code?: string | null
+          ship_zip?: string | null
+          shipping_amount?: number | null
+          shipping_lines?: Json
+          subtotal_price?: number | null
+          tags?: string | null
+          tax_id?: string | null
+          test?: boolean | null
+          total_discounts?: number | null
+          total_line_items_price?: number | null
+          total_price?: number | null
+          updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          channel_bucket?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_first_name?: string | null
+          customer_id?: number | null
+          customer_last_name?: string | null
+          customer_phone?: string | null
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          id?: number
+          is_bundle?: boolean | null
+          items?: Json
+          items_count?: number | null
+          landing_site?: string | null
+          name?: string | null
+          order_number?: number | null
+          payment_auth_code?: string | null
+          payment_cc_brand?: string | null
+          payment_gateway?: string | null
+          payment_installments?: number | null
+          payment_method_bucket?: string | null
+          payment_method_code?: string | null
+          processed_at?: string | null
+          referring_site?: string | null
+          ship_city?: string | null
+          ship_country_code?: string | null
+          ship_province?: string | null
+          ship_province_code?: string | null
+          ship_zip?: string | null
+          shipping_amount?: number | null
+          shipping_lines?: Json
+          subtotal_price?: number | null
+          tags?: string | null
+          tax_id?: string | null
+          test?: boolean | null
+          total_discounts?: number | null
+          total_line_items_price?: number | null
+          total_price?: number | null
+          updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
+      shopify_orders_ingest: {
+        Row: {
+          file_name: string
+          id: number
+          ingested_at: string
+          payload: Json
+        }
+        Insert: {
+          file_name: string
+          id?: number
+          ingested_at: string
+          payload: Json
+        }
+        Update: {
+          file_name?: string
+          id?: number
+          ingested_at?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
+      social_media_coupons: {
+        Row: {
+          coupon_code: string
+          created_at: string | null
+          description: string | null
+          id: number
+        }
+        Insert: {
+          coupon_code: string
+          created_at?: string | null
+          description?: string | null
+          id?: number
+        }
+        Update: {
+          coupon_code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
+      social_media_sales: {
+        Row: {
+          coupon_code: string
+          created_at: string | null
+          id: number
+          order_created_at: string
+          order_id: string
+          subtotal_price: number | null
+          total_price: number
+        }
+        Insert: {
+          coupon_code: string
+          created_at?: string | null
+          id?: number
+          order_created_at: string
+          order_id: string
+          subtotal_price?: number | null
+          total_price: number
+        }
+        Update: {
+          coupon_code?: string
+          created_at?: string | null
+          id?: number
+          order_created_at?: string
+          order_id?: string
+          subtotal_price?: number | null
+          total_price?: number
+        }
+        Relationships: []
       }
       system_settings: {
         Row: {
@@ -316,10 +800,125 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      daily_sales_summary: {
+        Row: {
+          avg_ticket: number | null
+          channel_id: string | null
+          channel_name: string | null
+          channel_type: string | null
+          data_source: string | null
+          sale_date: string | null
+          total_orders: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
+      monthly_channel_performance: {
+        Row: {
+          channel_id: string | null
+          channel_name: string | null
+          channel_type: string | null
+          data_source: string | null
+          days_with_sales: number | null
+          month: number | null
+          monthly_avg_ticket: number | null
+          monthly_orders: number | null
+          monthly_revenue: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      compare_shopify_sales_debug: {
+        Args: { target_date: string }
+        Returns: {
+          automatic_value: number
+          difference: number
+          difference_percent: number
+          manual_value: number
+          orders_count: number
+        }[]
+      }
+      get_daily_sales_period: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          channel_id: string
+          channel_name: string
+          channel_type: string
+          daily_avg_ticket: number
+          daily_orders: number
+          daily_revenue: number
+          data_source: string
+          sale_date: string
+        }[]
+      }
+      get_dashboard_sales_data: {
+        Args: { target_month?: number; target_year?: number }
+        Returns: {
+          channel_id: string
+          channel_name: string
+          channel_type: string
+          current_daily_pace: number
+          data_source: string
+          days_passed: number
+          days_with_sales: number
+          metric_type: string
+          monthly_avg_ticket: number
+          monthly_orders: number
+          monthly_revenue: number
+          projected_monthly_total: number
+          total_days_month: number
+        }[]
+      }
+      get_shopify_orders_debug: {
+        Args: { target_date: string }
+        Returns: {
+          created_at_sp: string
+          financial_status: string
+          id: number
+          included_in_filter: boolean
+          order_number: number
+          total_price: number
+        }[]
+      }
+      get_shopify_sales_period: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          cancelled_at: string
+          created_at: string
+          customer_id: number
+          data_sp: string
+          financial_status: string
+          id: number
+          items_count: number
+          order_number: number
+          payment_gateway: string
+          shipping_amount: number
+          subtotal_price: number
+          test: boolean
+          total_discounts: number
+          total_price: number
+        }[]
+      }
+      get_shopify_sales_summary: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          data: string
+          receita_bruta: number
+          receita_liquida: number
+          ticket_medio: number
+          total_pedidos: number
+        }[]
+      }
+      note_attr: {
+        Args: { attrs: Json; key: string }
+        Returns: string
+      }
+      process_shopify_orders_gold_since: {
+        Args: { since_ts?: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
