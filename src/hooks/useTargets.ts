@@ -3,22 +3,55 @@ import { SalesTarget, TargetHistory, MonthlyTargetData } from '@/types/target';
 import { useChannels } from './useChannels';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useTargets() {
+interface UseTargetsOptions {
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export function useTargets(options?: UseTargetsOptions) {
   const { channels } = useChannels();
   const [targets, setTargets] = useState<SalesTarget[]>([]);
   const [history, setHistory] = useState<TargetHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const startDate = options?.startDate;
+  const endDate = options?.endDate;
+
   useEffect(() => {
     fetchTargets();
     fetchHistory();
-  }, []);
+  }, [options?.startDate?.getTime(), options?.endDate?.getTime()]);
 
   const fetchTargets = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sales_targets')
-        .select('*')
+        .select('*');
+
+      // Apply date filtering if dates are provided
+      if (startDate && endDate) {
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth() + 1;
+        const endYear = endDate.getFullYear();
+        const endMonth = endDate.getMonth() + 1;
+
+        if (startYear === endYear) {
+          // Same year, filter by month range
+          query = query
+            .eq('year', startYear)
+            .gte('month', startMonth)
+            .lte('month', endMonth);
+        } else {
+          // Multiple years, use OR condition
+          query = query.or(
+            `and(year.eq.${startYear},month.gte.${startMonth}),` +
+            `and(year.eq.${endYear},month.lte.${endMonth})` +
+            (endYear - startYear > 1 ? `,and(year.gt.${startYear},year.lt.${endYear})` : '')
+          );
+        }
+      }
+
+      const { data, error } = await query
         .order('year', { ascending: false })
         .order('month', { ascending: false });
       
@@ -31,9 +64,34 @@ export function useTargets() {
 
   const fetchHistory = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('target_history')
-        .select('*')
+        .select('*');
+
+      // Apply date filtering if dates are provided
+      if (startDate && endDate) {
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth() + 1;
+        const endYear = endDate.getFullYear();
+        const endMonth = endDate.getMonth() + 1;
+
+        if (startYear === endYear) {
+          // Same year, filter by month range
+          query = query
+            .eq('year', startYear)
+            .gte('month', startMonth)
+            .lte('month', endMonth);
+        } else {
+          // Multiple years, use OR condition
+          query = query.or(
+            `and(year.eq.${startYear},month.gte.${startMonth}),` +
+            `and(year.eq.${endYear},month.lte.${endMonth})` +
+            (endYear - startYear > 1 ? `,and(year.gt.${startYear},year.lt.${endYear})` : '')
+          );
+        }
+      }
+
+      const { data, error } = await query
         .order('changed_at', { ascending: false });
       
       if (error) throw error;

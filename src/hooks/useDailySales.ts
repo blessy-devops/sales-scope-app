@@ -4,15 +4,23 @@ import { useChannels } from './useChannels';
 import { format, subDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useDailySales() {
+interface UseDailySalesOptions {
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export function useDailySales(options?: UseDailySalesOptions) {
   const { channels } = useChannels();
   const [sales, setSales] = useState<DailySale[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  const startDate = options?.startDate;
+  const endDate = options?.endDate;
+
   useEffect(() => {
     fetchSales();
-  }, []);
+  }, [options?.startDate?.getTime(), options?.endDate?.getTime()]);
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -25,14 +33,17 @@ export function useDailySales() {
 
   const fetchSales = async () => {
     try {
-      // Get sales for the last 6 months using the centralized function
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 6);
+      // Use provided dates or default to last 6 months
+      const queryEndDate = endDate || new Date();
+      const queryStartDate = startDate || (() => {
+        const defaultStart = new Date();
+        defaultStart.setMonth(defaultStart.getMonth() - 6);
+        return defaultStart;
+      })();
       
       const { data, error } = await supabase.rpc('get_dashboard_sales', {
-        start_date: format(startDate, 'yyyy-MM-dd'),
-        end_date: format(endDate, 'yyyy-MM-dd')
+        start_date: format(queryStartDate, 'yyyy-MM-dd'),
+        end_date: format(queryEndDate, 'yyyy-MM-dd')
       });
       
       if (error) throw error;
