@@ -28,7 +28,7 @@ interface PageHeaderProps {
 const pageInfo = {
   '/': {
     title: 'Dashboard',
-    description: 'Visão geral das vendas e metas',
+    description: 'Visão geral das vendas e metas teste',
     icon: LayoutDashboard
   },
   '/channels': {
