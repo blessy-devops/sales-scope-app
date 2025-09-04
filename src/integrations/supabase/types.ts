@@ -853,6 +853,14 @@ export type Database = {
           sale_date: string
         }[]
       }
+      get_dashboard_sales: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          amount: number
+          channel_id: string
+          sale_date: string
+        }[]
+      }
       get_dashboard_sales_data: {
         Args: { target_month?: number; target_year?: number }
         Returns: {

@@ -15,13 +15,29 @@ export function useDailySales() {
 
   const fetchSales = async () => {
     try {
-      const { data, error } = await supabase
-        .from('daily_sales')
-        .select('*')
-        .order('sale_date', { ascending: false });
+      // Get sales for the last 6 months using the centralized function
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 6);
+      
+      const { data, error } = await supabase.rpc('get_dashboard_sales', {
+        start_date: format(startDate, 'yyyy-MM-dd'),
+        end_date: format(endDate, 'yyyy-MM-dd')
+      });
       
       if (error) throw error;
-      setSales(data || []);
+      
+      // Transform RPC result to match DailySale structure
+      const transformedSales = (data || []).map(row => ({
+        id: `${row.channel_id}-${row.sale_date}`, // Generate consistent ID
+        channel_id: row.channel_id,
+        sale_date: row.sale_date,
+        amount: row.amount,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+      
+      setSales(transformedSales);
     } catch (error) {
       console.error('Error fetching sales:', error);
     } finally {
