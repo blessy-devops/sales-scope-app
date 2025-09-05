@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.coupons-social-media]
 verify_jwt = false
+
+[functions.get-social-media-sales]
+verify_jwt = false
