@@ -5,21 +5,37 @@ import { GoalsModal } from "@/components/GoalsModal";
 import { CouponsModal } from "@/components/CouponsModal";
 import { FollowersMetricsSection } from "@/components/FollowersMetricsSection";
 import { SalesMetricsSection } from "@/components/SalesMetricsSection";
-import { MonthYearPicker } from "@/components/MonthYearPicker";
+import { PeriodRangePicker, DateRange } from "@/components/PeriodRangePicker";
 import { useQueryClient } from "@tanstack/react-query";
+import { startOfMonth, endOfMonth } from "date-fns";
 export default function SocialMedia() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const currentDate = new Date();
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: startOfMonth(currentDate),
+    to: endOfMonth(currentDate)
+  });
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   const [couponsModalOpen, setCouponsModalOpen] = useState(false);
   const queryClient = useQueryClient();
+  
+  // For followers, use the first month of the range
+  const selectedDate = dateRange.from;
+  
   const handleRefreshAll = () => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth() + 1;
+    
+    // Invalidate followers using the first month
     queryClient.invalidateQueries({
       queryKey: ['followers-analytics', year, month]
     });
+    
+    // Invalidate sales using the date range
+    const startISO = new Date(`${dateRange.from.getFullYear()}-${(dateRange.from.getMonth() + 1).toString().padStart(2, '0')}-${dateRange.from.getDate().toString().padStart(2, '0')}T00:00:00-03:00`).toISOString();
+    const endISO = new Date(`${dateRange.to.getFullYear()}-${(dateRange.to.getMonth() + 1).toString().padStart(2, '0')}-${dateRange.to.getDate().toString().padStart(2, '0')}T23:59:59-03:00`).toISOString();
+    
     queryClient.invalidateQueries({
-      queryKey: ['sales-analytics', year, month]
+      queryKey: ['sales-analytics', startISO, endISO]
     });
   };
   return <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -36,7 +52,7 @@ export default function SocialMedia() {
         </div>
         
         <div className="flex items-center gap-2">
-          <MonthYearPicker date={selectedDate} onDateChange={setSelectedDate} />
+          <PeriodRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
           <Button onClick={() => setGoalsModalOpen(true)} variant="outline">
             <Target className="mr-2 h-4 w-4" />
             Definir Metas
@@ -58,7 +74,7 @@ export default function SocialMedia() {
 
       {/* Sales Performance Section */}
       <div className="mb-8">
-        <SalesMetricsSection selectedDate={selectedDate} onOpenGoals={() => setGoalsModalOpen(true)} />
+        <SalesMetricsSection dateRange={dateRange} onOpenGoals={() => setGoalsModalOpen(true)} />
       </div>
 
       {/* Modals */}

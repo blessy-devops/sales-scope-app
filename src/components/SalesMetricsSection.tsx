@@ -7,7 +7,8 @@ import { RefreshCw, Target, DollarSign, BarChart3, TrendingUp, Minus, Clock } fr
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { getDaysInMonth } from 'date-fns';
+import { differenceInDays } from 'date-fns';
+import { DateRange } from "@/components/PeriodRangePicker";
 
 interface SalesAnalytics {
   goal: number;
@@ -17,19 +18,20 @@ interface SalesAnalytics {
 }
 
 interface SalesMetricsSectionProps {
-  selectedDate: Date;
+  dateRange: DateRange;
   onOpenGoals?: () => void;
 }
 
-export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsSectionProps) {
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth() + 1;
+export function SalesMetricsSection({ dateRange, onOpenGoals }: SalesMetricsSectionProps) {
+  // Convert date range to ISO strings with São Paulo timezone
+  const startISO = new Date(`${dateRange.from.getFullYear()}-${(dateRange.from.getMonth() + 1).toString().padStart(2, '0')}-${dateRange.from.getDate().toString().padStart(2, '0')}T00:00:00-03:00`).toISOString();
+  const endISO = new Date(`${dateRange.to.getFullYear()}-${(dateRange.to.getMonth() + 1).toString().padStart(2, '0')}-${dateRange.to.getDate().toString().padStart(2, '0')}T23:59:59-03:00`).toISOString();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['sales-analytics', year, month],
+    queryKey: ['sales-analytics', startISO, endISO],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('analytics-social-media/sales', {
-        body: { year, month }
+        body: { startDate: startISO, endDate: endISO }
       });
       
       if (error) throw error;
@@ -39,14 +41,13 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
     refetchOnWindowFocus: true,
   });
 
-  // Helper function for month context
-  const getMonthContext = (selectedDate: Date) => {
+  // Helper function for period context
+  const getPeriodContext = (dateRange: DateRange) => {
     const today = new Date();
-    const isCurrentMonth = selectedDate.getFullYear() === today.getFullYear() && 
-                          selectedDate.getMonth() === today.getMonth();
-    const totalDaysInMonth = getDaysInMonth(selectedDate);
-    const diasPassados = isCurrentMonth ? today.getDate() : totalDaysInMonth;
-    return { isCurrentMonth, totalDaysInMonth, diasPassados };
+    const totalDaysInPeriod = differenceInDays(dateRange.to, dateRange.from) + 1;
+    const isCurrentPeriod = today >= dateRange.from && today <= dateRange.to;
+    const diasPassados = isCurrentPeriod ? differenceInDays(today, dateRange.from) + 1 : totalDaysInPeriod;
+    return { isCurrentPeriod, totalDaysInPeriod, diasPassados };
   };
 
   const formatCurrency = (value: number) =>
@@ -64,16 +65,16 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
   };
 
   // Calculate additional metrics
-  const { diasPassados, totalDaysInMonth } = getMonthContext(selectedDate);
+  const { diasPassados, totalDaysInPeriod } = getPeriodContext(dateRange);
   const saldo = data?.goal ? Math.max(0, data.goal - data.current_sales_total) : 0;
   const ritmo = diasPassados > 0 && data?.current_sales_total ? data.current_sales_total / diasPassados : 0;
-  const projetado = ritmo * totalDaysInMonth;
+  const projetado = ritmo * totalDaysInPeriod;
 
   // Prepare chart data
   const chartData = data?.daily_series ? data.daily_series.map(item => ({
     date: item.date,
     realizado: item.total,
-    meta: data?.goal ? data.goal / totalDaysInMonth : 0
+    meta: data?.goal ? data.goal / totalDaysInPeriod : 0
   })) : [];
 
   const chartConfig = {
@@ -118,7 +119,7 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
         {/* Card 1: Meta de Vendas */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Meta de Vendas</CardTitle>
+            <CardTitle className="text-sm font-medium">Meta do Período</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -234,7 +235,7 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">
-            Performance Diária de Vendas{data?.metric_used === 'total_price' ? ' (Total com Frete)' : ' (Produtos)'}
+            Performance Diária de Vendas - Período{data?.metric_used === 'total_price' ? ' (Total com Frete)' : ' (Produtos)'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -285,7 +286,7 @@ export function SalesMetricsSection({ selectedDate, onOpenGoals }: SalesMetricsS
             </ChartContainer>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              Sem dados para este mês
+              Sem dados para este período
             </div>
           )}
         </CardContent>

@@ -29,11 +29,12 @@ Deno.serve(async (req) => {
 
     // Get parameters from either query string (GET) or body (POST)
     let year: number, month: number
+    let requestData: any = {}
     
     if (req.method === 'POST') {
-      const body = await req.json()
-      year = body.year
-      month = body.month
+      requestData = await req.json()
+      year = requestData.year
+      month = requestData.month
     } else {
       year = parseInt(url.searchParams.get('year') || '')
       month = parseInt(url.searchParams.get('month') || '')
@@ -152,13 +153,22 @@ Deno.serve(async (req) => {
       }
 
       if (path === 'sales') {
-        // Create São Paulo timezone date range for selected month with explicit offset
-        const lastDay = new Date(year, month, 0).getDate() // Last day of month
-        const startTsUtc = new Date(`${year}-${month.toString().padStart(2, '0')}-01T00:00:00-03:00`).toISOString()
-        const endTsUtc = new Date(`${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}T23:59:59-03:00`).toISOString()
-        const monthString = `${year}-${month.toString().padStart(2, '0')}-01`
-
-        console.log('Fetching sales analytics for:', { year, month, monthString })
+        // Handle both legacy (year/month) and new (startDate/endDate) parameters
+        let startTsUtc: string;
+        let endTsUtc: string;
+        
+        if (requestData.startDate && requestData.endDate) {
+          // New date range format
+          startTsUtc = requestData.startDate;
+          endTsUtc = requestData.endDate;
+          console.log('Fetching sales analytics for period:', { startDate: startTsUtc, endDate: endTsUtc });
+        } else {
+          // Legacy month format (use extracted year/month from earlier)
+          const lastDay = new Date(year, month, 0).getDate();
+          startTsUtc = new Date(`${year}-${month.toString().padStart(2, '0')}-01T00:00:00-03:00`).toISOString();
+          endTsUtc = new Date(`${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}T23:59:59-03:00`).toISOString();
+          console.log('Fetching sales analytics for month:', { year, month });
+        }
 
         // Get user's sales metric preference
         const { data: settingData, error: settingError } = await supabaseAdmin
@@ -172,22 +182,57 @@ Deno.serve(async (req) => {
         
         console.log('Using sales metric:', { metricPreference, columnToSum })
 
-        // Get monthly goal
-        const { data: goalData, error: goalError } = await supabaseAdmin
-          .from('monthly_goals')
-          .select('sales_goal')
-          .eq('month', monthString)
-          .single()
-
-        if (goalError && goalError.code !== 'PGRST116') {
-          console.error('Error fetching sales goal:', goalError)
-          return new Response(
-            JSON.stringify({ error: goalError.message }),
-            { 
-              status: 500, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        // Get prorated goal for the period
+        let totalGoal = 0;
+        
+        if (requestData.startDate && requestData.endDate) {
+          // Calculate prorated goal for custom period
+          const startDate = new Date(startTsUtc);
+          const endDate = new Date(endTsUtc);
+          
+          // Get all months within the range
+          const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+          
+          while (currentDate <= endMonth) {
+            const monthString = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-01`;
+            
+            const { data: goalData } = await supabaseAdmin
+              .from('monthly_goals')
+              .select('sales_goal')
+              .eq('month', monthString)
+              .maybeSingle();
+            
+            if (goalData?.sales_goal) {
+              // Calculate days of this month that fall within our period
+              const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+              const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+              const daysInMonth = monthEnd.getDate();
+              
+              const periodStart = new Date(Math.max(startDate.getTime(), monthStart.getTime()));
+              const periodEnd = new Date(Math.min(endDate.getTime(), monthEnd.getTime()));
+              const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              
+              const proratedGoal = (goalData.sales_goal / daysInMonth) * daysInPeriod;
+              totalGoal += proratedGoal;
             }
-          )
+            
+            currentDate.setMonth(currentDate.getMonth() + 1);
+          }
+        } else {
+          // Legacy: single month goal
+          const monthString = `${year}-${month.toString().padStart(2, '0')}-01`;
+          const { data: goalData, error: goalError } = await supabaseAdmin
+            .from('monthly_goals')
+            .select('sales_goal')
+            .eq('month', monthString)
+            .maybeSingle();
+
+          if (goalError && goalError.code !== 'PGRST116') {
+            console.error('Error fetching sales goal:', goalError);
+          }
+          
+          totalGoal = goalData?.sales_goal || 0;
         }
 
         // Get all social media coupon codes
@@ -277,7 +322,7 @@ Deno.serve(async (req) => {
           couponsCount: coupons.length 
         })
 
-        const goal = goalData?.sales_goal || 0
+        const goal = totalGoal
         const currentSalesTotal = unifiedSalesData.reduce((sum, sale) => {
           return sum + sale.amount
         }, 0)
@@ -296,11 +341,23 @@ Deno.serve(async (req) => {
           dailyMap.set(spDate, current + sale.amount)
         }
 
-        // Fill all days of the month
-        for (let day = 1; day <= lastDay; day++) {
-          const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
-          const total = dailyMap.get(date) || 0
-          dailySeries.push({ date, total })
+        // Fill all days of the period
+        const periodStart = new Date(startTsUtc);
+        const periodEnd = new Date(endTsUtc);
+        
+        // Convert to São Paulo date for iteration
+        const startDateSP = new Date(periodStart.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }));
+        const endDateSP = new Date(periodEnd.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }));
+        
+        for (let d = new Date(startDateSP); d <= endDateSP; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0];
+          if (!dailyMap.has(dateStr)) {
+            dailyMap.set(dateStr, 0);
+          }
+          dailySeries.push({
+            date: dateStr,
+            total: dailyMap.get(dateStr) || 0
+          });
         }
 
         console.log('Sales analytics:', { goal, currentSalesTotal, metricUsed: metricPreference, dailySeriesLength: dailySeries.length })
