@@ -152,17 +152,13 @@ Deno.serve(async (req) => {
       }
 
       if (path === 'sales') {
-        // Create São Paulo timezone date range for selected month
-        const startOfMonthSP = `${year}-${month.toString().padStart(2, '0')}-01 00:00:00`
+        // Create São Paulo timezone date range for selected month with explicit offset
         const lastDay = new Date(year, month, 0).getDate() // Last day of month
-        const endOfMonthSP = `${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')} 23:59:59`
-        
-        // Convert to UTC timestamps for database filtering
-        const startTs = new Date(startOfMonthSP + ' America/Sao_Paulo').toISOString()
-        const endTs = new Date(endOfMonthSP + ' America/Sao_Paulo').toISOString()
+        const startTsUtc = new Date(`${year}-${month.toString().padStart(2, '0')}-01T00:00:00-03:00`).toISOString()
+        const endTsUtc = new Date(`${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}T23:59:59-03:00`).toISOString()
         const monthString = `${year}-${month.toString().padStart(2, '0')}-01`
 
-        console.log('Fetching sales analytics for:', { year, month, monthString, startTs, endTs })
+        console.log('Fetching sales analytics for:', { year, month, monthString })
 
         // Get user's sales metric preference
         const { data: settingData, error: settingError } = await supabaseAdmin
@@ -220,8 +216,8 @@ Deno.serve(async (req) => {
           let query = supabaseAdmin
             .from('shopify_orders_gold')
             .select(`${columnToSum} as amount, created_at, coupon_code`)
-            .gte('created_at', startTs)
-            .lte('created_at', endTs)
+            .gte('created_at', startTsUtc)
+            .lte('created_at', endTsUtc)
             .eq('financial_status', 'paid')
             .eq('test', false)
 
@@ -242,31 +238,62 @@ Deno.serve(async (req) => {
             )
           }
           
-          shopifySalesData = shopifyData || []
+          shopifySalesData = (shopifyData || []).map(sale => ({
+            order_created_at: sale.created_at,
+            amount: Number(sale.amount) || 0
+          }))
         }
 
-        console.log('Shopify data:', { 
+        // Get legacy social_media_sales data
+        const { data: legacySalesData, error: legacySalesError } = await supabaseAdmin
+          .from('social_media_sales')
+          .select(`order_created_at, ${columnToSum} as amount`)
+          .gte('order_created_at', startTsUtc)
+          .lte('order_created_at', endTsUtc)
+
+        if (legacySalesError) {
+          console.error('Error fetching legacy social media sales:', legacySalesError)
+          return new Response(
+            JSON.stringify({ error: legacySalesError.message }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        const formattedLegacySales = (legacySalesData || []).map(sale => ({
+          order_created_at: sale.order_created_at,
+          amount: Number(sale.amount) || 0
+        }))
+
+        // Unify both datasets
+        const unifiedSalesData = [...shopifySalesData, ...formattedLegacySales]
+
+        console.log('Unified sales data:', { 
           shopifyRecords: shopifySalesData.length,
+          legacyRecords: formattedLegacySales.length,
+          totalRecords: unifiedSalesData.length,
           couponsCount: coupons.length 
         })
 
         const goal = goalData?.sales_goal || 0
-        const currentSalesTotal = shopifySalesData.reduce((sum, sale) => {
-          return sum + (Number(sale.amount) || 0)
+        const currentSalesTotal = unifiedSalesData.reduce((sum, sale) => {
+          return sum + sale.amount
         }, 0)
 
         // Build daily series grouped by São Paulo date
         const dailySeries = []
         const dailyMap = new Map()
         
-        // Group Shopify sales by São Paulo date
-        for (const sale of shopifySalesData) {
+        // Group unified sales by São Paulo date
+        for (const sale of unifiedSalesData) {
           // Convert UTC timestamp to São Paulo date
-          const spDate = new Date(sale.created_at).toLocaleDateString('en-CA', { 
+          const spDate = new Date(sale.order_created_at).toLocaleDateString('en-CA', { 
             timeZone: 'America/Sao_Paulo' 
           })
           const current = dailyMap.get(spDate) || 0
-          dailyMap.set(spDate, current + (Number(sale.amount) || 0))
+          dailyMap.set(spDate, current + sale.amount)
         }
 
         // Fill all days of the month
