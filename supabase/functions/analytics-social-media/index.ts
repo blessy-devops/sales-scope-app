@@ -229,9 +229,14 @@ Deno.serve(async (req) => {
         // Get Shopify orders with social media coupons
         let shopifySalesData = []
         if (coupons.length > 0) {
+          // Use explicit column selection to avoid template string issues
+          const selectColumns = columnToSum === 'total_price' 
+            ? 'total_price as amount, created_at'
+            : 'subtotal_price as amount, created_at'
+          
           const { data: shopifyData, error: shopifyError } = await supabaseAdmin
             .from('shopify_orders_gold')
-            .select(`${columnToSum} as amount, created_at`)
+            .select(selectColumns)
             .in('coupon_code', coupons)
             .gte('created_at', startOfMonth.toISOString())
             .lte('created_at', endOfMonth.toISOString())
