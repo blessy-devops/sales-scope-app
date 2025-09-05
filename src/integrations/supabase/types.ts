@@ -468,12 +468,16 @@ export type Database = {
           cancel_reason: string | null
           cancelled_at: string | null
           channel_bucket: string | null
+          coupon_amount: number | null
+          coupon_code: string | null
+          coupon_type: string | null
           created_at: string | null
           customer_email: string | null
           customer_first_name: string | null
           customer_id: number | null
           customer_last_name: string | null
           customer_phone: string | null
+          discount_codes: Json
           financial_status: string | null
           fulfillment_status: string | null
           id: number
@@ -516,12 +520,16 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           channel_bucket?: string | null
+          coupon_amount?: number | null
+          coupon_code?: string | null
+          coupon_type?: string | null
           created_at?: string | null
           customer_email?: string | null
           customer_first_name?: string | null
           customer_id?: number | null
           customer_last_name?: string | null
           customer_phone?: string | null
+          discount_codes?: Json
           financial_status?: string | null
           fulfillment_status?: string | null
           id: number
@@ -564,12 +572,16 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           channel_bucket?: string | null
+          coupon_amount?: number | null
+          coupon_code?: string | null
+          coupon_type?: string | null
           created_at?: string | null
           customer_email?: string | null
           customer_first_name?: string | null
           customer_id?: number | null
           customer_last_name?: string | null
           customer_phone?: string | null
+          discount_codes?: Json
           financial_status?: string | null
           fulfillment_status?: string | null
           id?: number
@@ -825,6 +837,15 @@ export type Database = {
           monthly_orders: number | null
           monthly_revenue: number | null
           year: number | null
+        }
+        Relationships: []
+      }
+      v_social_media_unified_sales: {
+        Row: {
+          sale_date: string | null
+          source_table: string | null
+          subtotal_price: number | null
+          total_price: number | null
         }
         Relationships: []
       }

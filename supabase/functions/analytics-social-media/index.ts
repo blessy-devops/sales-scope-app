@@ -235,15 +235,17 @@ Deno.serve(async (req) => {
           totalGoal = goalData?.sales_goal || 0;
         }
 
-        // Get all social media coupon codes
-        const { data: couponsData, error: couponsError } = await supabaseAdmin
-          .from('social_media_coupons')
-          .select('coupon_code')
+        // Use the unified view for clean data access
+        const { data: unifiedSalesData, error: salesError } = await supabaseAdmin
+          .from('v_social_media_unified_sales')
+          .select(`sale_date, ${columnToSum} as amount`)
+          .gte('sale_date', new Date(startTsUtc).toISOString().split('T')[0])
+          .lte('sale_date', new Date(endTsUtc).toISOString().split('T')[0])
 
-        if (couponsError) {
-          console.error('Error fetching coupons:', couponsError)
+        if (salesError) {
+          console.error('Error fetching unified sales:', salesError)
           return new Response(
-            JSON.stringify({ error: couponsError.message }),
+            JSON.stringify({ error: salesError.message }),
             { 
               status: 500, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -251,94 +253,29 @@ Deno.serve(async (req) => {
           )
         }
 
-        const coupons = couponsData?.map(c => c.coupon_code.toLowerCase()) || []
-        console.log('Found social media coupons:', coupons.length)
-
-        // Get Shopify orders with social media coupons (case-insensitive)
-        let shopifySalesData = []
-        if (coupons.length > 0) {
-          // Build case-insensitive OR condition for coupon codes
-          let query = supabaseAdmin
-            .from('shopify_orders_gold')
-            .select(`${columnToSum} as amount, created_at, coupon_code`)
-            .gte('created_at', startTsUtc)
-            .lte('created_at', endTsUtc)
-            .eq('financial_status', 'paid')
-            .eq('test', false)
-
-          // Filter by any of the coupon codes (case-insensitive)
-          const orFilters = coupons.map(code => `coupon_code.ilike.${code}`).join(',')
-          query = query.or(orFilters)
-
-          const { data: shopifyData, error: shopifyError } = await query
-
-          if (shopifyError) {
-            console.error('Error fetching Shopify sales:', shopifyError)
-            return new Response(
-              JSON.stringify({ error: shopifyError.message }),
-              { 
-                status: 500, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-              }
-            )
-          }
-          
-          shopifySalesData = (shopifyData || []).map(sale => ({
-            order_created_at: sale.created_at,
-            amount: Number(sale.amount) || 0
-          }))
-        }
-
-        // Get legacy social_media_sales data
-        const { data: legacySalesData, error: legacySalesError } = await supabaseAdmin
-          .from('social_media_sales')
-          .select(`order_created_at, ${columnToSum} as amount`)
-          .gte('order_created_at', startTsUtc)
-          .lte('order_created_at', endTsUtc)
-
-        if (legacySalesError) {
-          console.error('Error fetching legacy social media sales:', legacySalesError)
-          return new Response(
-            JSON.stringify({ error: legacySalesError.message }),
-            { 
-              status: 500, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          )
-        }
-
-        const formattedLegacySales = (legacySalesData || []).map(sale => ({
-          order_created_at: sale.order_created_at,
+        const formattedSalesData = (unifiedSalesData || []).map(sale => ({
+          sale_date: sale.sale_date,
           amount: Number(sale.amount) || 0
         }))
 
-        // Unify both datasets
-        const unifiedSalesData = [...shopifySalesData, ...formattedLegacySales]
-
         console.log('Unified sales data:', { 
-          shopifyRecords: shopifySalesData.length,
-          legacyRecords: formattedLegacySales.length,
-          totalRecords: unifiedSalesData.length,
-          couponsCount: coupons.length 
+          totalRecords: formattedSalesData.length
         })
 
         const goal = totalGoal
-        const currentSalesTotal = unifiedSalesData.reduce((sum, sale) => {
+        const currentSalesTotal = formattedSalesData.reduce((sum, sale) => {
           return sum + sale.amount
         }, 0)
 
-        // Build daily series grouped by São Paulo date
+        // Build daily series - data is already grouped by São Paulo date in the VIEW
         const dailySeries = []
         const dailyMap = new Map()
         
-        // Group unified sales by São Paulo date
-        for (const sale of unifiedSalesData) {
-          // Convert UTC timestamp to São Paulo date
-          const spDate = new Date(sale.order_created_at).toLocaleDateString('en-CA', { 
-            timeZone: 'America/Sao_Paulo' 
-          })
-          const current = dailyMap.get(spDate) || 0
-          dailyMap.set(spDate, current + sale.amount)
+        // Group sales by date (already in São Paulo timezone from VIEW)
+        for (const sale of formattedSalesData) {
+          const dateStr = sale.sale_date
+          const current = dailyMap.get(dateStr) || 0
+          dailyMap.set(dateStr, current + sale.amount)
         }
 
         // Fill all days of the period
