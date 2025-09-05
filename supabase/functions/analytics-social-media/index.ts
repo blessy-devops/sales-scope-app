@@ -153,6 +153,17 @@ Deno.serve(async (req) => {
       }
 
       if (path === 'sales') {
+        // Validate columnToSum parameter if provided in request
+        if (requestData.columnToSum && requestData.columnToSum !== 'total_price' && requestData.columnToSum !== 'subtotal_price') {
+          return new Response(
+            JSON.stringify({ error: 'Parâmetro "columnToSum" inválido. Use "total_price" ou "subtotal_price".' }),
+            {
+              status: 400, // Bad Request
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
         // Handle both legacy (year/month) and new (startDate/endDate) parameters
         let startTsUtc: string;
         let endTsUtc: string;
@@ -170,17 +181,32 @@ Deno.serve(async (req) => {
           console.log('Fetching sales analytics for month:', { year, month });
         }
 
-        // Get user's sales metric preference
-        const { data: settingData, error: settingError } = await supabaseAdmin
-          .from('dashboard_settings')
-          .select('setting_value')
-          .eq('setting_key', 'sales_metric_preference')
-          .single()
-
-        const metricPreference = settingData?.setting_value || 'subtotal_price'
-        const columnToSum = metricPreference === 'total_price' ? 'total_price' : 'subtotal_price'
+        // Get user's sales metric preference (unless overridden by request)
+        let columnToSum = requestData.columnToSum;
         
-        console.log('Using sales metric:', { metricPreference, columnToSum })
+        if (!columnToSum) {
+          const { data: settingData, error: settingError } = await supabaseAdmin
+            .from('dashboard_settings')
+            .select('setting_value')
+            .eq('setting_key', 'sales_metric_preference')
+            .single()
+
+          const metricPreference = settingData?.setting_value || 'subtotal_price'
+          columnToSum = metricPreference === 'total_price' ? 'total_price' : 'subtotal_price'
+        }
+        
+        // Final validation to ensure columnToSum is always valid
+        if (columnToSum !== 'total_price' && columnToSum !== 'subtotal_price') {
+          return new Response(
+            JSON.stringify({ error: 'Parâmetro "columnToSum" inválido. Use "total_price" ou "subtotal_price".' }),
+            {
+              status: 400, // Bad Request
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        
+        console.log('Using sales metric:', { columnToSum })
 
         // Get prorated goal for the period
         let totalGoal = 0;
@@ -297,14 +323,14 @@ Deno.serve(async (req) => {
           });
         }
 
-        console.log('Sales analytics:', { goal, currentSalesTotal, metricUsed: metricPreference, dailySeriesLength: dailySeries.length })
+        console.log('Sales analytics:', { goal, currentSalesTotal, metricUsed: columnToSum, dailySeriesLength: dailySeries.length })
 
         return new Response(
           JSON.stringify({
             goal,
             current_sales_total: currentSalesTotal,
             daily_series: dailySeries,
-            metric_used: metricPreference
+            metric_used: columnToSum
           }),
           { 
             status: 200, 
