@@ -152,12 +152,17 @@ Deno.serve(async (req) => {
       }
 
       if (path === 'sales') {
-        // Create date range for selected month
-        const startOfMonth = new Date(year, month - 1, 1)
-        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999)
-        const monthString = startOfMonth.toISOString().split('T')[0]
+        // Create São Paulo timezone date range for selected month
+        const startOfMonthSP = `${year}-${month.toString().padStart(2, '0')}-01 00:00:00`
+        const lastDay = new Date(year, month, 0).getDate() // Last day of month
+        const endOfMonthSP = `${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')} 23:59:59`
+        
+        // Convert to UTC timestamps for database filtering
+        const startTs = new Date(startOfMonthSP + ' America/Sao_Paulo').toISOString()
+        const endTs = new Date(endOfMonthSP + ' America/Sao_Paulo').toISOString()
+        const monthString = `${year}-${month.toString().padStart(2, '0')}-01`
 
-        console.log('Fetching sales analytics for:', { year, month, monthString })
+        console.log('Fetching sales analytics for:', { year, month, monthString, startTs, endTs })
 
         // Get user's sales metric preference
         const { data: settingData, error: settingError } = await supabaseAdmin
@@ -205,42 +210,26 @@ Deno.serve(async (req) => {
           )
         }
 
-        const coupons = couponsData?.map(c => c.coupon_code) || []
+        const coupons = couponsData?.map(c => c.coupon_code.toLowerCase()) || []
         console.log('Found social media coupons:', coupons.length)
 
-        // Get month's sales data from social_media_sales - select both columns for dynamic calculation
-        const { data: socialMediaSalesData, error: socialMediaSalesError } = await supabaseAdmin
-          .from('social_media_sales')
-          .select('total_price, subtotal_price, order_created_at')
-          .gte('order_created_at', startOfMonth.toISOString())
-          .lte('order_created_at', endOfMonth.toISOString())
-
-        if (socialMediaSalesError) {
-          console.error('Error fetching social media sales:', socialMediaSalesError)
-          return new Response(
-            JSON.stringify({ error: socialMediaSalesError.message }),
-            { 
-              status: 500, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          )
-        }
-
-        // Get Shopify orders with social media coupons
+        // Get Shopify orders with social media coupons (case-insensitive)
         let shopifySalesData = []
         if (coupons.length > 0) {
-          // Use explicit column selection to avoid template string issues
-          const selectColumns = columnToSum === 'total_price' 
-            ? 'total_price as amount, created_at'
-            : 'subtotal_price as amount, created_at'
-          
-          const { data: shopifyData, error: shopifyError } = await supabaseAdmin
+          // Build case-insensitive OR condition for coupon codes
+          let query = supabaseAdmin
             .from('shopify_orders_gold')
-            .select(selectColumns)
-            .in('coupon_code', coupons)
-            .gte('created_at', startOfMonth.toISOString())
-            .lte('created_at', endOfMonth.toISOString())
+            .select(`${columnToSum} as amount, created_at, coupon_code`)
+            .gte('created_at', startTs)
+            .lte('created_at', endTs)
             .eq('financial_status', 'paid')
+            .eq('test', false)
+
+          // Filter by any of the coupon codes (case-insensitive)
+          const orFilters = coupons.map(code => `coupon_code.ilike.${code}`).join(',')
+          query = query.or(orFilters)
+
+          const { data: shopifyData, error: shopifyError } = await query
 
           if (shopifyError) {
             console.error('Error fetching Shopify sales:', shopifyError)
@@ -256,52 +245,33 @@ Deno.serve(async (req) => {
           shopifySalesData = shopifyData || []
         }
 
-        console.log('Data sources:', { 
-          socialMediaRecords: socialMediaSalesData?.length || 0,
+        console.log('Shopify data:', { 
           shopifyRecords: shopifySalesData.length,
           couponsCount: coupons.length 
         })
 
-        // Unify data from both sources
-        const unifiedSalesData = []
-        
-        // Add social media sales data
-        if (socialMediaSalesData) {
-          for (const sale of socialMediaSalesData) {
-            unifiedSalesData.push({
-              created_at: sale.order_created_at,
-              amount: Number(sale[columnToSum]) || 0
-            })
-          }
-        }
-
-        // Add Shopify sales data
-        for (const sale of shopifySalesData) {
-          unifiedSalesData.push({
-            created_at: sale.created_at,
-            amount: Number(sale.amount) || 0
-          })
-        }
-
         const goal = goalData?.sales_goal || 0
-        const currentSalesTotal = unifiedSalesData.reduce((sum, sale) => {
-          return sum + sale.amount
+        const currentSalesTotal = shopifySalesData.reduce((sum, sale) => {
+          return sum + (Number(sale.amount) || 0)
         }, 0)
 
-        // Build daily series
+        // Build daily series grouped by São Paulo date
         const dailySeries = []
         const dailyMap = new Map()
         
-        // Group unified sales by date
-        for (const sale of unifiedSalesData) {
-          const date = new Date(sale.created_at).toISOString().split('T')[0]
-          const current = dailyMap.get(date) || 0
-          dailyMap.set(date, current + sale.amount)
+        // Group Shopify sales by São Paulo date
+        for (const sale of shopifySalesData) {
+          // Convert UTC timestamp to São Paulo date
+          const spDate = new Date(sale.created_at).toLocaleDateString('en-CA', { 
+            timeZone: 'America/Sao_Paulo' 
+          })
+          const current = dailyMap.get(spDate) || 0
+          dailyMap.set(spDate, current + (Number(sale.amount) || 0))
         }
 
         // Fill all days of the month
-        for (let day = 1; day <= endOfMonth.getDate(); day++) {
-          const date = new Date(year, month - 1, day).toISOString().split('T')[0]
+        for (let day = 1; day <= lastDay; day++) {
+          const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
           const total = dailyMap.get(date) || 0
           dailySeries.push({ date, total })
         }
