@@ -189,17 +189,15 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Get month's sales data - select both columns for dynamic calculation
-        const { data: salesData, error: salesError } = await supabaseAdmin
-          .from('social_media_sales')
-          .select('total_price, subtotal_price, order_created_at')
-          .gte('order_created_at', startOfMonth.toISOString())
-          .lte('order_created_at', endOfMonth.toISOString())
+        // Get all social media coupon codes
+        const { data: couponsData, error: couponsError } = await supabaseAdmin
+          .from('social_media_coupons')
+          .select('coupon_code')
 
-        if (salesError) {
-          console.error('Error fetching sales:', salesError)
+        if (couponsError) {
+          console.error('Error fetching coupons:', couponsError)
           return new Response(
-            JSON.stringify({ error: salesError.message }),
+            JSON.stringify({ error: couponsError.message }),
             { 
               status: 500, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -207,24 +205,93 @@ Deno.serve(async (req) => {
           )
         }
 
+        const coupons = couponsData?.map(c => c.coupon_code) || []
+        console.log('Found social media coupons:', coupons.length)
+
+        // Get month's sales data from social_media_sales - select both columns for dynamic calculation
+        const { data: socialMediaSalesData, error: socialMediaSalesError } = await supabaseAdmin
+          .from('social_media_sales')
+          .select('total_price, subtotal_price, order_created_at')
+          .gte('order_created_at', startOfMonth.toISOString())
+          .lte('order_created_at', endOfMonth.toISOString())
+
+        if (socialMediaSalesError) {
+          console.error('Error fetching social media sales:', socialMediaSalesError)
+          return new Response(
+            JSON.stringify({ error: socialMediaSalesError.message }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        // Get Shopify orders with social media coupons
+        let shopifySalesData = []
+        if (coupons.length > 0) {
+          const { data: shopifyData, error: shopifyError } = await supabaseAdmin
+            .from('shopify_orders_gold')
+            .select(`${columnToSum} as amount, created_at`)
+            .in('coupon_code', coupons)
+            .gte('created_at', startOfMonth.toISOString())
+            .lte('created_at', endOfMonth.toISOString())
+            .eq('financial_status', 'paid')
+
+          if (shopifyError) {
+            console.error('Error fetching Shopify sales:', shopifyError)
+            return new Response(
+              JSON.stringify({ error: shopifyError.message }),
+              { 
+                status: 500, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            )
+          }
+          
+          shopifySalesData = shopifyData || []
+        }
+
+        console.log('Data sources:', { 
+          socialMediaRecords: socialMediaSalesData?.length || 0,
+          shopifyRecords: shopifySalesData.length,
+          couponsCount: coupons.length 
+        })
+
+        // Unify data from both sources
+        const unifiedSalesData = []
+        
+        // Add social media sales data
+        if (socialMediaSalesData) {
+          for (const sale of socialMediaSalesData) {
+            unifiedSalesData.push({
+              created_at: sale.order_created_at,
+              amount: Number(sale[columnToSum]) || 0
+            })
+          }
+        }
+
+        // Add Shopify sales data
+        for (const sale of shopifySalesData) {
+          unifiedSalesData.push({
+            created_at: sale.created_at,
+            amount: Number(sale.amount) || 0
+          })
+        }
+
         const goal = goalData?.sales_goal || 0
-        const currentSalesTotal = salesData?.reduce((sum, sale) => {
-          const saleValue = Number(sale[columnToSum]) || 0
-          return sum + saleValue
-        }, 0) || 0
+        const currentSalesTotal = unifiedSalesData.reduce((sum, sale) => {
+          return sum + sale.amount
+        }, 0)
 
         // Build daily series
         const dailySeries = []
         const dailyMap = new Map()
         
-        // Group sales by date using the chosen metric
-        if (salesData) {
-          for (const sale of salesData) {
-            const date = new Date(sale.order_created_at).toISOString().split('T')[0]
-            const current = dailyMap.get(date) || 0
-            const saleValue = Number(sale[columnToSum]) || 0
-            dailyMap.set(date, current + saleValue)
-          }
+        // Group unified sales by date
+        for (const sale of unifiedSalesData) {
+          const date = new Date(sale.created_at).toISOString().split('T')[0]
+          const current = dailyMap.get(date) || 0
+          dailyMap.set(date, current + sale.amount)
         }
 
         // Fill all days of the month
