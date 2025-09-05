@@ -4,7 +4,7 @@ import { Instagram, Target, Settings, RefreshCw } from "lucide-react";
 import { GoalsModal } from "@/components/GoalsModal";
 import { CouponsModal } from "@/components/CouponsModal";
 import { FollowersMetricsSection } from "@/components/FollowersMetricsSection";
-import { SalesMetricsSection } from "@/components/SalesMetricsSection";
+import SocialMediaSalesAnalytics from "./analises/components/SocialMediaSalesAnalytics";
 import { PeriodRangePicker, DateRange } from "@/components/PeriodRangePicker";
 import { useQueryClient } from "@tanstack/react-query";
 import { startOfMonth, endOfMonth } from "date-fns";
@@ -74,7 +74,7 @@ export default function SocialMedia() {
 
       {/* Sales Performance Section */}
       <div className="mb-8">
-        <SalesMetricsSection dateRange={dateRange} onOpenGoals={() => setGoalsModalOpen(true)} />
+        <SocialMediaSalesAnalytics />
       </div>
 
       {/* Modals */}
