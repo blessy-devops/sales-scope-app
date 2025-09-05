@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
         // Use the unified view for clean data access
         const { data: unifiedSalesData, error: salesError } = await supabaseAdmin
           .from('v_social_media_unified_sales')
-          .select(`sale_date, ${columnToSum} as amount`)
+          .select(`sale_date, ${columnToSum}`)
           .gte('sale_date', new Date(startTsUtc).toISOString().split('T')[0])
           .lte('sale_date', new Date(endTsUtc).toISOString().split('T')[0])
 
@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
 
         const formattedSalesData = (unifiedSalesData || []).map(sale => ({
           sale_date: sale.sale_date,
-          amount: Number(sale.amount) || 0
+          amount: Number(sale[columnToSum]) || 0
         }))
 
         console.log('Unified sales data:', { 
