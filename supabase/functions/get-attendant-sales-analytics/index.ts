@@ -34,31 +34,20 @@ serve(async (req) => {
       );
     }
 
-    // Define São Paulo timezone window
-    const startTs = `${startDate} 00:00:00`;
-    const endTs = `${endDate} 23:59:59.999`;
+    // Log the parameters received
+    console.log('Chamando RPC com as datas:', { startDate, endDate });
 
-    // Query shopify orders filtered by utm_medium containing 'atendimento'
-    const { data: orders, error: ordersError } = await supabase
-      .from('shopify_orders_gold')
-      .select(`
-        id,
-        order_number,
-        total_price,
-        utm_medium,
-        created_at,
-        financial_status
-      `)
-      .gte('created_at', `${startTs} America/Sao_Paulo`)
-      .lte('created_at', `${endTs} America/Sao_Paulo`)
-      .ilike('utm_medium', '%atendimento%')
-      .eq('financial_status', 'paid')
-      .eq('test', false);
+    // Call the new RPC function to get attendant sales data
+    const { data: salesData, error: rpcError } = await supabase
+      .rpc('get_attendant_sales_by_period', {
+        start_date: startDate,
+        end_date: endDate
+      });
 
-    if (ordersError) {
-      console.error('Error fetching orders:', ordersError);
+    if (rpcError) {
+      console.error('Erro na RPC:', rpcError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch orders' }),
+        JSON.stringify({ error: 'Failed to fetch attendant sales data' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -66,36 +55,21 @@ serve(async (req) => {
       );
     }
 
-    // Query all attendants
-    const { data: attendants, error: attendantsError } = await supabase
-      .from('attendants')
-      .select('*');
+    console.log('Dados recebidos da RPC:', (salesData || []).length, 'linhas');
 
-    if (attendantsError) {
-      console.error('Error fetching attendants:', attendantsError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch attendants' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Process data
-    const processedOrders = orders || [];
-    const processedAttendants = attendants || [];
+    // Process the RPC data
+    const processedSales = salesData || [];
 
     // Calculate KPIs
-    const totalRevenue = processedOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0);
-    const totalSales = processedOrders.length;
+    const totalRevenue = processedSales.reduce((sum, sale) => sum + (parseFloat(sale.total_revenue) || 0), 0);
+    const totalSales = processedSales.length;
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Calculate daily series
     const dailyRevenue = new Map();
-    processedOrders.forEach(order => {
-      const date = new Date(order.created_at).toISOString().split('T')[0];
-      const revenue = parseFloat(order.total_price) || 0;
+    processedSales.forEach(sale => {
+      const date = sale.sale_date;
+      const revenue = parseFloat(sale.total_revenue) || 0;
       dailyRevenue.set(date, (dailyRevenue.get(date) || 0) + revenue);
     });
 
@@ -106,54 +80,30 @@ serve(async (req) => {
     // Calculate attendant ranking
     const attendantStats = new Map();
     
-    processedOrders.forEach(order => {
-      const utmMedium = order.utm_medium || '';
-      let assignedAttendant = null;
+    processedSales.forEach(sale => {
+      const attendantName = sale.attendant_name;
+      const stats = attendantStats.get(attendantName) || {
+        name: attendantName,
+        revenue: 0,
+        sales: 0
+      };
       
-      // Find matching attendant by utm_identifier
-      for (const attendant of processedAttendants) {
-        if (utmMedium.toLowerCase().includes(attendant.utm_identifier.toLowerCase())) {
-          assignedAttendant = attendant;
-          break;
-        }
-      }
-      
-      if (assignedAttendant) {
-        const stats = attendantStats.get(assignedAttendant.id) || {
-          name: assignedAttendant.full_name,
-          revenue: 0,
-          sales: 0
-        };
-        
-        stats.revenue += parseFloat(order.total_price) || 0;
-        stats.sales += 1;
-        attendantStats.set(assignedAttendant.id, stats);
-      }
+      stats.revenue += parseFloat(sale.total_revenue) || 0;
+      stats.sales += 1;
+      attendantStats.set(attendantName, stats);
     });
 
     const attendantRanking = Array.from(attendantStats.values())
       .sort((a, b) => b.revenue - a.revenue);
 
-    // Get recent sales with attendant names
-    const recentSales = processedOrders
-      .map(order => {
-        const utmMedium = order.utm_medium || '';
-        let attendantName = 'Não identificado';
-        
-        for (const attendant of processedAttendants) {
-          if (utmMedium.toLowerCase().includes(attendant.utm_identifier.toLowerCase())) {
-            attendantName = attendant.full_name;
-            break;
-          }
-        }
-        
-        return {
-          date: new Date(order.created_at).toISOString().split('T')[0],
-          attendantName,
-          orderNumber: order.order_number,
-          value: parseFloat(order.total_price) || 0
-        };
-      })
+    // Get recent sales
+    const recentSales = processedSales
+      .map(sale => ({
+        date: sale.sale_date,
+        attendantName: sale.attendant_name,
+        orderNumber: sale.order_number,
+        value: parseFloat(sale.total_revenue) || 0
+      }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 20); // Get last 20 sales
 

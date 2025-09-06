@@ -882,6 +882,17 @@ export type Database = {
           orders_count: number
         }[]
       }
+      get_attendant_sales_by_period: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          attendant_name: string
+          attendant_utm: string
+          order_number: number
+          sale_date: string
+          total_revenue: number
+          total_sales: number
+        }[]
+      }
       get_daily_sales_period: {
         Args: { end_date: string; start_date: string }
         Returns: {
