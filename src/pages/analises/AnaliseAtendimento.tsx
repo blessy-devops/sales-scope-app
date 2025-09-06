@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Settings } from "lucide-react";
+import { Settings, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PeriodRangePicker } from "@/components/PeriodRangePicker";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AttendantSettingsModal } from "./components/AttendantSettingsModal";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { DateRange as RDPDateRange } from "react-day-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface AttendantKPIs {
@@ -49,6 +52,12 @@ export default function AnaliseAtendimento() {
     to: new Date()
   });
 
+  const handleDateRangeChange = (range: RDPDateRange | undefined) => {
+    if (range?.from && range.to) {
+      setDateRange({ from: range.from, to: range.to });
+    }
+  };
+
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ['attendant-analytics', dateRange],
     queryFn: async () => {
@@ -81,10 +90,26 @@ export default function AnaliseAtendimento() {
 
       {/* Filters */}
       <div className="flex items-center gap-4">
-        <PeriodRangePicker
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-[280px] justify-start">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} - {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="range"
+              selected={{ from: dateRange.from, to: dateRange.to }}
+              onSelect={handleDateRangeChange}
+              numberOfMonths={2}
+              locale={ptBR}
+              disabled={(date) => date > new Date()}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* KPIs Grid */}
