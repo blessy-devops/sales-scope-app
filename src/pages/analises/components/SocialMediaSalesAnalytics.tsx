@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format, subDays, differenceInDays, getDaysInMonth } from "date-fns";
+import { format, subDays, differenceInDays, getDaysInMonth, startOfMonth, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
@@ -59,8 +59,8 @@ function formatRangeLabel(range: DateRange | undefined) {
 }
 
 const initialRange: DateRange = {
-  from: subDays(new Date(), 29),
-  to: new Date(),
+  from: startOfMonth(new Date()),
+  to: endOfDay(new Date()),
 };
 
 export default function SocialMediaSalesAnalytics() {
