@@ -22,12 +22,9 @@ export default function SocialMedia() {
   const selectedDate = dateRange.from;
   
   const handleRefreshAll = () => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-    
-    // Invalidate followers using the first month
+    // Invalidate followers queries
     queryClient.invalidateQueries({
-      queryKey: ['followers-analytics', year, month]
+      queryKey: ['followers-analytics']
     });
     
     // Invalidate sales using the date range
@@ -69,7 +66,7 @@ export default function SocialMedia() {
 
       {/* Followers Performance Section */}
       <div className="mb-12">
-        <FollowersMetricsSection selectedDate={selectedDate} onOpenGoals={() => setGoalsModalOpen(true)} />
+        <FollowersMetricsSection onOpenGoals={() => setGoalsModalOpen(true)} />
       </div>
 
       {/* Sales Performance Section */}

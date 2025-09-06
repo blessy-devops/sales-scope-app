@@ -1,36 +1,44 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RefreshCw, Target, TrendingUp, Users, BarChart3, Minus, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { getDaysInMonth } from 'date-fns';
+import { PeriodRangePicker, DateRange } from "@/components/PeriodRangePicker";
+import { startOfMonth, endOfMonth, subDays, subMonths, differenceInDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface FollowersAnalytics {
   goal: number;
-  current_growth: number;
-  start_of_month_count: number;
-  latest_count: number;
-  daily_series: Array<{ date: string; followers_count: number }>;
+  startCount: number;
+  endCount: number;
+  dailySeries: Array<{ date: string; followers_count: number }>;
 }
 
 interface FollowersMetricsSectionProps {
-  selectedDate: Date;
   onOpenGoals?: () => void;
 }
 
-export function FollowersMetricsSection({ selectedDate, onOpenGoals }: FollowersMetricsSectionProps) {
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth() + 1;
+export function FollowersMetricsSection({ onOpenGoals }: FollowersMetricsSectionProps) {
+  const [periodoSeguidores, setPeriodoSeguidores] = useState("este-mes");
+  const [dateRangeSeguidores, setDateRangeSeguidores] = useState<DateRange>(() => ({
+    from: startOfMonth(new Date()),
+    to: new Date()
+  }));
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['followers-analytics', year, month],
+    queryKey: ['followers-analytics', dateRangeSeguidores.from, dateRangeSeguidores.to],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('analytics-social-media/followers', {
-        body: { year, month }
+        body: { 
+          startDate: format(dateRangeSeguidores.from, 'yyyy-MM-dd'),
+          endDate: format(dateRangeSeguidores.to, 'yyyy-MM-dd')
+        }
       });
       
       if (error) throw error;
@@ -40,32 +48,41 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
     refetchOnWindowFocus: true,
   });
 
-  // Helper functions for calculations
-  const getMonthContext = (selectedDate: Date) => {
+  const handlePeriodChange = (value: string) => {
+    setPeriodoSeguidores(value);
     const today = new Date();
-    const isCurrentMonth = selectedDate.getFullYear() === today.getFullYear() && 
-                          selectedDate.getMonth() === today.getMonth();
-    const totalDaysInMonth = getDaysInMonth(selectedDate);
-    const diasPassados = isCurrentMonth ? today.getDate() : totalDaysInMonth;
-    return { isCurrentMonth, totalDaysInMonth, diasPassados };
+    
+    switch (value) {
+      case "este-mes":
+        setDateRangeSeguidores({ from: startOfMonth(today), to: today });
+        break;
+      case "mes-passado":
+        const lastMonth = subMonths(today, 1);
+        setDateRangeSeguidores({ from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) });
+        break;
+      case "ultimos-7-dias":
+        setDateRangeSeguidores({ from: subDays(today, 6), to: today });
+        break;
+    }
   };
 
+  // Helper functions for calculations
   const buildFollowersDailyGrowth = (dailySeries: Array<{ date: string; followers_count: number }>) => {
     if (!dailySeries || dailySeries.length === 0) return [];
     
     const sortedData = [...dailySeries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return sortedData.map((item, index) => {
       const dailyGrowth = index === 0 ? 0 : item.followers_count - sortedData[index - 1].followers_count;
+      const totalDays = differenceInDays(dateRangeSeguidores.to, dateRangeSeguidores.from) + 1;
       return {
         date: item.date,
         realizado: Math.max(0, dailyGrowth),
-        meta: data?.goal ? Math.round(data.goal / getMonthContext(selectedDate).totalDaysInMonth) : 0
+        meta: data?.goal ? Math.round(data.goal / totalDays) : 0
       };
     });
   };
 
   const formatNumber = (num: number) => num.toLocaleString('pt-BR');
-  const attainmentPercentage = data?.goal ? (data.current_growth / data.goal) * 100 : 0;
   const formatPercentage = (value: number) => {
     if (value > 0 && value < 1) {
       return value.toFixed(1) + '%';
@@ -73,14 +90,18 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
     return Math.round(value) + '%';
   };
 
-  // Calculate additional metrics
-  const { diasPassados, totalDaysInMonth } = getMonthContext(selectedDate);
-  const saldo = data?.goal ? Math.max(0, data.goal - data.current_growth) : 0;
-  const ritmo = diasPassados > 0 && data?.current_growth ? data.current_growth / diasPassados : 0;
-  const projetado = ritmo * totalDaysInMonth;
+  // Calculate metrics using new data structure
+  const currentGrowth = data ? data.endCount - data.startCount : 0;
+  const attainmentPercentage = data?.goal ? (currentGrowth / data.goal) * 100 : 0;
+  
+  const diasPassados = differenceInDays(dateRangeSeguidores.to, dateRangeSeguidores.from) + 1;
+  const totalDays = diasPassados; // For the current period
+  const saldo = data?.goal ? Math.max(0, data.goal - currentGrowth) : 0;
+  const ritmo = diasPassados > 0 && currentGrowth ? currentGrowth / diasPassados : 0;
+  const projetado = ritmo * totalDays;
 
   // Prepare chart data
-  const chartData = data ? buildFollowersDailyGrowth(data.daily_series) : [];
+  const chartData = data ? buildFollowersDailyGrowth(data.dailySeries) : [];
 
   const chartConfig = {
     followers_count: {
@@ -120,6 +141,25 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
         </h2>
       </div>
 
+      <Tabs value={periodoSeguidores} onValueChange={handlePeriodChange}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="este-mes">Este Mês</TabsTrigger>
+          <TabsTrigger value="mes-passado">Mês Passado</TabsTrigger>
+          <TabsTrigger value="ultimos-7-dias">Últimos 7 dias</TabsTrigger>
+          <TabsTrigger value="customizado">Customizado</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="customizado" className="mt-4">
+          <PeriodRangePicker
+            dateRange={dateRangeSeguidores}
+            onDateRangeChange={(range) => {
+              setDateRangeSeguidores(range);
+              setPeriodoSeguidores("customizado");
+            }}
+          />
+        </TabsContent>
+      </Tabs>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Card 1: Meta de Seguidores */}
         <Card>
@@ -154,7 +194,7 @@ export function FollowersMetricsSection({ selectedDate, onOpenGoals }: Followers
               <Skeleton className="h-8 w-full" />
             ) : (
               <div className="text-2xl font-bold">
-                {formatNumber(data?.current_growth || 0)}
+                {formatNumber(currentGrowth)}
               </div>
             )}
           </CardContent>
