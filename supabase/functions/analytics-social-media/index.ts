@@ -47,19 +47,31 @@ Deno.serve(async (req) => {
 
     if (req.method === 'GET' || req.method === 'POST') {
       if (path === 'followers') {
-        // Create date range for selected month
-        const startOfMonth = new Date(year, month - 1, 1)
-        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999)
-        const monthString = startOfMonth.toISOString().split('T')[0]
+        // Get startDate and endDate from request
+        const startDate = requestData.startDate
+        const endDate = requestData.endDate
 
-        console.log('Fetching followers analytics for:', { year, month, monthString })
+        if (!startDate || !endDate) {
+          return new Response(
+            JSON.stringify({ error: 'startDate and endDate parameters are required' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
 
-        // Get monthly goal
+        console.log('Fetching followers analytics for period:', { startDate, endDate })
+
+        // Get monthly goal using startDate to determine the month
+        const startDateObj = new Date(startDate)
+        const monthString = `${startDateObj.getFullYear()}-${(startDateObj.getMonth() + 1).toString().padStart(2, '0')}-01`
+        
         const { data: goalData, error: goalError } = await supabaseAdmin
           .from('monthly_goals')
           .select('follower_goal')
           .eq('month', monthString)
-          .single()
+          .maybeSingle()
 
         if (goalError && goalError.code !== 'PGRST116') {
           console.error('Error fetching goal:', goalError)
@@ -72,34 +84,32 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Get start of month followers count
+        // Get start count - most recent followers_count before or on startDate
         const { data: startData, error: startError } = await supabaseAdmin
           .from('instagram_metrics')
           .select('followers_count, created_at')
-          .gte('created_at', startOfMonth.toISOString())
-          .lte('created_at', endOfMonth.toISOString())
-          .order('created_at', { ascending: true })
-          .limit(1)
-
-        // Get latest followers count within the month
-        const { data: latestData, error: latestError } = await supabaseAdmin
-          .from('instagram_metrics')
-          .select('followers_count, created_at')
-          .gte('created_at', startOfMonth.toISOString())
-          .lte('created_at', endOfMonth.toISOString())
+          .lte('created_at', startDate + 'T23:59:59.999Z')
           .order('created_at', { ascending: false })
           .limit(1)
 
-        // Get all metrics for daily series
+        // Get end count - most recent followers_count before or on endDate
+        const { data: endData, error: endError } = await supabaseAdmin
+          .from('instagram_metrics')
+          .select('followers_count, created_at')
+          .lte('created_at', endDate + 'T23:59:59.999Z')
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        // Get daily series - all metrics within the date range
         const { data: dailyData, error: dailyError } = await supabaseAdmin
           .from('instagram_metrics')
           .select('followers_count, created_at')
-          .gte('created_at', startOfMonth.toISOString())
-          .lte('created_at', endOfMonth.toISOString())
+          .gte('created_at', startDate + 'T00:00:00.000Z')
+          .lte('created_at', endDate + 'T23:59:59.999Z')
           .order('created_at', { ascending: true })
 
-        if (startError || latestError || dailyError) {
-          console.error('Error fetching metrics:', { startError, latestError, dailyError })
+        if (startError || endError || dailyError) {
+          console.error('Error fetching metrics:', { startError, endError, dailyError })
           return new Response(
             JSON.stringify({ error: 'Error fetching Instagram metrics' }),
             { 
@@ -110,9 +120,8 @@ Deno.serve(async (req) => {
         }
 
         const goal = goalData?.follower_goal || 0
-        const startOfMonthCount = startData?.[0]?.followers_count || 0
-        const latestCount = latestData?.[0]?.followers_count || 0
-        const currentGrowth = latestCount - startOfMonthCount
+        const startCount = startData?.[0]?.followers_count || 0
+        const endCount = endData?.[0]?.followers_count || 0
 
         // Build daily series
         const dailySeries = []
@@ -126,24 +135,19 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Fill all days of the month
-        let lastKnownCount = startOfMonthCount
-        for (let day = 1; day <= endOfMonth.getDate(); day++) {
-          const date = new Date(year, month - 1, day).toISOString().split('T')[0]
-          const count = dailyMap.get(date) || lastKnownCount
-          dailySeries.push({ date, followers_count: count })
-          lastKnownCount = count
+        // Convert dailyMap to array format
+        for (const [date, followers_count] of dailyMap.entries()) {
+          dailySeries.push({ date, followers_count })
         }
 
-        console.log('Followers analytics:', { goal, startOfMonthCount, latestCount, currentGrowth, dailySeriesLength: dailySeries.length })
+        console.log('Followers analytics:', { goal, startCount, endCount, dailySeriesLength: dailySeries.length })
 
         return new Response(
           JSON.stringify({
             goal,
-            current_growth: currentGrowth,
-            start_of_month_count: startOfMonthCount,
-            latest_count: latestCount,
-            daily_series: dailySeries
+            startCount,
+            endCount,
+            dailySeries
           }),
           { 
             status: 200, 
