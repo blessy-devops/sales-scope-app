@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -89,6 +89,7 @@ export default function SocialMediaSalesAnalytics() {
   const dailySales = data?.dailySales || [];
   const realizadoMTD = dailySales.reduce((sum, item) => sum + item.amount, 0);
   const metaPeriodo = data?.salesGoal || 0;
+  const totalSales = dailySales.length;
   
   const diasPassados = dateRange?.from && dateRange?.to 
     ? differenceInDays(dateRange.to, dateRange.from) + 1 
@@ -99,6 +100,14 @@ export default function SocialMediaSalesAnalytics() {
   const projetado = mediaDiaria * totalDiasNoMes;
   const percentualAtingimento = metaPeriodo > 0 ? (realizadoMTD / metaPeriodo) * 100 : 0;
   const saldo = metaPeriodo - realizadoMTD;
+
+  // Calculate pacing for Badge color logic
+  const diasPassadosAtual = differenceInDays(new Date(), dateRange?.from || new Date()) + 1;
+  const totalDiasPeriodo = dateRange?.from && dateRange?.to 
+    ? differenceInDays(dateRange.to, dateRange.from) + 1 
+    : 0;
+  const percentualDiasPassados = totalDiasPeriodo > 0 ? (diasPassadosAtual / totalDiasPeriodo) * 100 : 0;
+  const badgeVariant = percentualAtingimento >= percentualDiasPassados ? "default" : "destructive";
 
   const chartData = dailySales.map((d) => ({
     date: d.sale_date,
@@ -173,7 +182,7 @@ export default function SocialMediaSalesAnalytics() {
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Meta do Período</div>
@@ -186,32 +195,32 @@ export default function SocialMediaSalesAnalytics() {
           </Card>
           
           <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Realizado MTD</div>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm text-muted-foreground font-normal">Realizado MTD</CardTitle>
+                {!isLoading && (
+                  <Badge variant={badgeVariant} className="text-xs">
+                    {percentualAtingimento.toFixed(1)}%
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
               {isLoading ? (
-                <Skeleton className="h-8 w-20 mt-2" />
+                <Skeleton className="h-8 w-20" />
               ) : (
-                <div className="text-2xl font-bold mt-2">{formatBRL(realizadoMTD)}</div>
+                <div className="text-2xl font-bold">{formatBRL(realizadoMTD)}</div>
               )}
             </CardContent>
           </Card>
           
-          <Card className="md:col-span-2 lg:col-span-1">
+          <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Saldo & % Atingimento</div>
+              <div className="text-sm text-muted-foreground">Saldo</div>
               {isLoading ? (
                 <Skeleton className="h-8 w-20 mt-2" />
               ) : (
-                <div className="space-y-2 mt-2">
-                  <div className="text-2xl font-bold">{formatBRL(saldo)}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {percentualAtingimento.toFixed(1)}% atingido
-                  </div>
-                  <Progress 
-                    value={Math.min(Math.max(percentualAtingimento, 0), 100)} 
-                    className="h-2"
-                  />
-                </div>
+                <div className="text-2xl font-bold mt-2">{formatBRL(saldo)}</div>
               )}
             </CardContent>
           </Card>
@@ -234,6 +243,17 @@ export default function SocialMediaSalesAnalytics() {
                 <Skeleton className="h-8 w-20 mt-2" />
               ) : (
                 <div className="text-2xl font-bold mt-2">{formatBRL(projetado)}</div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Total de Vendas</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-2" />
+              ) : (
+                <div className="text-2xl font-bold mt-2">{totalSales}</div>
               )}
             </CardContent>
           </Card>
