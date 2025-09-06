@@ -5,21 +5,14 @@ import { GoalsModal } from "@/components/GoalsModal";
 import { CouponsModal } from "@/components/CouponsModal";
 import { FollowersMetricsSection } from "@/components/FollowersMetricsSection";
 import SocialMediaSalesAnalytics from "@/pages/analises/components/SocialMediaSalesAnalytics";
-import { PeriodRangePicker, DateRange } from "@/components/PeriodRangePicker";
 import { useQueryClient } from "@tanstack/react-query";
-import { startOfMonth, endOfMonth } from "date-fns";
 export default function SocialMedia() {
-  const currentDate = new Date();
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: startOfMonth(currentDate),
-    to: endOfMonth(currentDate)
-  });
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   const [couponsModalOpen, setCouponsModalOpen] = useState(false);
   const queryClient = useQueryClient();
   
-  // For followers, use the first month of the range
-  const selectedDate = dateRange.from;
+  // Use current date for goals modal
+  const selectedDate = new Date();
   
   const handleRefreshAll = () => {
     // Invalidate followers queries
@@ -27,12 +20,9 @@ export default function SocialMedia() {
       queryKey: ['followers-analytics']
     });
     
-    // Invalidate sales using the date range
-    const startISO = new Date(`${dateRange.from.getFullYear()}-${(dateRange.from.getMonth() + 1).toString().padStart(2, '0')}-${dateRange.from.getDate().toString().padStart(2, '0')}T00:00:00-03:00`).toISOString();
-    const endISO = new Date(`${dateRange.to.getFullYear()}-${(dateRange.to.getMonth() + 1).toString().padStart(2, '0')}-${dateRange.to.getDate().toString().padStart(2, '0')}T23:59:59-03:00`).toISOString();
-    
+    // Invalidate sales queries
     queryClient.invalidateQueries({
-      queryKey: ['sales-analytics', startISO, endISO]
+      queryKey: ['sales-analytics']
     });
   };
   return <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -49,7 +39,6 @@ export default function SocialMedia() {
         </div>
         
         <div className="flex items-center gap-2">
-          <PeriodRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
           <Button onClick={() => setGoalsModalOpen(true)} variant="outline">
             <Target className="mr-2 h-4 w-4" />
             Definir Metas

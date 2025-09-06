@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { RefreshCw, Target, TrendingUp, Users, BarChart3, Minus, Clock, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCw, Target, TrendingUp, Users, BarChart3, Minus, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DateRange as RDPDateRange } from "react-day-picker";
+import { PeriodRangePicker } from "@/components/PeriodRangePicker";
 import { startOfMonth, endOfMonth, subDays, subMonths, differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -73,11 +71,9 @@ export function FollowersMetricsSection({ onOpenGoals }: FollowersMetricsSection
     }
   };
 
-  const handleDateRangeChange = (range: RDPDateRange | undefined) => {
-    if (range?.from && range.to) {
-      setDateRangeSeguidores({ from: range.from, to: range.to });
-      setPeriodoSeguidores("customizado");
-    }
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRangeSeguidores(range);
+    setPeriodoSeguidores("customizado");
   };
 
   // Helper functions for calculations
@@ -164,26 +160,11 @@ export function FollowersMetricsSection({ onOpenGoals }: FollowersMetricsSection
         </TabsList>
         
         <TabsContent value="customizado" className="mt-4">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[280px] justify-start">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(dateRangeSeguidores.from, "dd/MM/yyyy", { locale: ptBR })} - {format(dateRangeSeguidores.to, "dd/MM/yyyy", { locale: ptBR })}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                selected={{ from: dateRangeSeguidores.from, to: dateRangeSeguidores.to }}
-                onSelect={handleDateRangeChange}
-                numberOfMonths={2}
-                locale={ptBR}
-                disabled={(date) => date > new Date()}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          <PeriodRangePicker
+            dateRange={dateRangeSeguidores}
+            onDateRangeChange={handleDateRangeChange}
+            className="w-[280px]"
+          />
         </TabsContent>
       </Tabs>
 
