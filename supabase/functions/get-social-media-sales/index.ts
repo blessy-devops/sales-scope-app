@@ -138,8 +138,31 @@ Deno.serve(async (req) => {
 
     console.log('Time series result:', { length: timeSeries.length, total: timeSeries.reduce((sum, item) => sum + item.amount, 0) })
 
+    // Fetch sales goal for the month
+    const monthKey = new Date(startDate).toISOString().slice(0, 7) + '-01'
+    console.log('Fetching sales goal for month:', monthKey)
+    
+    const { data: goalData, error: goalError } = await supabase
+      .from('monthly_goals')
+      .select('sales_goal')
+      .eq('month', monthKey)
+      .single()
+
+    if (goalError && goalError.code !== 'PGRST116') { // PGRST116 is "no rows found"
+      console.error('Error fetching sales goal:', goalError)
+    }
+
+    const salesGoal = goalData?.sales_goal || 0
+    console.log('Sales goal found:', salesGoal)
+
+    // Return structured response with both daily sales and sales goal
+    const response = {
+      dailySales: timeSeries,
+      salesGoal: salesGoal
+    }
+
     return new Response(
-      JSON.stringify(timeSeries),
+      JSON.stringify(response),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
