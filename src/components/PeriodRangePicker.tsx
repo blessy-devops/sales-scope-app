@@ -1,7 +1,8 @@
 import * as React from "react";
-import { format, startOfMonth, endOfMonth, isAfter, isBefore } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, X } from "lucide-react";
+import { DateRange as RDPDateRange } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,45 +26,28 @@ interface PeriodRangePickerProps {
 
 export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: PeriodRangePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [tempRange, setTempRange] = React.useState<{ from?: Date; to?: Date }>({
-    from: startOfMonth(dateRange.from),
-    to: endOfMonth(dateRange.to)
+  const [tempRange, setTempRange] = React.useState<RDPDateRange | undefined>({
+    from: dateRange.from,
+    to: dateRange.to
   });
 
   const formatDateRange = (range: DateRange) => {
-    const fromFormatted = format(range.from, "MMM/yyyy", { locale: ptBR });
-    const toFormatted = format(range.to, "MMM/yyyy", { locale: ptBR });
+    const fromFormatted = format(range.from, "dd/MM/yyyy", { locale: ptBR });
+    const toFormatted = format(range.to, "dd/MM/yyyy", { locale: ptBR });
     
-    if (format(range.from, "yyyy-MM") === format(range.to, "yyyy-MM")) {
-      return format(range.from, "MMMM 'de' yyyy", { locale: ptBR });
+    if (format(range.from, "yyyy-MM-dd") === format(range.to, "yyyy-MM-dd")) {
+      return format(range.from, "dd/MM/yyyy", { locale: ptBR });
     }
     
     return `${fromFormatted} - ${toFormatted}`;
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
-
-    const monthStart = startOfMonth(date);
-    
-    if (!tempRange.from || (tempRange.from && tempRange.to)) {
-      // Starting new selection
-      setTempRange({ from: monthStart, to: undefined });
-    } else if (tempRange.from && !tempRange.to) {
-      // Completing selection
-      const fromMonth = startOfMonth(tempRange.from);
-      const toMonth = endOfMonth(date);
-      
-      if (isAfter(monthStart, fromMonth)) {
-        setTempRange({ from: fromMonth, to: toMonth });
-      } else {
-        setTempRange({ from: monthStart, to: endOfMonth(tempRange.from) });
-      }
-    }
+  const handleDateRangeSelect = (range: RDPDateRange | undefined) => {
+    setTempRange(range);
   };
 
   const handleApply = () => {
-    if (tempRange.from && tempRange.to) {
+    if (tempRange?.from && tempRange?.to) {
       onDateRangeChange({
         from: tempRange.from,
         to: tempRange.to
@@ -73,16 +57,16 @@ export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: P
   };
 
   const handleClear = () => {
-    const currentMonth = new Date();
+    const today = new Date();
     const range = {
-      from: startOfMonth(currentMonth),
-      to: endOfMonth(currentMonth)
+      from: startOfMonth(today),
+      to: endOfMonth(today)
     };
     setTempRange(range);
     onDateRangeChange(range);
   };
 
-  const isRangeComplete = tempRange.from && tempRange.to;
+  const isRangeComplete = tempRange?.from && tempRange?.to;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -113,24 +97,27 @@ export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: P
           </div>
           
           <Calendar
-            mode="single"
-            selected={tempRange.from}
-            onSelect={handleDateSelect}
+            mode="range"
+            selected={tempRange}
+            onSelect={handleDateRangeSelect}
+            numberOfMonths={2}
+            locale={ptBR}
+            disabled={(date) => date > new Date()}
             initialFocus
-            className={cn("p-0 pointer-events-auto")}
+            className="p-3 pointer-events-auto"
           />
           
-          {tempRange.from && (
+          {tempRange?.from && (
             <div className="text-xs text-muted-foreground px-3">
               {tempRange.to ? (
                 <span>
-                  Período: {format(tempRange.from, "MMM/yyyy", { locale: ptBR })} - {format(tempRange.to, "MMM/yyyy", { locale: ptBR })}
+                  Período: {format(tempRange.from, "dd/MM/yyyy", { locale: ptBR })} - {format(tempRange.to, "dd/MM/yyyy", { locale: ptBR })}
                 </span>
               ) : (
                 <span>
-                  Início: {format(tempRange.from, "MMMM 'de' yyyy", { locale: ptBR })}
+                  Início: {format(tempRange.from, "dd/MM/yyyy", { locale: ptBR })}
                   <br />
-                  Selecione o mês final
+                  Selecione a data final
                 </span>
               )}
             </div>
