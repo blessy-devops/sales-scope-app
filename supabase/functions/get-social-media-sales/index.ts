@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     console.log(`Found ${orders?.length || 0} orders with social media coupons`)
 
     // Aggregate data by date (São Paulo timezone)
-    const dailyTotals = new Map<string, number>()
+    const dailyData = new Map<string, { amount: number; sales_count: number }>()
 
     orders?.forEach(order => {
       // Convert to São Paulo date
@@ -124,13 +124,16 @@ Deno.serve(async (req) => {
       })
       
       const amount = Number(order[metric]) || 0
-      const currentTotal = dailyTotals.get(saleDate) || 0
-      dailyTotals.set(saleDate, currentTotal + amount)
+      const current = dailyData.get(saleDate) || { amount: 0, sales_count: 0 }
+      dailyData.set(saleDate, {
+        amount: current.amount + amount,
+        sales_count: current.sales_count + 1
+      })
     })
 
     // Convert to time series array and sort by date
-    const timeSeries = Array.from(dailyTotals.entries())
-      .map(([sale_date, amount]) => ({ sale_date, amount }))
+    const timeSeries = Array.from(dailyData.entries())
+      .map(([sale_date, { amount, sales_count }]) => ({ sale_date, amount, sales_count }))
       .sort((a, b) => a.sale_date.localeCompare(b.sale_date))
 
     console.log('Time series result:', { length: timeSeries.length, total: timeSeries.reduce((sum, item) => sum + item.amount, 0) })

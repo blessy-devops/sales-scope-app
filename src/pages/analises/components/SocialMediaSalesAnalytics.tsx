@@ -40,6 +40,7 @@ type Metric = "total_price" | "subtotal_price";
 interface TimeSeriesItem {
   sale_date: string; // 'YYYY-MM-DD'
   amount: number;
+  sales_count?: number;
 }
 
 function formatBRL(value: number) {
@@ -77,6 +78,11 @@ export default function SocialMediaSalesAnalytics() {
     },
     refetchOnWindowFocus: true,
   });
+
+  // Calculate KPIs
+  const totalRevenue = data?.reduce((sum, item) => sum + item.amount, 0) || 0;
+  const totalSales = data?.reduce((sum, item) => sum + (item.sales_count || 0), 0) || 0;
+  const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
   const chartData = (data ?? []).map((d) => ({
     date: d.sale_date,
@@ -148,6 +154,40 @@ export default function SocialMediaSalesAnalytics() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Cards de Resumo */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Receita Total</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-2" />
+              ) : (
+                <div className="text-2xl font-bold mt-2">{formatBRL(totalRevenue)}</div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Total de Vendas</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16 mt-2" />
+              ) : (
+                <div className="text-2xl font-bold mt-2">{totalSales.toLocaleString('pt-BR')}</div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Ticket Médio</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-2" />
+              ) : (
+                <div className="text-2xl font-bold mt-2">{formatBRL(averageTicket)}</div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Gráfico */}
