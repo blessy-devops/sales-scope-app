@@ -55,6 +55,17 @@ const Analises = () => {
       iconColor: 'text-pink-600 dark:text-pink-400'
     },
     {
+      id: 'analise-atendimento',
+      title: 'Análise de Atendimento',
+      description: 'Performance de vendas do time de atendimento.',
+      icon: Users,
+      available: true,
+      path: '/analises/atendimento',
+      color: 'bg-gradient-to-br from-cyan-500 to-cyan-600',
+      iconBg: 'bg-cyan-100 dark:bg-cyan-900/30',
+      iconColor: 'text-cyan-600 dark:text-cyan-400'
+    },
+    {
       id: 'comparativo-mensal',
       title: 'Comparativo Mensal',
       description: 'Compare o desempenho entre diferentes períodos mensais',
