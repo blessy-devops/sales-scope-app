@@ -14,6 +14,7 @@ import Targets from "./pages/Targets";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
 import Analises from "./pages/Analises";
+import AnaliseAtendimento from "./pages/analises/AnaliseAtendimento";
 import PerformanceDiaria from "./pages/PerformanceDiaria";
 import Sazonalidade from "./pages/Sazonalidade";
 import SocialMedia from "./pages/SocialMedia";
@@ -98,6 +99,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Analises />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/analises/atendimento" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <AnaliseAtendimento />
                   </Layout>
                 </ProtectedRoute>
               } />
