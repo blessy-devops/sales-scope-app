@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.get-social-media-sales]
 verify_jwt = false
+
+[functions.get-attendant-sales-analytics]
+verify_jwt = false

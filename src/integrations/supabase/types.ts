@@ -62,6 +62,27 @@ export type Database = {
         }
         Relationships: []
       }
+      attendants: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          utm_identifier: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          utm_identifier: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          utm_identifier?: string
+        }
+        Relationships: []
+      }
       channels: {
         Row: {
           created_at: string | null
