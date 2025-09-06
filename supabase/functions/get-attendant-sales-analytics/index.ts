@@ -17,14 +17,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse request parameters
-    const url = new URL(req.url);
-    const startDate = url.searchParams.get('startDate');
-    const endDate = url.searchParams.get('endDate');
+    // Parse request body and format dates correctly
+    const { startDate: startIso, endDate: endIso } = await req.json();
 
-    if (!startDate || !endDate) {
+    if (!startIso || !endIso) {
       return new Response(
         JSON.stringify({ error: 'startDate and endDate parameters are required' }),
         { 
@@ -34,18 +32,22 @@ serve(async (req) => {
       );
     }
 
-    // Log the parameters received
-    console.log('Chamando RPC com as datas:', { startDate, endDate });
+    // Format dates to YYYY-MM-DD format that SQL expects
+    const startDate = new Date(startIso).toISOString().split('T')[0];
+    const endDate = new Date(endIso).toISOString().split('T')[0];
+
+    // Log the parameters being sent to RPC
+    console.log('[Attendant Analytics] Chamando RPC com parâmetros:', { start_date: startDate, end_date: endDate });
 
     // Call the new RPC function to get attendant sales data
-    const { data: salesData, error: rpcError } = await supabase
+    const { data: salesData, error: rpcError } = await supabaseAdmin
       .rpc('get_attendant_sales_by_period', {
         start_date: startDate,
         end_date: endDate
       });
 
     if (rpcError) {
-      console.error('Erro na RPC:', rpcError);
+      console.error('[Attendant Analytics] Erro na chamada RPC:', rpcError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch attendant sales data' }),
         { 
@@ -55,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Dados recebidos da RPC:', (salesData || []).length, 'linhas');
+    console.log(`[Attendant Analytics] Sucesso! RPC retornou ${(salesData || []).length} linhas.`);
 
     // Process the RPC data
     const processedSales = salesData || [];
