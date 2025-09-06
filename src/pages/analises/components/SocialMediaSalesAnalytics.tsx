@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format, subDays } from "date-fns";
+import { format, subDays, differenceInDays, getDaysInMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -43,6 +44,11 @@ interface TimeSeriesItem {
   sales_count?: number;
 }
 
+interface SalesResponse {
+  dailySales: TimeSeriesItem[];
+  salesGoal: number;
+}
+
 function formatBRL(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value ?? 0);
 }
@@ -74,17 +80,27 @@ export default function SocialMediaSalesAnalytics() {
         body: { startDate, endDate, metric },
       });
       if (error) throw error;
-      return (data ?? []) as TimeSeriesItem[];
+      return (data ?? { dailySales: [], salesGoal: 0 }) as SalesResponse;
     },
     refetchOnWindowFocus: true,
   });
 
   // Calculate KPIs
-  const totalRevenue = data?.reduce((sum, item) => sum + item.amount, 0) || 0;
-  const totalSales = data?.reduce((sum, item) => sum + (item.sales_count || 0), 0) || 0;
-  const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+  const dailySales = data?.dailySales || [];
+  const realizadoMTD = dailySales.reduce((sum, item) => sum + item.amount, 0);
+  const metaPeriodo = data?.salesGoal || 0;
+  
+  const diasPassados = dateRange?.from && dateRange?.to 
+    ? differenceInDays(dateRange.to, dateRange.from) + 1 
+    : 0;
+  const totalDiasNoMes = dateRange?.from ? getDaysInMonth(dateRange.from) : 0;
+  
+  const mediaDiaria = diasPassados > 0 ? realizadoMTD / diasPassados : 0;
+  const projetado = mediaDiaria * totalDiasNoMes;
+  const percentualAtingimento = metaPeriodo > 0 ? (realizadoMTD / metaPeriodo) * 100 : 0;
+  const saldo = metaPeriodo - realizadoMTD;
 
-  const chartData = (data ?? []).map((d) => ({
+  const chartData = dailySales.map((d) => ({
     date: d.sale_date,
     amount: Number(d.amount || 0),
   }));
@@ -157,34 +173,67 @@ export default function SocialMediaSalesAnalytics() {
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Receita Total</div>
+              <div className="text-sm text-muted-foreground">Meta do Período</div>
               {isLoading ? (
                 <Skeleton className="h-8 w-20 mt-2" />
               ) : (
-                <div className="text-2xl font-bold mt-2">{formatBRL(totalRevenue)}</div>
+                <div className="text-2xl font-bold mt-2">{formatBRL(metaPeriodo)}</div>
               )}
             </CardContent>
           </Card>
+          
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total de Vendas</div>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16 mt-2" />
-              ) : (
-                <div className="text-2xl font-bold mt-2">{totalSales.toLocaleString('pt-BR')}</div>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Ticket Médio</div>
+              <div className="text-sm text-muted-foreground">Realizado MTD</div>
               {isLoading ? (
                 <Skeleton className="h-8 w-20 mt-2" />
               ) : (
-                <div className="text-2xl font-bold mt-2">{formatBRL(averageTicket)}</div>
+                <div className="text-2xl font-bold mt-2">{formatBRL(realizadoMTD)}</div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card className="md:col-span-2 lg:col-span-1">
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Saldo & % Atingimento</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-2" />
+              ) : (
+                <div className="space-y-2 mt-2">
+                  <div className="text-2xl font-bold">{formatBRL(saldo)}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {percentualAtingimento.toFixed(1)}% atingido
+                  </div>
+                  <Progress 
+                    value={Math.min(Math.max(percentualAtingimento, 0), 100)} 
+                    className="h-2"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Média Diária</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-2" />
+              ) : (
+                <div className="text-2xl font-bold mt-2">{formatBRL(mediaDiaria)}</div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Projetado</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-20 mt-2" />
+              ) : (
+                <div className="text-2xl font-bold mt-2">{formatBRL(projetado)}</div>
               )}
             </CardContent>
           </Card>
