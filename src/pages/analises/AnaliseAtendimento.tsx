@@ -4,10 +4,12 @@ import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PeriodRangePicker } from "@/components/PeriodRangePicker";
 import { AttendantSettingsModal } from "./components/AttendantSettingsModal";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface AttendantKPIs {
   totalRevenue: number;
@@ -144,8 +146,35 @@ export default function AnaliseAtendimento() {
             {isLoading ? (
               <Skeleton className="h-64 w-full" />
             ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Gráfico de receita (em desenvolvimento)
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analyticsData?.dailySeries || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return format(date, 'dd/MM');
+                      }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [
+                        `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                        'Receita'
+                      ]}
+                      labelFormatter={(value) => {
+                        const date = new Date(value);
+                        return format(date, 'dd/MM/yyyy');
+                      }}
+                    />
+                    <Bar dataKey="revenue" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </CardContent>
@@ -209,36 +238,34 @@ export default function AnaliseAtendimento() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Data</th>
-                    <th className="text-left py-2">Atendente</th>
-                    <th className="text-left py-2">Pedido</th>
-                    <th className="text-right py-2">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analyticsData?.recentSales.slice(0, 10).map((sale, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="py-2 text-sm">{sale.date}</td>
-                      <td className="py-2 text-sm">{sale.attendantName}</td>
-                      <td className="py-2 text-sm">#{sale.orderNumber}</td>
-                      <td className="py-2 text-sm text-right font-medium">
-                        R$ {sale.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  )) || (
-                    <tr>
-                      <td colSpan={4} className="py-4 text-center text-sm text-muted-foreground">
-                        Nenhuma venda encontrada
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Atendente</TableHead>
+                  <TableHead>Pedido</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {analyticsData?.recentSales.slice(0, 10).map((sale, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{sale.date}</TableCell>
+                    <TableCell>{sale.attendantName}</TableCell>
+                    <TableCell>#{sale.orderNumber}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      R$ {sale.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                )) || (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      Nenhuma venda encontrada
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
