@@ -89,7 +89,7 @@ export default function SocialMediaSalesAnalytics() {
   const dailySales = data?.dailySales || [];
   const realizadoMTD = dailySales.reduce((sum, item) => sum + item.amount, 0);
   const metaPeriodo = data?.salesGoal || 0;
-  const totalSales = dailySales.length;
+  const totalSales = data?.dailySales?.reduce((sum, item) => sum + (item.sales_count || 0), 0) || 0;
   
   const diasPassados = dateRange?.from && dateRange?.to 
     ? differenceInDays(dateRange.to, dateRange.from) + 1 
