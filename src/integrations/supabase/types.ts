@@ -363,6 +363,24 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_steps: {
+        Row: {
+          display_name: string
+          display_order: number
+          slug: string
+        }
+        Insert: {
+          display_name: string
+          display_order: number
+          slug: string
+        }
+        Update: {
+          display_name?: string
+          display_order?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           cancelled_at: string | null
@@ -941,6 +959,13 @@ export type Database = {
           included_in_filter: boolean
           order_number: number
           total_price: number
+        }[]
+      }
+      get_shopify_precise_sales: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          sale_date: string
+          total_sales: number
         }[]
       }
       get_shopify_sales_period: {
