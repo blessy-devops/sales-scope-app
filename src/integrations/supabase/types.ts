@@ -879,15 +879,6 @@ export type Database = {
         }
         Relationships: []
       }
-      v_social_media_unified_sales: {
-        Row: {
-          sale_date: string | null
-          source_table: string | null
-          subtotal_price: number | null
-          total_price: number | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       compare_shopify_sales_debug: {
@@ -995,6 +986,15 @@ export type Database = {
           receita_liquida: number
           ticket_medio: number
           total_pedidos: number
+        }[]
+      }
+      get_social_media_sales_unified: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          sale_date: string
+          source_table: string
+          subtotal_price: number
+          total_price: number
         }[]
       }
       note_attr: {

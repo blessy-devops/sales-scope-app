@@ -265,12 +265,12 @@ Deno.serve(async (req) => {
           totalGoal = goalData?.sales_goal || 0;
         }
 
-        // Use the unified view for clean data access
+        // Use the new unified function for clean data access
         const { data: unifiedSalesData, error: salesError } = await supabaseAdmin
-          .from('v_social_media_unified_sales')
-          .select(`sale_date, ${columnToSum}`)
-          .gte('sale_date', new Date(startTsUtc).toISOString().split('T')[0])
-          .lte('sale_date', new Date(endTsUtc).toISOString().split('T')[0])
+          .rpc('get_social_media_sales_unified', {
+            start_date: new Date(startTsUtc).toISOString().split('T')[0],
+            end_date: new Date(endTsUtc).toISOString().split('T')[0]
+          })
 
         if (salesError) {
           console.error('Error fetching unified sales:', salesError)

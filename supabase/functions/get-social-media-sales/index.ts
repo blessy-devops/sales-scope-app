@@ -93,13 +93,34 @@ Deno.serve(async (req) => {
     
     console.log('Querying orders between:', { startTs, endTsExclusive })
 
-    // Query Shopify orders with social media coupons
+    // Use get_shopify_precise_sales and filter by social media coupons
+    const { data: preciseData, error: preciseError } = await supabase
+      .rpc('get_shopify_precise_sales', {
+        start_date: startDate,
+        end_date: endDate
+      })
+
+    if (preciseError) {
+      console.error('Error fetching precise sales:', preciseError)
+      return new Response(
+        JSON.stringify({ error: 'Erro ao buscar vendas precisas do Shopify.' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // Now get the detailed orders with coupons for the same period
     const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders_gold')
       .select(`created_at, ${metric}, coupon_code`)
       .gte('created_at', startTs)
       .lt('created_at', endTsExclusive)
       .in('coupon_code', couponCodes)
+      .eq('financial_status', 'paid')
+      .is('cancelled_at', null)
+      .eq('test', false)
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError)
