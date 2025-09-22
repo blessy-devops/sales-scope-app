@@ -256,6 +256,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ga4_daily_sessions: {
+        Row: {
+          avg_session_duration: number | null
+          bounce_rate: number | null
+          checkouts: number | null
+          created_at: string | null
+          direct_sessions: number | null
+          id: string
+          new_users: number | null
+          organic_sessions: number | null
+          page_views: number | null
+          paid_sessions: number | null
+          processed_at: string | null
+          referral_sessions: number | null
+          session_date: string
+          sessions: number
+          social_sessions: number | null
+          updated_at: string | null
+          users: number | null
+        }
+        Insert: {
+          avg_session_duration?: number | null
+          bounce_rate?: number | null
+          checkouts?: number | null
+          created_at?: string | null
+          direct_sessions?: number | null
+          id?: string
+          new_users?: number | null
+          organic_sessions?: number | null
+          page_views?: number | null
+          paid_sessions?: number | null
+          processed_at?: string | null
+          referral_sessions?: number | null
+          session_date: string
+          sessions: number
+          social_sessions?: number | null
+          updated_at?: string | null
+          users?: number | null
+        }
+        Update: {
+          avg_session_duration?: number | null
+          bounce_rate?: number | null
+          checkouts?: number | null
+          created_at?: string | null
+          direct_sessions?: number | null
+          id?: string
+          new_users?: number | null
+          organic_sessions?: number | null
+          page_views?: number | null
+          paid_sessions?: number | null
+          processed_at?: string | null
+          referral_sessions?: number | null
+          session_date?: string
+          sessions?: number
+          social_sessions?: number | null
+          updated_at?: string | null
+          users?: number | null
+        }
+        Relationships: []
+      }
       instagram_metrics: {
         Row: {
           created_at: string | null

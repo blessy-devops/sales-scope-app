@@ -10,6 +10,7 @@ interface RegionData {
   value: number;
   percentage: number;
   color: string;
+  [key: string]: string | number; // Index signature for compatibility
 }
 
 interface BrazilRegionsChartProps {
@@ -87,7 +88,7 @@ export const BrazilRegionsChart: React.FC<BrazilRegionsChartProps> = ({ data, cl
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
+                 <Pie
                   data={data}
                   cx="50%"
                   cy="50%"
