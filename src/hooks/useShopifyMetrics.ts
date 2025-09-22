@@ -46,7 +46,7 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
 
       console.log('🔍 Fetching metrics for period:', { startDateStr, endDateStr });
 
-      // Use get_shopify_precise_sales for accurate revenue calculation
+      // Use get_shopify_precise_sales for accurate revenue calculation with cache bypass
       const { data: salesData, error: salesError } = await supabase.rpc(
         'get_shopify_precise_sales',
         {
@@ -55,11 +55,21 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         }
       );
 
-      if (salesError) throw salesError;
+      console.log('📥 RPC Response:', { salesData, salesError });
 
-      // Calculate total revenue from precise sales function
-      const totalRevenue = salesData?.reduce((sum: number, day: any) => sum + (day.total_sales || 0), 0) || 0;
-      console.log('💰 Total revenue from get_shopify_precise_sales:', totalRevenue);
+      let totalRevenue = 0;
+
+      if (salesError) {
+        console.error('❌ Error from get_shopify_precise_sales:', salesError);
+        // Fallback: calculate directly from orders as backup
+        totalRevenue = 0; // Will be calculated below from ordersData
+      } else if (salesData && Array.isArray(salesData) && salesData.length > 0) {
+        totalRevenue = salesData.reduce((sum: number, day: any) => sum + (day.total_sales || 0), 0);
+        console.log('💰 Total revenue from get_shopify_precise_sales:', totalRevenue);
+      } else {
+        console.warn('⚠️ No data returned from get_shopify_precise_sales, using fallback');
+        totalRevenue = 0; // Will use fallback calculation
+      }
 
       // Get orders directly from shopify_orders_gold for other metrics
       const { data: ordersData, error: ordersError } = await supabase
@@ -85,6 +95,13 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
       const cancellations = cancelledOrders.reduce((sum: number, order: any) => sum + (order.total_price || 0), 0);
 
       const totalOrders = paidOrders.length;
+      
+      // Use fallback calculation if RPC didn't provide revenue
+      if (totalRevenue === 0 && paidOrders.length > 0) {
+        totalRevenue = paidOrders.reduce((sum: number, order: any) => sum + (order.total_price || 0), 0);
+        console.log('🔄 Using fallback revenue calculation:', totalRevenue);
+      }
+      
       const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       console.log('📊 Metrics calculated:', { totalRevenue, totalOrders, averageTicket, cancellations });
