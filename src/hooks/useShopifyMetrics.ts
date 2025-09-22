@@ -7,6 +7,7 @@ interface ShopifyMetrics {
   totalOrders: number;
   averageTicket: number;
   cancellations: number;
+  sessions: number;
   loading: boolean;
   error: string | null;
 }
@@ -24,6 +25,7 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     totalOrders: 0,
     averageTicket: 0,
     cancellations: 0,
+    sessions: 0,
     loading: true,
     error: null,
   });
@@ -42,28 +44,12 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      // Get precise sales data
-      const { data: salesData, error: salesError } = await supabase.rpc(
-        'get_shopify_precise_sales',
-        {
-          start_date: startDateStr,
-          end_date: endDateStr,
-        }
-      );
-
-      if (salesError) throw salesError;
-
-      // Calculate total revenue
-      const totalRevenue = salesData?.reduce((sum: number, day: any) => sum + (day.total_sales || 0), 0) || 0;
-
-      // Get order details for more metrics
-      const { data: ordersData, error: ordersError } = await supabase.rpc(
-        'get_shopify_sales_period',
-        {
-          start_date: startDateStr,
-          end_date: endDateStr,
-        }
-      );
+      // Get orders directly from shopify_orders_gold table
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('shopify_orders_gold')
+        .select('total_price, financial_status, cancelled_at, test, created_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
 
       if (ordersError) throw ordersError;
 
@@ -81,15 +67,26 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
       
       const cancellations = cancelledOrders.reduce((sum: number, order: any) => sum + (order.total_price || 0), 0);
 
-      // Calculate metrics
+      // Calculate total revenue from paid orders
+      const totalRevenue = paidOrders.reduce((sum: number, order: any) => sum + (order.total_price || 0), 0);
       const totalOrders = paidOrders.length;
       const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+      // Get GA4 sessions data
+      const { data: ga4Data, error: ga4Error } = await supabase
+        .from('ga4_daily_sessions')
+        .select('sessions')
+        .gte('session_date', startDateStr)
+        .lte('session_date', endDateStr);
+
+      const totalSessions = ga4Data?.reduce((sum: number, day: any) => sum + (day.sessions || 0), 0) || 0;
 
       setMetrics({
         totalRevenue,
         totalOrders,
         averageTicket,
         cancellations,
+        sessions: totalSessions,
         loading: false,
         error: null,
       });

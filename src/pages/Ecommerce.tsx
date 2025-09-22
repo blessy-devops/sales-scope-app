@@ -40,6 +40,7 @@ const Ecommerce: React.FC = () => {
     totalOrders, 
     averageTicket, 
     cancellations, 
+    sessions,
     loading, 
     coupons,
     refetch 
@@ -147,7 +148,7 @@ const Ecommerce: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricsSimple
           title="Sessões"
-          value="45.678" // TODO: Integrar dados reais
+          value={sessions.toLocaleString('pt-BR')}
           subtitle="Sessões únicas"
           change="+15.3%"
           trend="positive"
