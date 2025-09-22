@@ -260,6 +260,7 @@ export type Database = {
         Row: {
           avg_session_duration: number | null
           bounce_rate: number | null
+          checkouts: number | null
           created_at: string | null
           direct_sessions: number | null
           id: string
@@ -278,6 +279,7 @@ export type Database = {
         Insert: {
           avg_session_duration?: number | null
           bounce_rate?: number | null
+          checkouts?: number | null
           created_at?: string | null
           direct_sessions?: number | null
           id?: string
@@ -296,6 +298,7 @@ export type Database = {
         Update: {
           avg_session_duration?: number | null
           bounce_rate?: number | null
+          checkouts?: number | null
           created_at?: string | null
           direct_sessions?: number | null
           id?: string
