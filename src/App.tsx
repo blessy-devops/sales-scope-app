@@ -29,6 +29,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
+import BrazilMapTest from "./pages/BrazilMapTest";
+
 
 const queryClient = new QueryClient();
 
@@ -164,6 +166,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Ecommerce />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/brazil-map-test" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BrazilMapTest />
                   </Layout>
                 </ProtectedRoute>
               } />
