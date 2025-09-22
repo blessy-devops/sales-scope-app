@@ -41,23 +41,32 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     try {
       setMetrics(prev => ({ ...prev, loading: true }));
 
-      // Detailed date debugging
-      console.log('🔍 Original dates:', { startDate, endDate });
-      console.log('🔍 Date types:', { 
-        startType: typeof startDate, 
-        endType: typeof endDate,
-        startValid: startDate instanceof Date,
-        endValid: endDate instanceof Date 
-      });
+      // CRITICAL DEBUG: Test with hardcoded dates first
+      const HARDCODED_TEST = true;
+      
+      let startDateStr, endDateStr, startDateISO, endDateISO;
+      
+      if (HARDCODED_TEST) {
+        // Use exact dates from the manual SQL query that worked
+        startDateStr = '2025-09-01';
+        endDateStr = '2025-09-21';
+        startDateISO = '2025-09-01T00:00:00-03:00'; // Sao Paulo timezone
+        endDateISO = '2025-09-21T23:59:59-03:00';   // Sao Paulo timezone
+        console.log('🔧 USANDO DATAS HARDCODED PARA TESTE');
+      } else {
+        // Original date formatting
+        startDateStr = format(startDate, 'yyyy-MM-dd');
+        endDateStr = format(endDate, 'yyyy-MM-dd');
+        // Create ISO strings with Sao Paulo timezone offset
+        startDateISO = startDateStr + 'T00:00:00-03:00';
+        endDateISO = endDateStr + 'T23:59:59-03:00';
+      }
 
-      const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDate, 'yyyy-MM-dd');
-
-      console.log('🔍 Formatted dates for RPC:', { startDateStr, endDateStr });
-      console.log('🔍 Date validation:', {
-        startParsed: new Date(startDateStr),
-        endParsed: new Date(endDateStr),
-        isValidRange: new Date(startDateStr) <= new Date(endDateStr)
+      console.log('🔍 DEBUGGING DATES:', {
+        original: { startDate, endDate },
+        formatted: { startDateStr, endDateStr },
+        iso: { startDateISO, endDateISO },
+        hardcoded: HARDCODED_TEST
       });
 
       // Add unique timestamp to bypass cache
@@ -148,15 +157,16 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
 
       // Get orders directly from shopify_orders_gold for other metrics
       console.log('🔍 Fetching orders with date range:', {
-        startISO: startDate.toISOString(),
-        endISO: endDate.toISOString()
+        startISO: startDateISO,
+        endISO: endDateISO,
+        oldWay: startDate.toISOString()
       });
 
       const { data: ordersData, error: ordersError } = await supabase
         .from('shopify_orders_gold')
         .select('total_price, financial_status, cancelled_at, test, created_at')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .gte('created_at', startDateISO)
+        .lte('created_at', endDateISO);
 
       console.log('📥 Orders query result:', {
         ordersData: ordersData?.length,
@@ -234,6 +244,10 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     try {
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
+      
+      // Use timezone-consistent ISO strings
+      const startDateISO = startDateStr + 'T00:00:00-03:00';
+      const endDateISO = endDateStr + 'T23:59:59-03:00';
 
       // Query shopify_orders_gold for coupon usage
       const { data: couponsData, error: couponsError } = await supabase
@@ -243,8 +257,8 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         .eq('financial_status', 'paid')
         .is('cancelled_at', null)
         .eq('test', false)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .gte('created_at', startDateISO)
+        .lte('created_at', endDateISO);
 
       if (couponsError) throw couponsError;
 
