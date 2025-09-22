@@ -4,30 +4,39 @@ import { type ComponentType, type HTMLAttributes, type ReactNode, type Ref, crea
 import { HelpCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface InputBaseProps extends TextFieldProps {
+interface BaseProps {
+    /** Label text for the input */
+    label?: string;
+    /** Helper text displayed below the input */
+    hint?: ReactNode;
+}
+
+export interface TextFieldProps
+    extends BaseProps,
+        Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
+    ref?: Ref<HTMLDivElement>;
+    isInvalid?: boolean;
+    isRequired?: boolean;
+    size?: "sm" | "md";
+    wrapperClassName?: string;
+    inputClassName?: string;
+    iconClassName?: string;
+    tooltipClassName?: string;
+}
+
+export interface InputBaseProps extends Omit<TextFieldProps, "label" | "hint"> {
     /** Tooltip message on hover. */
     tooltip?: string;
-    /**
-     * Input size.
-     * @default "sm"
-     */
-    size?: "sm" | "md";
     /** Placeholder text. */
     placeholder?: string;
-    /** Class name for the icon. */
-    iconClassName?: string;
-    /** Class name for the input. */
-    inputClassName?: string;
-    /** Class name for the input wrapper. */
-    wrapperClassName?: string;
-    /** Class name for the tooltip. */
-    tooltipClassName?: string;
     /** Keyboard shortcut to display. */
     shortcut?: string | boolean;
     ref?: Ref<HTMLInputElement>;
     groupRef?: Ref<HTMLDivElement>;
     /** Icon component to display on the left side of the input. */
     icon?: ComponentType<HTMLAttributes<HTMLOrSVGElement>>;
+    /** Whether the input is disabled. */
+    isDisabled?: boolean;
 }
 
 export const InputBase = ({
@@ -36,18 +45,16 @@ export const InputBase = ({
     shortcut,
     groupRef,
     size = "sm",
-    isInvalid,
-    isDisabled,
+    isInvalid = false,
+    isDisabled = false,
     icon: Icon,
     placeholder,
     wrapperClassName,
     tooltipClassName,
     inputClassName,
     iconClassName,
-    // Omit this prop to avoid invalid HTML attribute warning
-    isRequired: _isRequired,
     ...inputProps
-}: Omit<InputBaseProps, "label" | "hint">) => {
+}: InputBaseProps) => {
     // Check if the input has a leading icon or tooltip
     const hasTrailingIcon = tooltip || isInvalid;
     const hasLeadingIcon = Icon;
@@ -168,22 +175,6 @@ export const InputBase = ({
 
 InputBase.displayName = "InputBase";
 
-interface BaseProps {
-    /** Label text for the input */
-    label?: string;
-    /** Helper text displayed below the input */
-    hint?: ReactNode;
-}
-
-interface TextFieldProps
-    extends BaseProps,
-        Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
-        Pick<InputBaseProps, "size" | "wrapperClassName" | "inputClassName" | "iconClassName" | "tooltipClassName"> {
-    ref?: Ref<HTMLDivElement>;
-    isInvalid?: boolean;
-    isRequired?: boolean;
-}
-
 const TextFieldContext = createContext<TextFieldProps>({});
 
 export const TextField = ({ className, ...props }: TextFieldProps) => {
@@ -201,7 +192,11 @@ export const TextField = ({ className, ...props }: TextFieldProps) => {
 
 TextField.displayName = "TextField";
 
-interface InputProps extends InputBaseProps, BaseProps {
+export interface InputProps extends InputBaseProps {
+    /** Label text for the input */
+    label?: string;
+    /** Helper text displayed below the input */
+    hint?: ReactNode;
     /** Whether to hide required indicator from label */
     hideRequiredIndicator?: boolean;
 }
@@ -222,43 +217,42 @@ export const Input = ({
     inputClassName,
     wrapperClassName,
     tooltipClassName,
+    isRequired = false,
+    isInvalid = false,
     ...props
 }: InputProps) => {
     return (
         <TextField aria-label={!label ? placeholder : undefined} {...props} className={className}>
-            {({ isRequired, isInvalid }) => (
-                <>
-                    {label && (
-                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {label}
-                            {!hideRequiredIndicator && isRequired && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                    )}
+            {label && (
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {label}
+                    {!hideRequiredIndicator && isRequired && <span className="text-destructive ml-1">*</span>}
+                </label>
+            )}
 
-                    <InputBase
-                        {...{
-                            ref,
-                            groupRef,
-                            size,
-                            placeholder,
-                            icon: Icon,
-                            shortcut,
-                            iconClassName,
-                            inputClassName,
-                            wrapperClassName,
-                            tooltipClassName,
-                            tooltip,
-                            isRequired,
-                            isInvalid,
-                        }}
-                    />
+            <InputBase
+                {...{
+                    ref,
+                    groupRef,
+                    size,
+                    placeholder,
+                    icon: Icon,
+                    shortcut,
+                    iconClassName,
+                    inputClassName,
+                    wrapperClassName,
+                    tooltipClassName,
+                    tooltip,
+                    isRequired,
+                    isInvalid,
+                    ...props
+                }}
+            />
 
-                    {hint && (
-                        <p className={cn("text-sm text-muted-foreground", isInvalid && "text-destructive")}>
-                            {hint}
-                        </p>
-                    )}
-                </>
+            {hint && (
+                <p className={cn("text-sm text-muted-foreground", isInvalid && "text-destructive")}>
+                    {hint}
+                </p>
             )}
         </TextField>
     );

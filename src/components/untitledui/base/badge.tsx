@@ -20,7 +20,7 @@ export type BadgeColors =
 
 export type BadgeTypes = "pill-color" | "badge-color" | "badge-modern";
 export type Sizes = "sm" | "md" | "lg";
-export type FlagTypes = "AU" | "US" | "GB" | "CA" | "DE" | "FR" | "IT" | "ES" | "NL" | "SE" | "NO" | "DK" | "FI" | "PL" | "CZ" | "HU" | "RO" | "BG" | "HR" | "SI" | "SK" | "EE" | "LV" | "LT" | "MT" | "CY" | "LU" | "IE" | "PT" | "GR" | "AT" | "BE" | "CH" | "IS" | "LI" | "MC" | "SM" | "VA" | "AD" | "BR" | "MX" | "AR" | "CL" | "CO" | "PE" | "VE" | "UY" | "PY" | "BO" | "EC" | "GY" | "SR" | "GF" | "FK" | "JP" | "KR" | "CN" | "IN" | "TH" | "VN" | "ID" | "MY" | "SG" | "PH" | "TW" | "HK" | "MO" | "MN" | "KZ" | "UZ" | "KG" | "TJ" | "TM" | "AF" | "PK" | "BD" | "LK" | "MV" | "BT" | "NP" | "MM" | "LA" | "KH" | "BN" | "TL" | "FJ" | "PG" | "SB" | "VU" | "NC" | "PF" | "WS" | "TO" | "KI" | "TV" | "NR" | "FM" | "MH" | "PW" | "CK" | "NU" | "TK" | "AS" | "GU" | "MP" | "VI" | "PR" | "DO" | "HT" | "JM" | "CU" | "BS" | "BB" | "TT" | "AG" | "DM" | "GD" | "KN" | "LC" | "VC" | "BZ" | "GT" | "HN" | "SV" | "NI" | "CR" | "PA" | "AW" | "AN" | "KY" | "TC" | "VG" | "AI" | "MS" | "GP" | "MQ" | "BL" | "MF" | "SX" | "CW" | "BQ" | "ZA" | "EG" | "LY" | "TN" | "DZ" | "MA" | "SD" | "SS" | "ET" | "ER" | "DJ" | "SO" | "KE" | "UG" | "TZ" | "RW" | "BI" | "MW" | "ZM" | "ZW" | "BW" | "NA" | "SZ" | "LS" | "MG" | "MU" | "SC" | "KM" | "YT" | "RE" | "MZ" | "AO" | "CD" | "CG" | "CM" | "CF" | "TD" | "NE" | "NG" | "BJ" | "TG" | "GH" | "BF" | "CI" | "LR" | "SL" | "GN" | "GW" | "GM" | "SN" | "ML" | "MR" | "CV" | "ST" | "GQ" | "GA" | "AO" | "ZM" | "ZW" | "BW" | "NA" | "SZ" | "LS" | "MG" | "MU" | "SC" | "KM" | "YT" | "RE" | "MZ" | "AO" | "CD" | "CG" | "CM" | "CF" | "TD" | "NE" | "NG" | "BJ" | "TG" | "GH" | "BF" | "CI" | "LR" | "SL" | "GN" | "GW" | "GM" | "SN" | "ML" | "MR" | "CV" | "ST" | "GQ" | "GA";
+export type FlagTypes = "AU" | "US" | "GB" | "CA" | "DE" | "FR" | "IT" | "ES" | "NL" | "SE" | "NO" | "DK" | "FI" | "PL" | "CZ" | "HU" | "RO" | "BG" | "HR" | "SI" | "SK" | "EE" | "LV" | "LT" | "MT" | "CY" | "LU" | "IE" | "PT" | "GR" | "AT" | "BE" | "CH" | "IS" | "LI" | "MC" | "SM" | "VA" | "AD" | "BR" | "MX" | "AR" | "CL" | "CO" | "PE" | "VE" | "UY" | "PY" | "BO" | "EC" | "GY" | "SR" | "GF" | "FK" | "JP" | "KR" | "CN" | "IN" | "TH" | "VN" | "ID" | "MY" | "SG" | "PH" | "TW" | "HK" | "MO" | "MN" | "KZ" | "UZ" | "KG" | "TJ" | "TM" | "AF" | "PK" | "BD" | "LK" | "MV" | "BT" | "NP" | "MM" | "LA" | "KH" | "BN" | "TL" | "FJ" | "PG" | "SB" | "VU" | "NC" | "PF" | "WS" | "TO" | "KI" | "TV" | "NR" | "FM" | "MH" | "PW" | "CK" | "NU" | "TK" | "AS" | "GU" | "MP" | "VI" | "PR" | "DO" | "HT" | "JM" | "CU" | "BS" | "BB" | "TT" | "AG" | "DM" | "GD" | "KN" | "LC" | "VC" | "BZ" | "GT" | "HN" | "SV" | "NI" | "CR" | "PA" | "AW" | "AN" | "KY" | "TC" | "VG" | "AI" | "MS" | "GP" | "MQ" | "BL" | "MF" | "SX" | "CW" | "BQ" | "ZA" | "EG" | "LY" | "TN" | "DZ" | "MA" | "SD" | "SS" | "ET" | "ER" | "DJ" | "SO" | "KE" | "UG" | "TZ" | "RW" | "BI" | "MW" | "ZM" | "ZW" | "BW" | "NA" | "SZ" | "LS" | "MG" | "MU" | "SC" | "KM" | "YT" | "RE" | "MZ" | "AO" | "CD" | "CG" | "CM" | "CF" | "TD" | "NE" | "NG" | "BJ" | "TG" | "GH" | "BF" | "CI" | "LR" | "SL" | "GN" | "GW" | "GM" | "SN" | "ML" | "MR" | "CV" | "ST" | "GQ" | "GA" | "AO" | "ZM" | "ZW" | "BW" | "NA" | "SZ" | "LS" | "MG" | "MU" | "SC" | "KM" | "YT" | "RE" | "MZ" | "AO" | "CD" | "CG" | "CM" | "CF" | "TD" | "NE" | "NG" | "BJ" | "TG" | "GH" | "BF" | "CI" | "LR" | "SL" | "GN" | "GW" | "GM" | "SN" | "ML" | "MR" | "CV" | "ST" | "EQ" | "GA";
 
 export type IconComponentType = React.ComponentType<{ className?: string }>;
 
@@ -130,7 +130,7 @@ const withBadgeTypes = {
 
 export type BadgeColor<T extends BadgeTypes> = BadgeColors;
 
-interface BadgeProps<T extends BadgeTypes> {
+export interface BadgeProps<T extends BadgeTypes = BadgeTypes> {
     type?: T;
     size?: Sizes;
     color?: BadgeColor<T>;
@@ -162,7 +162,7 @@ export const Badge = <T extends BadgeTypes>(props: BadgeProps<T>) => {
     return <span className={cn(colors.common, sizes[type][size], colors.styles[color].root, props.className)}>{children}</span>;
 };
 
-interface BadgeWithDotProps<T extends BadgeTypes> {
+export interface BadgeWithDotProps<T extends BadgeTypes = BadgeTypes> {
     type?: T;
     size?: Sizes;
     color?: BadgeColor<T>;
@@ -201,7 +201,7 @@ export const BadgeWithDot = <T extends BadgeTypes>(props: BadgeWithDotProps<T>) 
     );
 };
 
-interface BadgeWithIconProps<T extends BadgeTypes> {
+export interface BadgeWithIconProps<T extends BadgeTypes = BadgeTypes> {
     type?: T;
     size?: Sizes;
     color?: BadgeColor<T>;
@@ -262,7 +262,7 @@ export const BadgeWithIcon = <T extends BadgeTypes>(props: BadgeWithIconProps<T>
     );
 };
 
-interface BadgeWithButtonProps<T extends BadgeTypes> {
+export interface BadgeWithButtonProps<T extends BadgeTypes = BadgeTypes> {
     type?: T;
     size?: Sizes;
     icon?: IconComponentType;
@@ -319,7 +319,7 @@ export const BadgeWithButton = <T extends BadgeTypes>(props: BadgeWithButtonProp
     );
 };
 
-interface BadgeIconProps<T extends BadgeTypes> {
+export interface BadgeIconProps<T extends BadgeTypes = BadgeTypes> {
     type?: T;
     size?: Sizes;
     icon: IconComponentType;

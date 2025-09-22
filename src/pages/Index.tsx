@@ -1136,7 +1136,7 @@ const Index = () => {
                               cx="50%"
                               cy="50%"
                               outerRadius={150}
-                              label={({name, percent}) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                              label={({name, percent}: any) => `${name}: ${(Number(percent) * 100).toFixed(1)}%`}
                               labelLine={false}
                             >
                               {dadosTreemap.map((entry, index) => (
