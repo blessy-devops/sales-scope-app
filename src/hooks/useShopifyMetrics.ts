@@ -41,44 +41,133 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     try {
       setMetrics(prev => ({ ...prev, loading: true }));
 
+      // Detailed date debugging
+      console.log('🔍 Original dates:', { startDate, endDate });
+      console.log('🔍 Date types:', { 
+        startType: typeof startDate, 
+        endType: typeof endDate,
+        startValid: startDate instanceof Date,
+        endValid: endDate instanceof Date 
+      });
+
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      console.log('🔍 Fetching metrics for period:', { startDateStr, endDateStr });
+      console.log('🔍 Formatted dates for RPC:', { startDateStr, endDateStr });
+      console.log('🔍 Date validation:', {
+        startParsed: new Date(startDateStr),
+        endParsed: new Date(endDateStr),
+        isValidRange: new Date(startDateStr) <= new Date(endDateStr)
+      });
 
-      // Use get_shopify_precise_sales for accurate revenue calculation with cache bypass
-      const { data: salesData, error: salesError } = await supabase.rpc(
-        'get_shopify_precise_sales',
-        {
-          start_date: startDateStr,
-          end_date: endDateStr,
+      // Add unique timestamp to bypass cache
+      const cacheBypass = Date.now();
+      console.log('🔄 Cache bypass timestamp:', cacheBypass);
+
+      // Retry mechanism for RPC call
+      let salesData, salesError;
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      while (retryCount <= maxRetries) {
+        try {
+          console.log(`🔄 RPC attempt ${retryCount + 1}/${maxRetries + 1}`);
+          
+          const result = await supabase.rpc(
+            'get_shopify_precise_sales',
+            {
+              start_date: startDateStr,
+              end_date: endDateStr,
+            }
+          );
+          
+          salesData = result.data;
+          salesError = result.error;
+          
+          if (!salesError && salesData) {
+            console.log(`✅ RPC successful on attempt ${retryCount + 1}`);
+            break;
+          }
+          
+          console.log(`⚠️ RPC attempt ${retryCount + 1} failed or returned no data`);
+          retryCount++;
+          
+          if (retryCount <= maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+          }
+        } catch (error) {
+          console.error(`❌ RPC attempt ${retryCount + 1} threw error:`, error);
+          salesError = error;
+          retryCount++;
+          
+          if (retryCount <= maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
         }
-      );
+      }
 
-      console.log('📥 RPC Response:', { salesData, salesError });
+      console.log('📥 RPC Response (detailed):', { 
+        salesData, 
+        salesError,
+        dataType: typeof salesData,
+        isArray: Array.isArray(salesData),
+        dataLength: salesData?.length,
+        dataFirstItem: salesData?.[0],
+        errorCode: salesError?.code,
+        errorMessage: salesError?.message
+      });
 
       let totalRevenue = 0;
 
       if (salesError) {
         console.error('❌ Error from get_shopify_precise_sales:', salesError);
-        // Fallback: calculate directly from orders as backup
-        totalRevenue = 0; // Will be calculated below from ordersData
+        console.error('❌ Error details:', {
+          code: salesError.code,
+          message: salesError.message,
+          details: salesError.details,
+          hint: salesError.hint
+        });
+        // Will use fallback calculation below
       } else if (salesData && Array.isArray(salesData) && salesData.length > 0) {
-        totalRevenue = salesData.reduce((sum: number, day: any) => sum + (day.total_sales || 0), 0);
+        console.log('✅ Processing RPC data:', salesData);
+        totalRevenue = salesData.reduce((sum: number, day: any) => {
+          const dayTotal = day.total_sales || 0;
+          console.log('📊 Day data:', { date: day.sale_date, total: dayTotal });
+          return sum + dayTotal;
+        }, 0);
         console.log('💰 Total revenue from get_shopify_precise_sales:', totalRevenue);
       } else {
-        console.warn('⚠️ No data returned from get_shopify_precise_sales, using fallback');
-        totalRevenue = 0; // Will use fallback calculation
+        console.warn('⚠️ No data returned from get_shopify_precise_sales');
+        console.warn('⚠️ RPC returned:', { 
+          data: salesData, 
+          isNull: salesData === null,
+          isUndefined: salesData === undefined,
+          isEmpty: Array.isArray(salesData) && salesData.length === 0
+        });
       }
 
       // Get orders directly from shopify_orders_gold for other metrics
+      console.log('🔍 Fetching orders with date range:', {
+        startISO: startDate.toISOString(),
+        endISO: endDate.toISOString()
+      });
+
       const { data: ordersData, error: ordersError } = await supabase
         .from('shopify_orders_gold')
         .select('total_price, financial_status, cancelled_at, test, created_at')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
 
-      if (ordersError) throw ordersError;
+      console.log('📥 Orders query result:', {
+        ordersData: ordersData?.length,
+        ordersError,
+        firstOrder: ordersData?.[0]
+      });
+
+      if (ordersError) {
+        console.error('❌ Orders query error:', ordersError);
+        throw ordersError;
+      }
 
       // Filter paid orders for count and average ticket
       const paidOrders = ordersData?.filter((order: any) => 
@@ -86,6 +175,13 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         !order.test &&
         !order.cancelled_at
       ) || [];
+
+      console.log('📊 Filtered orders:', {
+        totalOrders: ordersData?.length,
+        paidOrders: paidOrders.length,
+        testOrders: ordersData?.filter(o => o.test).length,
+        cancelledOrders: ordersData?.filter(o => o.cancelled_at).length
+      });
 
       // Calculate cancellations
       const cancelledOrders = ordersData?.filter((order: any) => 
