@@ -21,6 +21,7 @@ import SocialMedia from "./pages/SocialMedia";
 import Ferramentas from "./pages/Ferramentas";
 import FerramentasCalculadoraEmail from "./pages/FerramentasCalculadoraEmail";
 import ShopifyDebug from "./pages/ShopifyDebug";
+import Ecommerce from "./pages/Ecommerce";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ChangePassword from "./pages/ChangePassword";
@@ -155,6 +156,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <ShopifyDebug />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/ecommerce" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Ecommerce />
                   </Layout>
                 </ProtectedRoute>
               } />
