@@ -7,21 +7,22 @@ export function useSubChannels(parentChannelId?: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (parentChannelId) {
-      fetchSubChannels();
-    }
+    fetchSubChannels();
   }, [parentChannelId]);
 
   const fetchSubChannels = async () => {
-    if (!parentChannelId) return;
-    
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('sub_channels')
-        .select('*')
-        .eq('parent_channel_id', parentChannelId)
-        .order('name');
+        .select('*');
+      
+      // If parentChannelId is provided, filter by it; otherwise get all sub-channels
+      if (parentChannelId) {
+        query = query.eq('parent_channel_id', parentChannelId);
+      }
+      
+      const { data, error } = await query.order('name');
 
       if (error) throw error;
       setSubChannels(data || []);
