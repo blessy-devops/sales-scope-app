@@ -87,7 +87,7 @@ export default function Targets() {
     const newValues: Record<string, number> = {};
     
     previousData.forEach(data => {
-      const key = data.sub_channel_id ? `${data.channel_id}-${data.sub_channel_id}` : data.channel_id;
+      const key = data.sub_channel_id ? `${data.channel_id}|${data.sub_channel_id}` : data.channel_id;
       newValues[key] = data.target_amount;
     });
     
@@ -103,9 +103,9 @@ export default function Targets() {
   const handleSaveTargets = async () => {
     try {
       const targetsData: MonthlyTargetData[] = Object.entries(targetValues).map(([key, amount]) => {
-        if (key.includes('-')) {
+        if (key.includes('|')) {
           // Sub-channel target
-          const [channelId, subChannelId] = key.split('-');
+          const [channelId, subChannelId] = key.split('|');
           return {
             channel_id: channelId,
             sub_channel_id: subChannelId,
@@ -158,7 +158,7 @@ export default function Targets() {
           
           // Sub-channel targets
           subChannels.forEach(({ subChannel, target }) => {
-            const key = `${channel.id}-${subChannel.id}`;
+            const key = `${channel.id}|${subChannel.id}`;
             initialValues[key] = target?.target_amount || 0;
           });
         }
@@ -353,7 +353,7 @@ export default function Targets() {
                             Sub-Canais
                           </h4>
                           {subChannels.map(({ subChannel, target }) => {
-                            const key = `${channel.id}-${subChannel.id}`;
+                            const key = `${channel.id}|${subChannel.id}`;
                             return (
                               <div key={subChannel.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg">
                                 <div>
