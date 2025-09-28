@@ -206,7 +206,7 @@ export function useTargets(options?: UseTargetsOptions) {
         const { error } = await supabase
           .from('sales_targets')
           .upsert(upsertData, {
-            onConflict: 'channel_id,sub_channel_id,month,year'
+            onConflict: 'unique_sales_targets_channel_month_year'
           });
 
         if (error) {
