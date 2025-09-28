@@ -130,47 +130,46 @@ export function useTargets(options?: UseTargetsOptions) {
     return targets.filter(t => t.month === prevMonth && t.year === prevYear);
   };
 
-  const saveMonthlyTargets = async (month: number, year: number, targetsData: MonthlyTargetData[]): Promise<void> => {
-    setLoading(true);
+  const saveMonthlyTargets = async (
+    month: number,
+    year: number,
+    targetsData: MonthlyTargetData[]
+  ): Promise<void> => {
+    console.log('Salvando targets:', { month, year, targetsData });
+    
+    if (!targetsData.length) {
+      console.log('Nenhum target para salvar');
+      return;
+    }
+
     try {
-      console.log('Salvando targets:', { month, year, targetsData });
-
-      if (!targetsData.length) {
-        console.log('Nenhum target para salvar');
-        return;
-      }
-
-      // Preparar dados para upsert - versão simplificada
-      const upsertData = targetsData.map(target => ({
-        channel_id: target.channel_id,
-        sub_channel_id: target.sub_channel_id || null,
+      // Simple upsert - the database constraint handles uniqueness
+      const targetRecords = targetsData.map(targetData => ({
+        channel_id: targetData.channel_id,
+        sub_channel_id: targetData.sub_channel_id || null,
         month,
         year,
-        target_amount: target.target_amount
+        target_amount: targetData.target_amount
       }));
 
-      console.log('Dados para upsert:', upsertData);
+      console.log('Inserindo targets:', targetRecords);
 
-      // Upsert simples - deixar o banco lidar com conflitos
       const { error } = await supabase
         .from('sales_targets')
-        .upsert(upsertData);
+        .upsert(targetRecords, {
+          onConflict: 'channel_id,sub_channel_id,month,year'
+        });
 
       if (error) {
-        console.error('Erro no upsert:', error);
+        console.error('Erro ao salvar targets:', error);
         throw error;
       }
 
       console.log('Targets salvos com sucesso');
-      
-      // Recarregar dados
-      await fetchTargets();
-      await fetchHistory();
+      await Promise.all([fetchTargets(), fetchHistory()]);
     } catch (error) {
       console.error('Erro ao salvar targets:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 

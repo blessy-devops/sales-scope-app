@@ -87,7 +87,8 @@ export default function Targets() {
     const newValues: Record<string, number> = {};
     
     previousData.forEach(data => {
-      const key = data.sub_channel_id ? `${data.channel_id}|${data.sub_channel_id}` : data.channel_id;
+      // Usar ID direto - se tem sub_channel_id, usar ele; senão, usar channel_id
+      const key = data.sub_channel_id || data.channel_id;
       newValues[key] = data.target_amount;
     });
     
@@ -100,49 +101,37 @@ export default function Targets() {
     });
   };
 
-  // Helper function to validate UUID format
-  const isValidUUID = (uuid: string): boolean => {
-    if (!uuid || uuid === 'undefined' || uuid === 'null') return false;
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
-  };
-
   const handleSaveTargets = async () => {
     try {
-      const targetsData: MonthlyTargetData[] = Object.entries(targetValues).map(([key, amount]) => {
-        if (key.includes('|')) {
-          // Sub-channel target
-          const [channelId, subChannelId] = key.split('|');
-          
-          // Only include sub_channel_id if it's a valid UUID
-          if (isValidUUID(subChannelId)) {
-            return {
-              channel_id: channelId,
-              sub_channel_id: subChannelId,
-              target_amount: amount,
-            };
-          } else {
-            // If subChannelId is invalid, treat as parent channel
-            return {
-              channel_id: channelId,
-              target_amount: amount,
-            };
-          }
-        } else {
-          // Parent channel target
-          return {
-            channel_id: key,
-            target_amount: amount,
-          };
+      const targetsData: MonthlyTargetData[] = [];
+      const hierarchicalData = getHierarchicalTargets(selectedDate.getMonth() + 1, selectedDate.getFullYear());
+
+      // Processa canais principais
+      hierarchicalData.forEach(({ channel, subChannels }) => {
+        const channelValue = targetValues[channel.id] || 0;
+        if (channelValue > 0) {
+          targetsData.push({
+            channel_id: channel.id,
+            target_amount: channelValue
+          });
         }
+
+        // Processa sub-channels
+        subChannels.forEach(({ subChannel }) => {
+          const subChannelValue = targetValues[subChannel.id] || 0;
+          if (subChannelValue > 0) {
+            targetsData.push({
+              channel_id: channel.id, // Canal pai
+              sub_channel_id: subChannel.id,
+              target_amount: subChannelValue
+            });
+          }
+        });
       });
 
-      await saveMonthlyTargets(
-        selectedDate.getMonth() + 1,
-        selectedDate.getFullYear(),
-        targetsData
-      );
-
+      console.log('Dados para salvar:', targetsData);
+      
+      await saveMonthlyTargets(selectedDate.getMonth() + 1, selectedDate.getFullYear(), targetsData);
       setHasChanges(false);
       
       toast({
@@ -173,10 +162,9 @@ export default function Targets() {
           // Parent channel target
           initialValues[channel.id] = channelTarget?.target_amount || 0;
           
-          // Sub-channel targets
+          // Sub-channel targets - usar ID direto do sub-channel
           subChannels.forEach(({ subChannel, target }) => {
-            const key = `${channel.id}|${subChannel.id}`;
-            initialValues[key] = target?.target_amount || 0;
+            initialValues[subChannel.id] = target?.target_amount || 0;
           });
         }
       });
@@ -370,11 +358,10 @@ export default function Targets() {
                             Sub-Canais
                           </h4>
                           {subChannels.map(({ subChannel, target }) => {
-                            const key = `${channel.id}|${subChannel.id}`;
                             return (
                               <div key={subChannel.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg">
                                 <div>
-                                  <Label htmlFor={`target-${key}`} className="text-base font-medium">
+                                  <Label htmlFor={`target-${subChannel.id}`} className="text-base font-medium">
                                     <div className="flex items-center gap-2">
                                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                       {subChannel.name}
@@ -384,18 +371,18 @@ export default function Targets() {
                                     {subChannel.utm_source} • {subChannel.utm_medium}
                                   </p>
                                   <Input
-                                    id={`target-${key}`}
+                                    id={`target-${subChannel.id}`}
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    value={targetValues[key] || 0}
-                                    onChange={(e) => handleTargetChange(key, e.target.value)}
+                                    value={targetValues[subChannel.id] || 0}
+                                    onChange={(e) => handleTargetChange(subChannel.id, e.target.value)}
                                     placeholder="0,00"
                                   />
                                 </div>
                                 <div className="flex flex-col justify-end">
                                   <div className="text-lg font-medium text-primary">
-                                    {formatCurrency(targetValues[key] || 0)}
+                                    {formatCurrency(targetValues[subChannel.id] || 0)}
                                   </div>
                                 </div>
                               </div>
