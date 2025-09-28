@@ -130,98 +130,44 @@ export function useTargets(options?: UseTargetsOptions) {
     return targets.filter(t => t.month === prevMonth && t.year === prevYear);
   };
 
-  // Helper function to normalize sub_channel_id comparison
-  const normalizeSubChannelId = (value: string | null | undefined): string | null => {
-    if (!value || value === 'undefined' || value === 'null') return null;
-    return value;
-  };
-
-  // Helper function to validate UUID format
-  const isValidUUID = (uuid: string): boolean => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
-  };
-
-  const saveMonthlyTargets = async (
-    month: number,
-    year: number,
-    targetsData: MonthlyTargetData[]
-  ): Promise<void> => {
+  const saveMonthlyTargets = async (month: number, year: number, targetsData: MonthlyTargetData[]): Promise<void> => {
     setLoading(true);
-    
     try {
-      console.log('💾 Salvando targets:', targetsData);
-      
-      for (const data of targetsData) {
-        // Normalize sub_channel_id for comparison
-        const normalizedSubChannelId = normalizeSubChannelId(data.sub_channel_id);
-        
-        console.log(`🎯 Processando target:`, {
-          channel_id: data.channel_id,
-          sub_channel_id: normalizedSubChannelId,
-          target_amount: data.target_amount,
-          month,
-          year
-        });
+      console.log('Salvando targets:', { month, year, targetsData });
 
-        // Find existing target to track history
-        const existingTarget = targets.find(
-          t => t.channel_id === data.channel_id && 
-               normalizeSubChannelId(t.sub_channel_id) === normalizedSubChannelId && 
-               t.month === month && 
-               t.year === year
-        );
-
-        // Prepare upsert data
-        const upsertData: any = {
-          channel_id: data.channel_id,
-          month,
-          year,
-          target_amount: data.target_amount,
-        };
-        
-        // Only add sub_channel_id if it's a valid UUID
-        if (normalizedSubChannelId && isValidUUID(normalizedSubChannelId)) {
-          upsertData.sub_channel_id = normalizedSubChannelId;
-          console.log(`✅ Sub-channel válido: ${normalizedSubChannelId}`);
-        } else {
-          console.log(`❌ Sub-channel inválido/nulo: ${data.sub_channel_id} -> ${normalizedSubChannelId}`);
-        }
-
-        // Log history if amount changed (before upsert)
-        if (existingTarget && existingTarget.target_amount !== data.target_amount) {
-          console.log(`📝 Logando histórico: ${existingTarget.target_amount} -> ${data.target_amount}`);
-          await supabase
-            .from('target_history')
-            .insert({
-              channel_id: data.channel_id,
-              month,
-              year,
-              old_amount: existingTarget.target_amount,
-              new_amount: data.target_amount
-            });
-        }
-
-        // Use upsert with the unique constraint
-        const { error } = await supabase
-          .from('sales_targets')
-          .upsert(upsertData, {
-            onConflict: 'channel_id,sub_channel_id,month,year'
-          });
-
-        if (error) {
-          console.error(`❌ Erro ao salvar target:`, error);
-          throw error;
-        } else {
-          console.log(`✅ Target salvo com sucesso`);
-        }
+      if (!targetsData.length) {
+        console.log('Nenhum target para salvar');
+        return;
       }
+
+      // Preparar dados para upsert - versão simplificada
+      const upsertData = targetsData.map(target => ({
+        channel_id: target.channel_id,
+        sub_channel_id: target.sub_channel_id || null,
+        month,
+        year,
+        target_amount: target.target_amount
+      }));
+
+      console.log('Dados para upsert:', upsertData);
+
+      // Upsert simples - deixar o banco lidar com conflitos
+      const { error } = await supabase
+        .from('sales_targets')
+        .upsert(upsertData);
+
+      if (error) {
+        console.error('Erro no upsert:', error);
+        throw error;
+      }
+
+      console.log('Targets salvos com sucesso');
       
+      // Recarregar dados
       await fetchTargets();
       await fetchHistory();
-      console.log('🎉 Todos os targets salvos com sucesso!');
     } catch (error) {
-      console.error('❌ Erro geral ao salvar targets:', error);
+      console.error('Erro ao salvar targets:', error);
       throw error;
     } finally {
       setLoading(false);
