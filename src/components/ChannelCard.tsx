@@ -7,13 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Store, Globe, ShoppingBag } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Store, Globe, ShoppingBag, Settings } from 'lucide-react';
 import { Channel, ChannelType } from '@/types/channel';
 
 interface ChannelCardProps {
   channel: Channel;
   onEdit: (channel: Channel) => void;
   onDelete: (id: string) => void;
+  onManageSubChannels?: (channel: Channel) => void;
 }
 
 const getChannelIcon = (type: ChannelType) => {
@@ -42,7 +43,7 @@ const getTypeVariant = (type: ChannelType) => {
   }
 };
 
-export function ChannelCard({ channel, onEdit, onDelete }: ChannelCardProps) {
+export function ChannelCard({ channel, onEdit, onDelete, onManageSubChannels }: ChannelCardProps) {
   const IconComponent = getChannelIcon(channel.type);
 
   return (
@@ -87,7 +88,7 @@ export function ChannelCard({ channel, onEdit, onDelete }: ChannelCardProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent 
               align="end" 
-              className="w-48 bg-popover border border-border shadow-lg"
+              className="w-56 bg-popover border border-border shadow-lg"
             >
               <DropdownMenuItem 
                 onClick={() => onEdit(channel)}
@@ -96,6 +97,15 @@ export function ChannelCard({ channel, onEdit, onDelete }: ChannelCardProps) {
                 <Edit className="w-4 h-4 mr-2" />
                 Editar
               </DropdownMenuItem>
+              {channel.type === 'E-commerce' && onManageSubChannels && (
+                <DropdownMenuItem 
+                  onClick={() => onManageSubChannels(channel)}
+                  className="cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Gerenciar Sub-Canais
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem 
                 onClick={() => onDelete(channel.id)}
                 className="cursor-pointer text-destructive hover:text-destructive"

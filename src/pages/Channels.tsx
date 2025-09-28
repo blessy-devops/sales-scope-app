@@ -4,6 +4,7 @@ import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ChannelCard } from '@/components/ChannelCard';
 import { ChannelModal } from '@/components/ChannelModal';
+import { SubChannelManagerModal } from '@/components/SubChannelManagerModal';
 import { useChannels } from '@/hooks/useChannels';
 import { Channel, CreateChannelData } from '@/types/channel';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,8 @@ export default function Channels() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
+  const [subChannelModalOpen, setSubChannelModalOpen] = useState(false);
+  const [selectedChannelForSubChannels, setSelectedChannelForSubChannels] = useState<Channel | null>(null);
 
   const filteredChannels = channels.filter(channel =>
     channel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,6 +73,11 @@ export default function Channels() {
   const handleNewChannel = () => {
     setEditingChannel(null);
     setModalOpen(true);
+  };
+
+  const handleManageSubChannels = (channel: Channel) => {
+    setSelectedChannelForSubChannels(channel);
+    setSubChannelModalOpen(true);
   };
 
   return (
@@ -130,6 +138,7 @@ export default function Channels() {
                 channel={channel}
                 onEdit={handleEditChannel}
                 onDelete={handleDeleteChannel}
+                onManageSubChannels={handleManageSubChannels}
               />
             ))}
           </div>
@@ -143,6 +152,16 @@ export default function Channels() {
           channel={editingChannel}
           loading={loading}
         />
+
+        {/* Sub-Channel Manager Modal */}
+        {selectedChannelForSubChannels && (
+          <SubChannelManagerModal
+            open={subChannelModalOpen}
+            onOpenChange={setSubChannelModalOpen}
+            parentChannelId={selectedChannelForSubChannels.id}
+            parentChannelName={selectedChannelForSubChannels.name}
+          />
+        )}
       </div>
     </div>
   );
