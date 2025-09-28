@@ -9,7 +9,7 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -125,7 +125,7 @@ serve(async (req) => {
         realized: totalSales,
         attainment: attainment,
         orderCount: orderCount,
-        channelName: subChannel.channels?.name || 'Unknown'
+        channelName: (subChannel.channels as any)?.name || 'Unknown'
       });
     }
 
