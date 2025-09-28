@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Clock,
   Activity,
-  Instagram
+  Instagram,
+  GitBranch
 } from 'lucide-react';
 
 const Analises = () => {
@@ -64,6 +65,17 @@ const Analises = () => {
       color: 'bg-gradient-to-br from-cyan-500 to-cyan-600',
       iconBg: 'bg-cyan-100 dark:bg-cyan-900/30',
       iconColor: 'text-cyan-600 dark:text-cyan-400'
+    },
+    {
+      id: 'analise-subcanais',
+      title: 'Análise por Sub-canal',
+      description: 'Performance individual de cada sub-canal contra suas metas definidas.',
+      icon: GitBranch,
+      available: true,
+      path: '/analises/subcanais',
+      color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+      iconColor: 'text-emerald-600 dark:text-emerald-400'
     },
     {
       id: 'comparativo-mensal',
