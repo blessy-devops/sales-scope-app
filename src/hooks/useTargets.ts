@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { SalesTarget, TargetHistory, MonthlyTargetData } from '@/types/target';
+import { SalesTarget, TargetHistory, MonthlyTargetData, HierarchicalTargetData } from '@/types/target';
 import { useChannels } from './useChannels';
+import { useSubChannels } from './useSubChannels';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseTargetsOptions {
@@ -10,6 +11,7 @@ interface UseTargetsOptions {
 
 export function useTargets(options?: UseTargetsOptions) {
   const { channels } = useChannels();
+  const { subChannels } = useSubChannels();
   const [targets, setTargets] = useState<SalesTarget[]>([]);
   const [history, setHistory] = useState<TargetHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,8 +124,12 @@ export function useTargets(options?: UseTargetsOptions) {
     
     try {
       for (const data of targetsData) {
+        // Find existing target by matching both channel_id and sub_channel_id
         const existingTarget = targets.find(
-          t => t.channel_id === data.channel_id && t.month === month && t.year === year
+          t => t.channel_id === data.channel_id && 
+               t.sub_channel_id === data.sub_channel_id && 
+               t.month === month && 
+               t.year === year
         );
         
         if (existingTarget) {
@@ -151,14 +157,20 @@ export function useTargets(options?: UseTargetsOptions) {
           }
         } else if (data.target_amount > 0) {
           // Criar nova meta
+          const insertData: any = {
+            channel_id: data.channel_id,
+            month,
+            year,
+            target_amount: data.target_amount,
+          };
+          
+          if (data.sub_channel_id) {
+            insertData.sub_channel_id = data.sub_channel_id;
+          }
+          
           await supabase
             .from('sales_targets')
-            .insert({
-              channel_id: data.channel_id,
-              month,
-              year,
-              target_amount: data.target_amount,
-            });
+            .insert(insertData);
           
           // Salvar histórico
           await supabase
@@ -202,6 +214,64 @@ export function useTargets(options?: UseTargetsOptions) {
     return history.filter(h => h.month === month && h.year === year);
   };
 
+  const getHierarchicalTargets = (month: number, year: number): HierarchicalTargetData[] => {
+    const result: HierarchicalTargetData[] = [];
+    
+    channels.forEach(channel => {
+      // Get parent channel target
+      const channelTarget = targets.find(
+        t => t.channel_id === channel.id && !t.sub_channel_id && t.month === month && t.year === year
+      ) || null;
+      
+      // Get sub-channels for this parent channel
+      const channelSubChannels = subChannels.filter(sc => sc.parent_channel_id === channel.id);
+      
+      // Get targets for each sub-channel
+      const subChannelTargets = channelSubChannels.map(subChannel => ({
+        subChannel,
+        target: targets.find(
+          t => t.sub_channel_id === subChannel.id && t.month === month && t.year === year
+        ) || null
+      }));
+      
+      result.push({
+        channel,
+        channelTarget,
+        subChannels: subChannelTargets
+      });
+    });
+    
+    return result;
+  };
+
+  const copyFromPreviousMonthHierarchical = (month: number, year: number): MonthlyTargetData[] => {
+    const previousTargets = getPreviousMonthTargets(month, year);
+    const activeChannels = channels.filter(c => c.is_active);
+    const result: MonthlyTargetData[] = [];
+    
+    // Add parent channel targets
+    activeChannels.forEach(channel => {
+      const prevTarget = previousTargets.find(t => t.channel_id === channel.id && !t.sub_channel_id);
+      result.push({
+        channel_id: channel.id,
+        target_amount: prevTarget?.target_amount || 0,
+      });
+      
+      // Add sub-channel targets
+      const channelSubChannels = subChannels.filter(sc => sc.parent_channel_id === channel.id);
+      channelSubChannels.forEach(subChannel => {
+        const prevSubTarget = previousTargets.find(t => t.sub_channel_id === subChannel.id);
+        result.push({
+          channel_id: channel.id,
+          sub_channel_id: subChannel.id,
+          target_amount: prevSubTarget?.target_amount || 0,
+        });
+      });
+    });
+    
+    return result;
+  };
+
   return {
     targets,
     history,
@@ -211,5 +281,7 @@ export function useTargets(options?: UseTargetsOptions) {
     saveMonthlyTargets,
     copyFromPreviousMonth,
     getHistoryForMonth,
+    getHierarchicalTargets,
+    copyFromPreviousMonthHierarchical,
   };
 }
