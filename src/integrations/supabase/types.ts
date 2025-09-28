@@ -528,6 +528,7 @@ export type Database = {
           id: string
           month: number
           previous_amount: number | null
+          sub_channel_id: string | null
           target_amount: number
           updated_at: string | null
           year: number
@@ -538,6 +539,7 @@ export type Database = {
           id?: string
           month: number
           previous_amount?: number | null
+          sub_channel_id?: string | null
           target_amount?: number
           updated_at?: string | null
           year: number
@@ -548,6 +550,7 @@ export type Database = {
           id?: string
           month?: number
           previous_amount?: number | null
+          sub_channel_id?: string | null
           target_amount?: number
           updated_at?: string | null
           year?: number
@@ -558,6 +561,13 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_targets_sub_channel_id_fkey"
+            columns: ["sub_channel_id"]
+            isOneToOne: false
+            referencedRelation: "sub_channels"
             referencedColumns: ["id"]
           },
         ]
@@ -792,6 +802,41 @@ export type Database = {
           total_price?: number
         }
         Relationships: []
+      }
+      sub_channels: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_channel_id: string
+          utm_medium: string
+          utm_source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_channel_id: string
+          utm_medium: string
+          utm_source: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_channel_id?: string
+          utm_medium?: string
+          utm_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_channels_parent_channel_id_fkey"
+            columns: ["parent_channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_settings: {
         Row: {
