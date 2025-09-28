@@ -63,13 +63,13 @@ serve(async (req) => {
     const processedSales = salesData || [];
 
     // Calculate KPIs
-    const totalRevenue = processedSales.reduce((sum, sale) => sum + (parseFloat(sale.total_revenue) || 0), 0);
+    const totalRevenue = processedSales.reduce((sum: number, sale: any) => sum + (parseFloat(sale.total_revenue) || 0), 0);
     const totalSales = processedSales.length;
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Calculate daily series
     const dailyRevenue = new Map();
-    processedSales.forEach(sale => {
+    processedSales.forEach((sale: any) => {
       const date = sale.sale_date;
       const revenue = parseFloat(sale.total_revenue) || 0;
       dailyRevenue.set(date, (dailyRevenue.get(date) || 0) + revenue);
@@ -82,7 +82,7 @@ serve(async (req) => {
     // Calculate attendant ranking
     const attendantStats = new Map();
     
-    processedSales.forEach(sale => {
+    processedSales.forEach((sale: any) => {
       const attendantName = sale.attendant_name;
       const stats = attendantStats.get(attendantName) || {
         name: attendantName,
@@ -100,13 +100,13 @@ serve(async (req) => {
 
     // Get recent sales
     const recentSales = processedSales
-      .map(sale => ({
+      .map((sale: any) => ({
         date: sale.sale_date,
         attendantName: sale.attendant_name,
         orderNumber: sale.order_number,
         value: parseFloat(sale.total_revenue) || 0
       }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 20); // Get last 20 sales
 
     // Return structured response

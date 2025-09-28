@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
 
     orders?.forEach(order => {
       // Convert to São Paulo date
-      const saleDate = new Date(order.created_at).toLocaleDateString('en-CA', {
+      const saleDate = new Date((order as any).created_at).toLocaleDateString('en-CA', {
         timeZone: 'America/Sao_Paulo'
       })
       

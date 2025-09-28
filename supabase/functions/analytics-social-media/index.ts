@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
           )
         }
 
-        const formattedSalesData = (unifiedSalesData || []).map(sale => ({
+        const formattedSalesData = (unifiedSalesData || []).map((sale: any) => ({
           sale_date: sale.sale_date,
           amount: Number(sale[columnToSum]) || 0
         }))
@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
         })
 
         const goal = totalGoal
-        const currentSalesTotal = formattedSalesData.reduce((sum, sale) => {
+        const currentSalesTotal = formattedSalesData.reduce((sum: number, sale: any) => {
           return sum + sale.amount
         }, 0)
 
