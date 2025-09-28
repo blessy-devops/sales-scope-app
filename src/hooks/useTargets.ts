@@ -106,7 +106,22 @@ export function useTargets(options?: UseTargetsOptions) {
   };
 
   const getTargetsForMonth = (month: number, year: number): SalesTarget[] => {
-    return targets.filter(t => t.month === month && t.year === year);
+    // Filter targets and remove duplicates based on channel_id + sub_channel_id combination
+    const monthTargets = targets.filter(t => t.month === month && t.year === year);
+    
+    // Create a map to ensure uniqueness
+    const uniqueTargetsMap = new Map<string, SalesTarget>();
+    
+    monthTargets.forEach(target => {
+      const key = `${target.channel_id}-${target.sub_channel_id || 'null'}`;
+      // Keep the most recent one (highest id or created_at)
+      const existing = uniqueTargetsMap.get(key);
+      if (!existing || (target.created_at && existing.created_at && target.created_at > existing.created_at)) {
+        uniqueTargetsMap.set(key, target);
+      }
+    });
+    
+    return Array.from(uniqueTargetsMap.values());
   };
 
   const getPreviousMonthTargets = (month: number, year: number): SalesTarget[] => {
@@ -135,79 +150,78 @@ export function useTargets(options?: UseTargetsOptions) {
     setLoading(true);
     
     try {
+      console.log('💾 Salvando targets:', targetsData);
+      
       for (const data of targetsData) {
         // Normalize sub_channel_id for comparison
-        const normalizedDataSubChannelId = normalizeSubChannelId(data.sub_channel_id);
+        const normalizedSubChannelId = normalizeSubChannelId(data.sub_channel_id);
         
-        // Find existing target by matching both channel_id and normalized sub_channel_id
+        console.log(`🎯 Processando target:`, {
+          channel_id: data.channel_id,
+          sub_channel_id: normalizedSubChannelId,
+          target_amount: data.target_amount,
+          month,
+          year
+        });
+
+        // Find existing target to track history
         const existingTarget = targets.find(
           t => t.channel_id === data.channel_id && 
-               normalizeSubChannelId(t.sub_channel_id) === normalizedDataSubChannelId && 
+               normalizeSubChannelId(t.sub_channel_id) === normalizedSubChannelId && 
                t.month === month && 
                t.year === year
         );
+
+        // Prepare upsert data
+        const upsertData: any = {
+          channel_id: data.channel_id,
+          month,
+          year,
+          target_amount: data.target_amount,
+        };
         
-        if (existingTarget) {
-          // Atualizar meta existente
-          if (existingTarget.target_amount !== data.target_amount) {
-            // Salvar histórico
-            await supabase
-              .from('target_history')
-              .insert({
-                channel_id: data.channel_id,
-                month,
-                year,
-                old_amount: existingTarget.target_amount,
-                new_amount: data.target_amount,
-              });
-            
-            // Atualizar meta
-            await supabase
-              .from('sales_targets')
-              .update({ 
-                target_amount: data.target_amount,
-                previous_amount: existingTarget.target_amount 
-              })
-              .eq('id', existingTarget.id);
-          }
-        } else if (data.target_amount > 0) {
-          // Criar nova meta
-          const insertData: any = {
-            channel_id: data.channel_id,
-            month,
-            year,
-            target_amount: data.target_amount,
-          };
-          
-          // Only add sub_channel_id if it's a valid UUID
-          const normalizedSubChannelId = normalizeSubChannelId(data.sub_channel_id);
-          if (normalizedSubChannelId && isValidUUID(normalizedSubChannelId)) {
-            insertData.sub_channel_id = normalizedSubChannelId;
-          }
-          
-          await supabase
-            .from('sales_targets')
-            .insert(insertData);
-          
-          // Salvar histórico
+        // Only add sub_channel_id if it's a valid UUID
+        if (normalizedSubChannelId && isValidUUID(normalizedSubChannelId)) {
+          upsertData.sub_channel_id = normalizedSubChannelId;
+          console.log(`✅ Sub-channel válido: ${normalizedSubChannelId}`);
+        } else {
+          console.log(`❌ Sub-channel inválido/nulo: ${data.sub_channel_id} -> ${normalizedSubChannelId}`);
+        }
+
+        // Log history if amount changed (before upsert)
+        if (existingTarget && existingTarget.target_amount !== data.target_amount) {
+          console.log(`📝 Logando histórico: ${existingTarget.target_amount} -> ${data.target_amount}`);
           await supabase
             .from('target_history')
             .insert({
               channel_id: data.channel_id,
               month,
               year,
-              old_amount: 0,
-              new_amount: data.target_amount,
+              old_amount: existingTarget.target_amount,
+              new_amount: data.target_amount
             });
+        }
+
+        // Use upsert with the unique constraint
+        const { error } = await supabase
+          .from('sales_targets')
+          .upsert(upsertData, {
+            onConflict: 'channel_id,sub_channel_id,month,year'
+          });
+
+        if (error) {
+          console.error(`❌ Erro ao salvar target:`, error);
+          throw error;
+        } else {
+          console.log(`✅ Target salvo com sucesso`);
         }
       }
       
-      // Recarregar dados
       await fetchTargets();
       await fetchHistory();
-      
+      console.log('🎉 Todos os targets salvos com sucesso!');
     } catch (error) {
-      console.error('Error saving targets:', error);
+      console.error('❌ Erro geral ao salvar targets:', error);
       throw error;
     } finally {
       setLoading(false);
