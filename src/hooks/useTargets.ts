@@ -115,6 +115,18 @@ export function useTargets(options?: UseTargetsOptions) {
     return targets.filter(t => t.month === prevMonth && t.year === prevYear);
   };
 
+  // Helper function to normalize sub_channel_id comparison
+  const normalizeSubChannelId = (value: string | null | undefined): string | null => {
+    if (!value || value === 'undefined' || value === 'null') return null;
+    return value;
+  };
+
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
   const saveMonthlyTargets = async (
     month: number,
     year: number,
@@ -124,10 +136,13 @@ export function useTargets(options?: UseTargetsOptions) {
     
     try {
       for (const data of targetsData) {
-        // Find existing target by matching both channel_id and sub_channel_id
+        // Normalize sub_channel_id for comparison
+        const normalizedDataSubChannelId = normalizeSubChannelId(data.sub_channel_id);
+        
+        // Find existing target by matching both channel_id and normalized sub_channel_id
         const existingTarget = targets.find(
           t => t.channel_id === data.channel_id && 
-               t.sub_channel_id === data.sub_channel_id && 
+               normalizeSubChannelId(t.sub_channel_id) === normalizedDataSubChannelId && 
                t.month === month && 
                t.year === year
         );
@@ -164,8 +179,10 @@ export function useTargets(options?: UseTargetsOptions) {
             target_amount: data.target_amount,
           };
           
-          if (data.sub_channel_id) {
-            insertData.sub_channel_id = data.sub_channel_id;
+          // Only add sub_channel_id if it's a valid UUID
+          const normalizedSubChannelId = normalizeSubChannelId(data.sub_channel_id);
+          if (normalizedSubChannelId && isValidUUID(normalizedSubChannelId)) {
+            insertData.sub_channel_id = normalizedSubChannelId;
           }
           
           await supabase

@@ -100,17 +100,34 @@ export default function Targets() {
     });
   };
 
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid: string): boolean => {
+    if (!uuid || uuid === 'undefined' || uuid === 'null') return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
   const handleSaveTargets = async () => {
     try {
       const targetsData: MonthlyTargetData[] = Object.entries(targetValues).map(([key, amount]) => {
         if (key.includes('|')) {
           // Sub-channel target
           const [channelId, subChannelId] = key.split('|');
-          return {
-            channel_id: channelId,
-            sub_channel_id: subChannelId,
-            target_amount: amount,
-          };
+          
+          // Only include sub_channel_id if it's a valid UUID
+          if (isValidUUID(subChannelId)) {
+            return {
+              channel_id: channelId,
+              sub_channel_id: subChannelId,
+              target_amount: amount,
+            };
+          } else {
+            // If subChannelId is invalid, treat as parent channel
+            return {
+              channel_id: channelId,
+              target_amount: amount,
+            };
+          }
         } else {
           // Parent channel target
           return {
