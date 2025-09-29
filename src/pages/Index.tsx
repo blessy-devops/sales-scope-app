@@ -1091,7 +1091,7 @@ const Index = () => {
                             labelLine={true}
                           />
                           <ChartLegend
-                            content={<ChartLegendContent nameKey="channel" />}
+                            content={<ChartLegendContent />}
                             verticalAlign="bottom"
                             height={36}
                           />
