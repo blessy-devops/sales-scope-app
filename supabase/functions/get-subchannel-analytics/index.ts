@@ -51,6 +51,7 @@ serve(async (req) => {
         name,
         utm_source,
         utm_medium,
+        utm_matching_type,
         parent_channel_id,
         channels!inner(name, is_active)
       `)
@@ -92,19 +93,32 @@ serve(async (req) => {
     const analyticsData = [];
     
     for (const subChannel of subChannels || []) {
-      console.log(`[SubChannel Analytics] Processing sub-channel: ${subChannel.name} (UTM: ${subChannel.utm_source}/${subChannel.utm_medium})`);
+      console.log(`[SubChannel Analytics] Processing sub-channel: ${subChannel.name} (UTM: ${subChannel.utm_source}/${subChannel.utm_medium}, Type: ${subChannel.utm_matching_type})`);
 
-      // Query Shopify orders for this specific sub-channel
-      const { data: salesData, error: salesError } = await supabaseAdmin
+      // Build query with conditional UTM matching logic
+      let query = supabaseAdmin
         .from('shopify_orders_gold')
         .select('total_price, id')
-        .eq('utm_source', subChannel.utm_source)
-        .eq('utm_medium', subChannel.utm_medium)
         .eq('financial_status', 'paid')
         .eq('test', false)
         .is('cancelled_at', null)
         .gte('created_at', `${startDate}T00:00:00-03:00`)
         .lte('created_at', `${endDate}T23:59:59-03:00`);
+
+      // Apply UTM matching based on utm_matching_type
+      if (subChannel.utm_matching_type === 'contains') {
+        // Use ILIKE for flexible matching (contains)
+        query = query
+          .ilike('utm_source', `%${subChannel.utm_source}%`)
+          .ilike('utm_medium', `%${subChannel.utm_medium}%`);
+      } else {
+        // Use exact matching (default behavior)
+        query = query
+          .eq('utm_source', subChannel.utm_source)
+          .eq('utm_medium', subChannel.utm_medium);
+      }
+
+      const { data: salesData, error: salesError } = await query;
 
       if (salesError) {
         console.error(`[SubChannel Analytics] Error fetching sales for ${subChannel.name}:`, salesError);
