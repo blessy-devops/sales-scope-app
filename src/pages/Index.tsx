@@ -168,11 +168,9 @@ const Index = () => {
   const periodTargets = months.flatMap(month => {
     const monthNum = month.getMonth() + 1;
     const yearNum = month.getFullYear();
-    // Para visão global, usar apenas metas principais (sem subcanais)
-    // Para canais específicos, usar todas as metas
-    return viewFilter === 'global' 
-      ? getChannelTargetsOnly(monthNum, yearNum)
-      : getTargetsForMonth(monthNum, yearNum);
+    // Sempre usar apenas metas principais (sem subcanais) no dashboard
+    // Subcanais aparecem apenas na página específica de análise
+    return getChannelTargetsOnly(monthNum, yearNum);
   });
   
   // Filtrar metas conforme visão selecionada
