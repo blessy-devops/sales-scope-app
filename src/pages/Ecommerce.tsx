@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { PeriodRangePicker, type DateRange } from '@/components/PeriodRangePicker';
 import { MetricsChart } from '@/components/ecommerce/MetricsChart';
 import { MetricsSimple } from '@/components/ecommerce/MetricsSimple';
@@ -31,7 +31,7 @@ const Ecommerce: React.FC = () => {
     const currentDate = new Date();
     return {
       from: startOfMonth(currentDate),
-      to: endOfMonth(currentDate)
+      to: currentDate
     };
   });
 
@@ -97,22 +97,11 @@ const Ecommerce: React.FC = () => {
       <Card className="border-border/50">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Tabs defaultValue="mes" className="w-auto">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="hoje">Hoje</TabsTrigger>
-                  <TabsTrigger value="7dias">Últimos 7 dias</TabsTrigger>
-                  <TabsTrigger value="mes">Este mês</TabsTrigger>
-                  <TabsTrigger value="customizado">Customizado</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              <PeriodRangePicker 
-                dateRange={dateRange}
-                onDateRangeChange={setDateRange}
-                className="w-64"
-              />
-            </div>
+            <PeriodRangePicker 
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              className="w-64"
+            />
           </div>
         </CardContent>
       </Card>
