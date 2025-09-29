@@ -83,6 +83,35 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_coupons: {
+        Row: {
+          campaign_id: string
+          coupon_code: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          campaign_id: string
+          coupon_code: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          campaign_id?: string
+          coupon_code?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_coupons_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_performance_data: {
         Row: {
           campaign_id: string
