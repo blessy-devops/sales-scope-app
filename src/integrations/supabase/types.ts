@@ -809,6 +809,7 @@ export type Database = {
           id: string
           name: string
           parent_channel_id: string
+          utm_matching_type: string
           utm_medium: string
           utm_source: string
         }
@@ -817,6 +818,7 @@ export type Database = {
           id?: string
           name: string
           parent_channel_id: string
+          utm_matching_type?: string
           utm_medium: string
           utm_source: string
         }
@@ -825,6 +827,7 @@ export type Database = {
           id?: string
           name?: string
           parent_channel_id?: string
+          utm_matching_type?: string
           utm_medium?: string
           utm_source?: string
         }

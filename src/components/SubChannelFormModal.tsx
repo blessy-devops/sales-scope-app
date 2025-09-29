@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SubChannel, CreateSubChannelData } from '@/types/subChannel';
 import { Loader2 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ export function SubChannelFormModal({
     name: '',
     utm_source: '',
     utm_medium: '',
+    utm_matching_type: 'exact',
   });
 
   useEffect(() => {
@@ -38,12 +40,14 @@ export function SubChannelFormModal({
         name: subChannel.name,
         utm_source: subChannel.utm_source,
         utm_medium: subChannel.utm_medium,
+        utm_matching_type: subChannel.utm_matching_type,
       });
     } else {
       setFormData({
         name: '',
         utm_source: '',
         utm_medium: '',
+        utm_matching_type: 'exact',
       });
     }
   }, [subChannel, open]);
@@ -53,7 +57,7 @@ export function SubChannelFormModal({
     await onSubmit(formData);
   };
 
-  const isFormValid = formData.name.trim() && formData.utm_source.trim() && formData.utm_medium.trim();
+  const isFormValid = formData.name.trim() && formData.utm_source.trim() && formData.utm_medium.trim() && formData.utm_matching_type;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,6 +97,29 @@ export function SubChannelFormModal({
             />
             <p className="text-xs text-muted-foreground">
               Identificador da fonte de tráfego
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="utm_matching_type" className="text-sm font-medium">
+              Tipo de Correspondência UTM
+            </Label>
+            <Select
+              value={formData.utm_matching_type}
+              onValueChange={(value: 'exact' | 'contains') => 
+                setFormData(prev => ({ ...prev, utm_matching_type: value }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="exact">Correspondência Exata</SelectItem>
+                <SelectItem value="contains">Contém Termo</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Exata: UTM deve ser idêntico. Contém: UTM pode conter o termo em qualquer posição
             </p>
           </div>
 

@@ -25,7 +25,7 @@ export function useSubChannels(parentChannelId?: string) {
       const { data, error } = await query.order('name');
 
       if (error) throw error;
-      setSubChannels(data || []);
+      setSubChannels((data || []) as SubChannel[]);
     } catch (error) {
       console.error('Error fetching sub-channels:', error);
     } finally {
