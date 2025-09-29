@@ -113,6 +113,15 @@ export function CampaignFormDialog({
   }, [campaign, open, form]);
 
   const handleSubmit = async (data: CampaignFormData) => {
+    console.log('🔍 Date objects recebidos:', {
+      from: data.dateRange.from,
+      to: data.dateRange.to,
+      from_string: data.dateRange.from.toString(),
+      to_string: data.dateRange.to.toString(),
+      from_iso: data.dateRange.from.toISOString(),
+      to_iso: data.dateRange.to.toISOString()
+    });
+    
     const submitData: CreateCampaignData = {
       name: data.name,
       description: data.description || undefined,
@@ -130,6 +139,11 @@ export function CampaignFormDialog({
       goal_average_ticket: data.goal_average_ticket ? parseFloat(data.goal_average_ticket) : undefined,
       goal_cps: data.goal_cps ? parseFloat(data.goal_cps) : undefined,
     };
+
+    console.log('📅 Datas formatadas para envio:', {
+      start_date: submitData.start_date,
+      end_date: submitData.end_date
+    });
 
     await onSubmit(submitData);
   };

@@ -84,11 +84,15 @@ serve(async (req) => {
       );
     }
 
-    // Validate dates
-    const startDate = new Date(body.start_date);
-    const endDate = new Date(body.end_date);
+    // Validate dates (compare ISO strings directly to avoid timezone issues)
+    console.log('🔍 Datas recebidas na edge function:', {
+      start_date: body.start_date,
+      end_date: body.end_date,
+      start_date_type: typeof body.start_date,
+      end_date_type: typeof body.end_date
+    });
     
-    if (endDate < startDate) {
+    if (body.end_date < body.start_date) {
       return new Response(
         JSON.stringify({ error: 'End date must be after start date' }),
         {
