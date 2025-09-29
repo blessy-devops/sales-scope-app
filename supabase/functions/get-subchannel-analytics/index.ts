@@ -53,6 +53,7 @@ serve(async (req) => {
         utm_medium,
         utm_matching_type,
         parent_channel_id,
+        created_at,
         channels!inner(name, is_active)
       `)
       .eq('channels.is_active', true);
@@ -90,9 +91,21 @@ serve(async (req) => {
     });
 
     // Get sales data for each sub-channel from Shopify orders
+    // Implement priority-based conflict resolution: exact > contains > chronological
+    const processedOrders = new Set<string>();
     const analyticsData = [];
     
-    for (const subChannel of subChannels || []) {
+    // Sort sub-channels by priority: exact first, then by creation date
+    const prioritizedSubChannels = (subChannels || []).sort((a, b) => {
+      // Exact matching has higher priority
+      if (a.utm_matching_type === 'exact' && b.utm_matching_type === 'contains') return -1;
+      if (a.utm_matching_type === 'contains' && b.utm_matching_type === 'exact') return 1;
+      
+      // If same type, sort by creation date (older first gets priority)
+      return new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime();
+    });
+    
+    for (const subChannel of prioritizedSubChannels) {
       console.log(`[SubChannel Analytics] Processing sub-channel: ${subChannel.name} (UTM: ${subChannel.utm_source}/${subChannel.utm_medium}, Type: ${subChannel.utm_matching_type})`);
 
       // Build query with conditional UTM matching logic
@@ -125,13 +138,18 @@ serve(async (req) => {
         continue;
       }
 
-      const orders = salesData || [];
-      const totalSales = orders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0);
-      const orderCount = orders.length;
+      // Filter out already processed orders (conflict resolution)
+      const availableOrders = (salesData || []).filter(order => !processedOrders.has(order.id.toString()));
+      
+      // Mark orders as processed for this sub-channel
+      availableOrders.forEach(order => processedOrders.add(order.id.toString()));
+
+      const totalSales = availableOrders.reduce((sum, order) => sum + (parseFloat(order.total_price) || 0), 0);
+      const orderCount = availableOrders.length;
       const target = targetMap.get(subChannel.id) || 0;
       const attainment = target > 0 ? (totalSales / target) * 100 : 0;
 
-      console.log(`[SubChannel Analytics] ${subChannel.name}: Sales=${totalSales}, Orders=${orderCount}, Target=${target}, Attainment=${attainment.toFixed(1)}%`);
+      console.log(`[SubChannel Analytics] ${subChannel.name}: Sales=${totalSales}, Orders=${orderCount}, Target=${target}, Attainment=${attainment.toFixed(1)}% (after conflict resolution)`);
 
       analyticsData.push({
         name: subChannel.name,

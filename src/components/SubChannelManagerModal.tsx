@@ -209,6 +209,8 @@ export function SubChannelManagerModal({
         onSubmit={handleCreateSubChannel}
         subChannel={editingSubChannel}
         loading={actionLoading}
+        existingSubChannels={subChannels}
+        parentChannelId={parentChannelId}
       />
     </>
   );

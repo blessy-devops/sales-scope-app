@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SubChannel, CreateSubChannelData } from '@/types/subChannel';
-import { Loader2 } from 'lucide-react';
+import { useOverlapValidation } from '@/hooks/useOverlapValidation';
+import { Loader2, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 
 interface SubChannelFormModalProps {
   open: boolean;
@@ -18,6 +20,8 @@ interface SubChannelFormModalProps {
   onSubmit: (data: CreateSubChannelData) => Promise<void>;
   subChannel?: SubChannel | null;
   loading?: boolean;
+  existingSubChannels: SubChannel[];
+  parentChannelId: string;
 }
 
 export function SubChannelFormModal({ 
@@ -25,7 +29,9 @@ export function SubChannelFormModal({
   onOpenChange, 
   onSubmit, 
   subChannel, 
-  loading = false 
+  loading = false,
+  existingSubChannels,
+  parentChannelId
 }: SubChannelFormModalProps) {
   const [formData, setFormData] = useState<CreateSubChannelData>({
     name: '',
@@ -33,6 +39,8 @@ export function SubChannelFormModal({
     utm_medium: '',
     utm_matching_type: 'exact',
   });
+
+  const { validationState, validateOverlap } = useOverlapValidation(existingSubChannels, parentChannelId);
 
   useEffect(() => {
     if (subChannel) {
@@ -52,12 +60,19 @@ export function SubChannelFormModal({
     }
   }, [subChannel, open]);
 
+  // Validate overlap whenever form data changes
+  useEffect(() => {
+    if (formData.utm_source.trim() && formData.utm_medium.trim()) {
+      validateOverlap(formData, subChannel?.id);
+    }
+  }, [formData, validateOverlap, subChannel?.id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(formData);
   };
 
-  const isFormValid = formData.name.trim() && formData.utm_source.trim() && formData.utm_medium.trim() && formData.utm_matching_type;
+  const isFormValid = formData.name.trim() && formData.utm_source.trim() && formData.utm_medium.trim() && formData.utm_matching_type && validationState.type !== 'error';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,6 +154,34 @@ export function SubChannelFormModal({
               Tipo de mídia (cpc, social, email, etc.)
             </p>
           </div>
+
+          {/* Validation Alert */}
+          {validationState.type !== 'none' && (
+            <Alert className={`${
+              validationState.type === 'error' 
+                ? 'border-destructive bg-destructive/10' 
+                : 'border-warning bg-warning/10'
+            }`}>
+              <div className="flex items-start gap-2">
+                {validationState.type === 'error' ? (
+                  <XCircle className="h-4 w-4 text-destructive mt-0.5" />
+                ) : validationState.type === 'warning' ? (
+                  <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
+                )}
+                <AlertDescription className={`text-sm whitespace-pre-line ${
+                  validationState.type === 'error' 
+                    ? 'text-destructive' 
+                    : validationState.type === 'warning'
+                    ? 'text-warning'
+                    : 'text-success'
+                }`}>
+                  {validationState.message}
+                </AlertDescription>
+              </div>
+            </Alert>
+          )}
 
           <div className="flex gap-3 pt-4">
             <Button
