@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -20,27 +20,29 @@ interface CouponData {
 }
 
 export function useShopifyMetrics(startDate: Date, endDate: Date) {
-  const [metrics, setMetrics] = useState<ShopifyMetrics>({
-    totalRevenue: 0,
-    totalOrders: 0,
-    averageTicket: 0,
-    cancellations: 0,
-    sessions: 0,
-    loading: true,
-    error: null,
+  // Query 1: Fetch calculation mode from system_settings
+  const { data: calculationMode } = useQuery({
+    queryKey: ['shopify-calculation-mode'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'shopify_sales_calculation_mode')
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching calculation mode:', error);
+      }
+      
+      return data?.value || 'paid_only';
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const [coupons, setCoupons] = useState<CouponData[]>([]);
-
-  useEffect(() => {
-    fetchMetrics();
-    fetchCoupons();
-  }, [startDate, endDate]);
-
-  const fetchMetrics = async () => {
-    try {
-      setMetrics(prev => ({ ...prev, loading: true }));
-
+  // Query 2: Fetch metrics (depends on calculationMode)
+  const metricsQuery = useQuery({
+    queryKey: ['shopify-metrics', startDate.toISOString(), endDate.toISOString(), calculationMode],
+    queryFn: async () => {
       // Format dates
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
@@ -48,15 +50,6 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
       const endDateISO = endDateStr + 'T23:59:59-03:00';
 
       console.log('🔍 Date range:', { startDateStr, endDateStr });
-
-      // Fetch calculation mode from system_settings
-      const { data: settingsData, error: settingsError } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'shopify_sales_calculation_mode')
-        .maybeSingle();
-
-      const calculationMode = settingsData?.value || 'paid_only';
       console.log('⚙️ Calculation mode:', calculationMode);
 
       // Add unique timestamp to bypass cache
@@ -212,27 +205,22 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
 
       const totalSessions = ga4Data?.reduce((sum: number, day: any) => sum + (day.sessions || 0), 0) || 0;
 
-      setMetrics({
+      return {
         totalRevenue,
         totalOrders,
         averageTicket,
         cancellations,
         sessions: totalSessions,
-        loading: false,
-        error: null,
-      });
-    } catch (error) {
-      console.error('Error fetching Shopify metrics:', error);
-      setMetrics(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-      }));
-    }
-  };
+      };
+    },
+    enabled: !!calculationMode, // Only run when calculationMode is available
+    staleTime: 60 * 1000, // 1 minute
+  });
 
-  const fetchCoupons = async () => {
-    try {
+  // Query 3: Fetch coupons data
+  const couponsQuery = useQuery({
+    queryKey: ['shopify-coupons', startDate.toISOString(), endDate.toISOString()],
+    queryFn: async () => {
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
       
@@ -282,18 +270,25 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         .sort((a, b) => b.uses - a.uses)
         .slice(0, 10); // Top 10 coupons
 
-      setCoupons(couponsArray);
-    } catch (error) {
-      console.error('Error fetching coupons:', error);
-    }
-  };
+      return couponsArray;
+    },
+    staleTime: 60 * 1000, // 1 minute
+  });
 
+  // Combine all query results
   return {
-    ...metrics,
-    coupons,
+    totalRevenue: metricsQuery.data?.totalRevenue || 0,
+    totalOrders: metricsQuery.data?.totalOrders || 0,
+    averageTicket: metricsQuery.data?.averageTicket || 0,
+    cancellations: metricsQuery.data?.cancellations || 0,
+    sessions: metricsQuery.data?.sessions || 0,
+    loading: metricsQuery.isLoading || couponsQuery.isLoading,
+    error: metricsQuery.error ? (metricsQuery.error as Error).message : 
+           couponsQuery.error ? (couponsQuery.error as Error).message : null,
+    coupons: couponsQuery.data || [],
     refetch: () => {
-      fetchMetrics();
-      fetchCoupons();
+      metricsQuery.refetch();
+      couponsQuery.refetch();
     },
   };
 }
