@@ -37,7 +37,7 @@ export function SubChannelFormModal({
     name: '',
     utm_source: '',
     utm_medium: '',
-    utm_matching_type: 'exact',
+    utm_medium_matching_type: 'exact',
   });
 
   const { validationState, validateOverlap } = useOverlapValidation(existingSubChannels, parentChannelId);
@@ -48,14 +48,14 @@ export function SubChannelFormModal({
         name: subChannel.name,
         utm_source: subChannel.utm_source,
         utm_medium: subChannel.utm_medium,
-        utm_matching_type: subChannel.utm_matching_type,
+        utm_medium_matching_type: subChannel.utm_medium_matching_type,
       });
     } else {
       setFormData({
         name: '',
         utm_source: '',
         utm_medium: '',
-        utm_matching_type: 'exact',
+        utm_medium_matching_type: 'exact',
       });
     }
   }, [subChannel, open]);
@@ -72,7 +72,7 @@ export function SubChannelFormModal({
     await onSubmit(formData);
   };
 
-  const isFormValid = formData.name.trim() && formData.utm_source.trim() && formData.utm_medium.trim() && formData.utm_matching_type && validationState.type !== 'error';
+  const isFormValid = formData.name.trim() && formData.utm_source.trim() && formData.utm_medium.trim() && formData.utm_medium_matching_type && validationState.type !== 'error';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,45 +115,47 @@ export function SubChannelFormModal({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="utm_matching_type" className="text-sm font-medium">
-              Tipo de Correspondência UTM
-            </Label>
-            <Select
-              value={formData.utm_matching_type}
-              onValueChange={(value: 'exact' | 'contains') => 
-                setFormData(prev => ({ ...prev, utm_matching_type: value }))
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="exact">Correspondência Exata</SelectItem>
-                <SelectItem value="contains">Contém Termo</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Exata: UTM deve ser idêntico. Contém: UTM pode conter o termo em qualquer posição
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="utm_medium" className="text-sm font-medium">
+                UTM Medium
+              </Label>
+              <Input
+                id="utm_medium"
+                value={formData.utm_medium}
+                onChange={(e) => setFormData(prev => ({ ...prev, utm_medium: e.target.value }))}
+                placeholder="Ex: cpc"
+                required
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tipo de mídia (cpc, social, email, etc.)
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="utm_medium" className="text-sm font-medium">
-              UTM Medium
-            </Label>
-            <Input
-              id="utm_medium"
-              value={formData.utm_medium}
-              onChange={(e) => setFormData(prev => ({ ...prev, utm_medium: e.target.value }))}
-              placeholder="Ex: cpc"
-              required
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Tipo de mídia (cpc, social, email, etc.)
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="utm_medium_matching_type" className="text-sm font-medium">
+                Tipo de Correspondência UTM Medium
+              </Label>
+              <Select
+                value={formData.utm_medium_matching_type}
+                onValueChange={(value: 'exact' | 'contains') => 
+                  setFormData(prev => ({ ...prev, utm_medium_matching_type: value }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exact">Correspondência Exata</SelectItem>
+                  <SelectItem value="contains">Contém Termo</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                <strong>Exata:</strong> UTM Medium deve corresponder exatamente<br />
+                <strong>Contém:</strong> UTM Medium pode estar contido em valores maiores<br />
+                <em>Nota: UTM Source sempre usa correspondência exata</em>
+              </p>
+            </div>
 
           {/* Validation Alert */}
           {validationState.type !== 'none' && (

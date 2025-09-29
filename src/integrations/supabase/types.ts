@@ -809,8 +809,8 @@ export type Database = {
           id: string
           name: string
           parent_channel_id: string
-          utm_matching_type: string
           utm_medium: string
+          utm_medium_matching_type: string
           utm_source: string
         }
         Insert: {
@@ -818,8 +818,8 @@ export type Database = {
           id?: string
           name: string
           parent_channel_id: string
-          utm_matching_type?: string
           utm_medium: string
+          utm_medium_matching_type?: string
           utm_source: string
         }
         Update: {
@@ -827,8 +827,8 @@ export type Database = {
           id?: string
           name?: string
           parent_channel_id?: string
-          utm_matching_type?: string
           utm_medium?: string
+          utm_medium_matching_type?: string
           utm_source?: string
         }
         Relationships: [

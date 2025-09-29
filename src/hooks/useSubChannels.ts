@@ -43,7 +43,7 @@ export function useSubChannels(parentChannelId?: string) {
         body: {
           utm_source: data.utm_source,
           utm_medium: data.utm_medium,
-          utm_matching_type: data.utm_matching_type,
+          utm_medium_matching_type: data.utm_medium_matching_type,
           parent_channel_id: parentChannelId
         }
       }
@@ -76,14 +76,14 @@ export function useSubChannels(parentChannelId?: string) {
 
   const updateSubChannel = async (id: string, data: Partial<CreateSubChannelData>): Promise<SubChannel> => {
     // Server-side validation via edge function (excluding current sub-channel)
-    if (data.utm_source || data.utm_medium || data.utm_matching_type) {
+    if (data.utm_source || data.utm_medium || data.utm_medium_matching_type) {
       const currentSubChannel = subChannels.find(sc => sc.id === id);
       if (!currentSubChannel) throw new Error('Sub-canal não encontrado');
 
       const validationData = {
         utm_source: data.utm_source || currentSubChannel.utm_source,
         utm_medium: data.utm_medium || currentSubChannel.utm_medium,
-        utm_matching_type: data.utm_matching_type || currentSubChannel.utm_matching_type,
+        utm_medium_matching_type: data.utm_medium_matching_type || currentSubChannel.utm_medium_matching_type,
         parent_channel_id: parentChannelId || currentSubChannel.parent_channel_id,
         exclude_sub_channel_id: id
       };

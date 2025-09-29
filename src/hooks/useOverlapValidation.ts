@@ -79,23 +79,34 @@ function detectOverlapType(newData: CreateSubChannelData, existing: SubChannel):
   const existingSource = existing.utm_source.toLowerCase().trim();
   const existingMedium = existing.utm_medium.toLowerCase().trim();
 
+  // Source must always match exactly since it's always 'exact' matching
+  const sourceMatch = newSource === existingSource;
+  
+  if (!sourceMatch) {
+    // No overlap if sources don't match exactly
+    return {
+      exact_vs_exact: false,
+      exact_vs_contains: false,
+      contains_vs_contains: false
+    };
+  }
+
+  // With same source, check medium matching based on utm_medium_matching_type
   const exact_vs_exact = 
-    newData.utm_matching_type === 'exact' && 
-    existing.utm_matching_type === 'exact' &&
-    newSource === existingSource && 
+    newData.utm_medium_matching_type === 'exact' && 
+    existing.utm_medium_matching_type === 'exact' &&
     newMedium === existingMedium;
 
   const exact_vs_contains = 
-    (newData.utm_matching_type === 'exact' && existing.utm_matching_type === 'contains' &&
-     (existingSource.includes(newSource) || existingMedium.includes(newMedium))) ||
-    (newData.utm_matching_type === 'contains' && existing.utm_matching_type === 'exact' &&
-     (newSource.includes(existingSource) || newMedium.includes(existingMedium)));
+    (newData.utm_medium_matching_type === 'exact' && existing.utm_medium_matching_type === 'contains' &&
+     existingMedium.includes(newMedium)) ||
+    (newData.utm_medium_matching_type === 'contains' && existing.utm_medium_matching_type === 'exact' &&
+     newMedium.includes(existingMedium));
 
   const contains_vs_contains = 
-    newData.utm_matching_type === 'contains' && 
-    existing.utm_matching_type === 'contains' &&
-    (newSource.includes(existingSource) || existingSource.includes(newSource) ||
-     newMedium.includes(existingMedium) || existingMedium.includes(newMedium));
+    newData.utm_medium_matching_type === 'contains' && 
+    existing.utm_medium_matching_type === 'contains' &&
+    (newMedium.includes(existingMedium) || existingMedium.includes(newMedium));
 
   return {
     exact_vs_exact,
@@ -110,22 +121,20 @@ function calculateContainsOverlap(newData: CreateSubChannelData, existing: SubCh
   const existingSource = existing.utm_source.toLowerCase().trim();
   const existingMedium = existing.utm_medium.toLowerCase().trim();
 
-  // Calculate similarity score
-  let overlapScore = 0;
+  // Source must match exactly (always 'exact' matching)
+  if (newSource !== existingSource) return 'none';
   
-  // Source overlap
-  if (newSource === existingSource) overlapScore += 50;
-  else if (newSource.includes(existingSource) || existingSource.includes(newSource)) overlapScore += 30;
-  else if (calculateStringSimilarity(newSource, existingSource) > 0.7) overlapScore += 20;
-
-  // Medium overlap
+  // Calculate overlap score based only on medium since source already matches
+  let overlapScore = 50; // Base score for matching source
+  
+  // Medium overlap evaluation
   if (newMedium === existingMedium) overlapScore += 50;
   else if (newMedium.includes(existingMedium) || existingMedium.includes(newMedium)) overlapScore += 30;
   else if (calculateStringSimilarity(newMedium, existingMedium) > 0.7) overlapScore += 20;
 
   if (overlapScore >= 80) return 'high';
-  if (overlapScore >= 50) return 'medium';
-  if (overlapScore >= 20) return 'low';
+  if (overlapScore >= 70) return 'medium';
+  if (overlapScore >= 60) return 'low';
   return 'none';
 }
 

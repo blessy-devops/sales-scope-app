@@ -51,7 +51,7 @@ serve(async (req) => {
         name,
         utm_source,
         utm_medium,
-        utm_matching_type,
+        utm_medium_matching_type,
         parent_channel_id,
         created_at,
         channels!inner(name, is_active)
@@ -95,18 +95,18 @@ serve(async (req) => {
     const processedOrders = new Set<string>();
     const analyticsData = [];
     
-    // Sort sub-channels by priority: exact first, then by creation date
+    // Sort sub-channels by priority: exact medium matching first, then by creation date
     const prioritizedSubChannels = (subChannels || []).sort((a, b) => {
-      // Exact matching has higher priority
-      if (a.utm_matching_type === 'exact' && b.utm_matching_type === 'contains') return -1;
-      if (a.utm_matching_type === 'contains' && b.utm_matching_type === 'exact') return 1;
+      // Exact medium matching has higher priority
+      if (a.utm_medium_matching_type === 'exact' && b.utm_medium_matching_type === 'contains') return -1;
+      if (a.utm_medium_matching_type === 'contains' && b.utm_medium_matching_type === 'exact') return 1;
       
       // If same type, sort by creation date (older first gets priority)
       return new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime();
     });
     
     for (const subChannel of prioritizedSubChannels) {
-      console.log(`[SubChannel Analytics] Processing sub-channel: ${subChannel.name} (UTM: ${subChannel.utm_source}/${subChannel.utm_medium}, Type: ${subChannel.utm_matching_type})`);
+      console.log(`[SubChannel Analytics] Processing sub-channel: ${subChannel.name} (UTM: ${subChannel.utm_source}/${subChannel.utm_medium}, Medium Type: ${subChannel.utm_medium_matching_type})`);
 
       // Build query with conditional UTM matching logic
       let query = supabaseAdmin
@@ -118,17 +118,16 @@ serve(async (req) => {
         .gte('created_at', `${startDate}T00:00:00-03:00`)
         .lte('created_at', `${endDate}T23:59:59-03:00`);
 
-      // Apply UTM matching based on utm_matching_type
-      if (subChannel.utm_matching_type === 'contains') {
-        // Use ILIKE for flexible matching (contains)
-        query = query
-          .ilike('utm_source', `%${subChannel.utm_source}%`)
-          .ilike('utm_medium', `%${subChannel.utm_medium}%`);
+      // Source matching is always exact
+      query = query.eq('utm_source', subChannel.utm_source);
+
+      // Apply medium matching based on utm_medium_matching_type
+      if (subChannel.utm_medium_matching_type === 'contains') {
+        // Use ILIKE for flexible matching (contains) on medium only
+        query = query.ilike('utm_medium', `%${subChannel.utm_medium}%`);
       } else {
-        // Use exact matching (default behavior)
-        query = query
-          .eq('utm_source', subChannel.utm_source)
-          .eq('utm_medium', subChannel.utm_medium);
+        // Use exact matching for medium (default behavior)
+        query = query.eq('utm_medium', subChannel.utm_medium);
       }
 
       const { data: salesData, error: salesError } = await query;

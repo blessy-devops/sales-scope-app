@@ -4,7 +4,7 @@ export interface SubChannel {
   name: string;
   utm_source: string;
   utm_medium: string;
-  utm_matching_type: 'exact' | 'contains';
+  utm_medium_matching_type: 'exact' | 'contains';
   created_at: string;
 }
 
@@ -12,5 +12,5 @@ export interface CreateSubChannelData {
   name: string;
   utm_source: string;
   utm_medium: string;
-  utm_matching_type?: 'exact' | 'contains';
+  utm_medium_matching_type?: 'exact' | 'contains';
 }

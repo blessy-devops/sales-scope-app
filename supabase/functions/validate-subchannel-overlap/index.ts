@@ -9,7 +9,7 @@ const corsHeaders = {
 interface ValidationRequest {
   utm_source: string;
   utm_medium: string;
-  utm_matching_type: 'exact' | 'contains';
+  utm_medium_matching_type: 'exact' | 'contains';
   parent_channel_id: string;
   exclude_sub_channel_id?: string;
 }
@@ -23,7 +23,7 @@ interface ValidationResult {
     name: string;
     utm_source: string;
     utm_medium: string;
-    utm_matching_type: string;
+    utm_medium_matching_type: string;
   }>;
 }
 
@@ -43,12 +43,12 @@ serve(async (req) => {
     const {
       utm_source,
       utm_medium,
-      utm_matching_type,
+      utm_medium_matching_type,
       parent_channel_id,
       exclude_sub_channel_id
     }: ValidationRequest = await req.json();
 
-    if (!utm_source || !utm_medium || !utm_matching_type || !parent_channel_id) {
+    if (!utm_source || !utm_medium || !utm_medium_matching_type || !parent_channel_id) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { 
@@ -58,12 +58,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('[SubChannel Validation] Validating:', { utm_source, utm_medium, utm_matching_type, parent_channel_id });
+    console.log('[SubChannel Validation] Validating:', { utm_source, utm_medium, utm_medium_matching_type, parent_channel_id });
 
     // Fetch existing sub-channels for the same parent channel
     let query = supabaseAdmin
       .from('sub_channels')
-      .select('id, name, utm_source, utm_medium, utm_matching_type')
+      .select('id, name, utm_source, utm_medium, utm_medium_matching_type')
       .eq('parent_channel_id', parent_channel_id);
 
     // Exclude current sub-channel if editing
@@ -95,43 +95,45 @@ serve(async (req) => {
       const existingSource = existing.utm_source.toLowerCase().trim();
       const existingMedium = existing.utm_medium.toLowerCase().trim();
 
-      // Check for exact conflicts (blocking)
-      if (utm_matching_type === 'exact' && existing.utm_matching_type === 'exact') {
-        if (newSource === existingSource && newMedium === existingMedium) {
+      // Source must match exactly since it's always exact matching
+      if (newSource !== existingSource) {
+        continue; // No conflict if sources don't match exactly
+      }
+
+      // With same source, check medium matching based on utm_medium_matching_type
+
+      // Check for exact vs exact conflicts (medium) - blocking
+      if (utm_medium_matching_type === 'exact' && existing.utm_medium_matching_type === 'exact') {
+        if (newMedium === existingMedium) {
           conflicts.push(existing);
           worstConflictType = 'error';
-          conflictMessages.push(`Conflito EXATO com "${existing.name}": UTMs idênticos`);
+          conflictMessages.push(`Conflito EXATO com "${existing.name}": UTM Source e Medium idênticos`);
         }
       }
 
-      // Check for exact vs contains conflicts (warning)
-      if ((utm_matching_type === 'exact' && existing.utm_matching_type === 'contains') ||
-          (utm_matching_type === 'contains' && existing.utm_matching_type === 'exact')) {
+      // Check for exact vs contains conflicts (medium only) - warning
+      if ((utm_medium_matching_type === 'exact' && existing.utm_medium_matching_type === 'contains') ||
+          (utm_medium_matching_type === 'contains' && existing.utm_medium_matching_type === 'exact')) {
         
-        const hasSourceOverlap = utm_matching_type === 'exact' 
-          ? existingSource.includes(newSource)
-          : newSource.includes(existingSource);
-        
-        const hasMediumOverlap = utm_matching_type === 'exact'
+        const hasMediumOverlap = utm_medium_matching_type === 'exact'
           ? existingMedium.includes(newMedium)
           : newMedium.includes(existingMedium);
 
-        if (hasSourceOverlap || hasMediumOverlap) {
+        if (hasMediumOverlap) {
           conflicts.push(existing);
           if (worstConflictType !== 'error') worstConflictType = 'warning';
-          conflictMessages.push(`Possível conflito com "${existing.name}": sobreposição de UTMs`);
+          conflictMessages.push(`Possível conflito com "${existing.name}": UTM Medium exato vs contém (mesmo source)`);
         }
       }
 
-      // Check for contains vs contains conflicts (warning if high overlap)
-      if (utm_matching_type === 'contains' && existing.utm_matching_type === 'contains') {
-        const sourceOverlap = newSource.includes(existingSource) || existingSource.includes(newSource);
+      // Check for contains vs contains conflicts (medium only) - warning if high overlap
+      if (utm_medium_matching_type === 'contains' && existing.utm_medium_matching_type === 'contains') {
         const mediumOverlap = newMedium.includes(existingMedium) || existingMedium.includes(newMedium);
         
-        if (sourceOverlap && mediumOverlap) {
+        if (mediumOverlap) {
           conflicts.push(existing);
           if (worstConflictType !== 'error') worstConflictType = 'warning';
-          conflictMessages.push(`Alta sobreposição com "${existing.name}": UTMs muito similares`);
+          conflictMessages.push(`Sobreposição detectada com "${existing.name}": UTM Medium podem se sobrepor (mesmo source)`);
         }
       }
     }
