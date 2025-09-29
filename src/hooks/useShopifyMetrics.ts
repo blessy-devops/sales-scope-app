@@ -41,118 +41,64 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     try {
       setMetrics(prev => ({ ...prev, loading: true }));
 
-      // CRITICAL DEBUG: Test with hardcoded dates first
-      const HARDCODED_TEST = true;
-      
-      let startDateStr, endDateStr, startDateISO, endDateISO;
-      
-      if (HARDCODED_TEST) {
-        // Use exact dates from the manual SQL query that worked
-        startDateStr = '2025-09-01';
-        endDateStr = '2025-09-21';
-        startDateISO = '2025-09-01T00:00:00-03:00'; // Sao Paulo timezone
-        endDateISO = '2025-09-21T23:59:59-03:00';   // Sao Paulo timezone
-        console.log('🔧 USANDO DATAS HARDCODED PARA TESTE');
-      } else {
-        // Original date formatting
-        startDateStr = format(startDate, 'yyyy-MM-dd');
-        endDateStr = format(endDate, 'yyyy-MM-dd');
-        // Create ISO strings with Sao Paulo timezone offset
-        startDateISO = startDateStr + 'T00:00:00-03:00';
-        endDateISO = endDateStr + 'T23:59:59-03:00';
+      // Format dates
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+      const startDateISO = startDateStr + 'T00:00:00-03:00';
+      const endDateISO = endDateStr + 'T23:59:59-03:00';
+
+      console.log('🔍 Date range:', { startDateStr, endDateStr });
+
+      // Get Shopify channel ID
+      const { data: shopifyChannel } = await supabase
+        .from('channels')
+        .select('id')
+        .ilike('name', '%shopify%')
+        .single();
+
+      if (!shopifyChannel) {
+        throw new Error('Canal Shopify não encontrado');
       }
 
-      console.log('🔍 DEBUGGING DATES:', {
-        original: { startDate, endDate },
-        formatted: { startDateStr, endDateStr },
-        iso: { startDateISO, endDateISO },
-        hardcoded: HARDCODED_TEST
-      });
+      console.log('🏪 Shopify channel ID:', shopifyChannel.id);
 
-      // Add unique timestamp to bypass cache
-      const cacheBypass = Date.now();
-      console.log('🔄 Cache bypass timestamp:', cacheBypass);
-
-      // Retry mechanism for RPC call
-      let salesData, salesError;
-      let retryCount = 0;
-      const maxRetries = 2;
-
-      while (retryCount <= maxRetries) {
-        try {
-          console.log(`🔄 RPC attempt ${retryCount + 1}/${maxRetries + 1}`);
-          
-          const result = await supabase.rpc(
-            'get_shopify_precise_sales',
-            {
-              start_date: startDateStr,
-              end_date: endDateStr,
-            }
-          );
-          
-          salesData = result.data;
-          salesError = result.error;
-          
-          if (!salesError && salesData) {
-            console.log(`✅ RPC successful on attempt ${retryCount + 1}`);
-            break;
-          }
-          
-          console.log(`⚠️ RPC attempt ${retryCount + 1} failed or returned no data`);
-          retryCount++;
-          
-          if (retryCount <= maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
-          }
-        } catch (error) {
-          console.error(`❌ RPC attempt ${retryCount + 1} threw error:`, error);
-          salesError = error;
-          retryCount++;
-          
-          if (retryCount <= maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          }
+      // Use get_dashboard_sales (same as home dashboard)
+      const { data: salesData, error: salesError } = await supabase.rpc(
+        'get_dashboard_sales',
+        {
+          start_date: startDateStr,
+          end_date: endDateStr,
         }
-      }
+      );
 
-      console.log('📥 RPC Response (detailed):', { 
+      console.log('📥 Dashboard sales response:', { 
         salesData, 
         salesError,
-        dataType: typeof salesData,
-        isArray: Array.isArray(salesData),
-        dataLength: salesData?.length,
-        dataFirstItem: salesData?.[0],
-        errorCode: salesError?.code,
-        errorMessage: salesError?.message
+        dataLength: salesData?.length
       });
 
-      let totalRevenue = 0;
+      // Filter for Shopify channel only
+      const shopifySales = salesData?.filter(
+        (row: any) => row.channel_id === shopifyChannel.id
+      ) || [];
+
+      console.log('🏪 Shopify sales filtered:', {
+        total: salesData?.length,
+        shopify: shopifySales.length,
+        data: shopifySales
+      });
+
+      // Calculate total revenue from Shopify sales
+      let totalRevenue = shopifySales.reduce(
+        (sum: number, row: any) => sum + (row.amount || 0), 
+        0
+      );
+
+      console.log('💰 Total revenue from get_dashboard_sales:', totalRevenue);
 
       if (salesError) {
-        console.error('❌ Error from get_shopify_precise_sales:', salesError);
-        console.error('❌ Error details:', {
-          code: salesError.code,
-          message: salesError.message,
-          details: salesError.details,
-          hint: salesError.hint
-        });
+        console.error('❌ Error from get_dashboard_sales:', salesError);
         // Will use fallback calculation below
-      } else if (salesData && Array.isArray(salesData) && salesData.length > 0) {
-        console.log('✅ Processing RPC data:', salesData);
-        totalRevenue = salesData.reduce((sum: number, day: any) => {
-          const dayTotal = day.total_sales || 0;
-          console.log('📊 Day data:', { date: day.sale_date, total: dayTotal });
-          return sum + dayTotal;
-        }, 0);
-        console.log('💰 Total revenue from get_shopify_precise_sales:', totalRevenue);
-      } else {
-        console.warn('⚠️ No data returned from get_shopify_precise_sales');
-        console.warn('⚠️ RPC returned:', { 
-          data: salesData, 
-          isNull: salesData === null,
-          isUndefined: salesData === undefined,
-          isEmpty: Array.isArray(salesData) && salesData.length === 0
-        });
       }
 
       // Get orders directly from shopify_orders_gold for other metrics
