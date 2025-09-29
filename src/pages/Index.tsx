@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DashboardChart } from '@/components/DashboardChart';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PeriodRangePicker, type DateRange } from '@/components/PeriodRangePicker';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
