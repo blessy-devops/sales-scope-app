@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Calendar, Target } from 'lucide-react';
+import { Plus, Search, Calendar, Target, LayoutGrid, List } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { CampaignFormDialog } from '@/components/CampaignFormDialog';
 import { CampaignCard } from '@/components/CampaignCard';
+import { CampaignsTable } from '@/components/campaigns/CampaignsTable';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { Campaign, CreateCampaignData } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +18,7 @@ export default function Campaigns() {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const filteredCampaigns = campaigns.filter(campaign =>
     campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,10 +89,25 @@ export default function Campaigns() {
               Gerencie suas campanhas de marketing e monitore suas metas
             </p>
           </div>
-          <Button onClick={handleNewCampaign} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Nova Campanha
-          </Button>
+          <div className="flex items-center gap-3">
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')}
+              className="border rounded-md"
+            >
+              <ToggleGroupItem value="grid" aria-label="Visualização em galeria" size="sm">
+                <LayoutGrid className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="Visualização em lista" size="sm">
+                <List className="w-4 h-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button onClick={handleNewCampaign} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Nova Campanha
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -103,39 +121,43 @@ export default function Campaigns() {
           />
         </div>
 
-        {/* Campaigns Grid */}
-        {filteredCampaigns.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Target className="w-8 h-8 text-muted-foreground" />
+        {/* Campaigns Content */}
+        {viewMode === 'grid' ? (
+          filteredCampaigns.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {searchTerm ? 'Nenhuma campanha encontrada' : 'Nenhuma campanha cadastrada'}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {searchTerm 
+                  ? 'Tente buscar com outros termos' 
+                  : 'Comece criando sua primeira campanha de marketing'
+                }
+              </p>
+              {!searchTerm && (
+                <Button onClick={handleNewCampaign} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Criar Primeira Campanha
+                </Button>
+              )}
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {searchTerm ? 'Nenhuma campanha encontrada' : 'Nenhuma campanha cadastrada'}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {searchTerm 
-                ? 'Tente buscar com outros termos' 
-                : 'Comece criando sua primeira campanha de marketing'
-              }
-            </p>
-            {!searchTerm && (
-              <Button onClick={handleNewCampaign} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Criar Primeira Campanha
-              </Button>
-            )}
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onEdit={handleEditCampaign}
+                  onDelete={handleDeleteCampaign}
+                />
+              ))}
+            </div>
+          )
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCampaigns.map((campaign) => (
-              <CampaignCard
-                key={campaign.id}
-                campaign={campaign}
-                onEdit={handleEditCampaign}
-                onDelete={handleDeleteCampaign}
-              />
-            ))}
-          </div>
+          <CampaignsTable campaigns={filteredCampaigns} />
         )}
 
         {/* Modal */}
