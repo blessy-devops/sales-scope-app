@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DashboardChart } from '@/components/DashboardChart';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PeriodRangePicker, type DateRange } from '@/components/PeriodRangePicker';
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
@@ -1075,7 +1075,7 @@ const Index = () => {
                         config={chartConfig}
                         className="mx-auto aspect-square max-w-[450px] [&_.recharts-pie-label-text]:fill-foreground"
                       >
-                        <PieChart margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                        <PieChart margin={{ top: 10, right: 30, bottom: 40, left: 30 }}>
                           <ChartTooltip 
                             content={<ChartTooltipContent 
                               hideLabel 
@@ -1089,6 +1089,11 @@ const Index = () => {
                             outerRadius={140}
                             label={({ name, percent }) => `${name}: ${(Number(percent) * 100).toFixed(1)}%`}
                             labelLine={true}
+                          />
+                          <ChartLegend
+                            content={<ChartLegendContent nameKey="channel" />}
+                            verticalAlign="bottom"
+                            height={36}
                           />
                         </PieChart>
                       </ChartContainer>
