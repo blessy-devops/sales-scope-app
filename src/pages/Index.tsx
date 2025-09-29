@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DashboardChart } from '@/components/DashboardChart';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PeriodRangePicker, type DateRange } from '@/components/PeriodRangePicker';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { useDailySales } from '@/hooks/useDailySales';
 import { useTargets } from '@/hooks/useTargets';
@@ -1022,143 +1023,75 @@ const Index = () => {
                   <CardTitle className="text-base">Representatividade por Canal</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[400px] w-full">
-                    {(() => {
-                      // Cores predefinidas para os canais
-                      const coresCanais = [
-                        '#3B82F6', // Blue
-                        '#10B981', // Green
-                        '#F59E0B', // Yellow
-                        '#EF4444', // Red
-                        '#8B5CF6', // Purple
-                        '#F97316', // Orange
-                        '#06B6D4', // Cyan
-                        '#84CC16', // Lime
-                      ];
+                  {(() => {
+                    // Preparar dados dos canais com vendas
+                    const canaisComVendas = channelData
+                      .filter(channel => channel.sales > 0)
+                      .sort((a, b) => b.sales - a.sales);
 
-                      const gerarCorPorIndice = (index) => {
-                        return coresCanais[index % coresCanais.length];
-                      };
-
-                      // Preparar dados dos canais com vendas
-                      const canaisComVendas = channelData
-                        .filter(channel => channel.sales > 0)
-                        .map((channel, index) => ({
-                          name: channel.name,
-                          total_vendas: channel.sales || 0,
-                          fill: gerarCorPorIndice(index)
-                        }))
-                        .sort((a, b) => b.total_vendas - a.total_vendas);
-
-                      // Preparar dados corretamente para o Treemap
-                      const dadosTreemap = canaisComVendas.map((canal, index) => ({
-                        name: canal.name,
-                        size: canal.total_vendas,
-                        fill: gerarCorPorIndice(index)
-                      }));
-
-                      // Calcular total para porcentagens
-                      const totalVendas = canaisComVendas.reduce((sum, canal) => sum + canal.total_vendas, 0);
-
-                      // Log para debug
-                      console.log('Dados Treemap:', { dadosTreemap, totalVendas, canaisComVendas });
-
-                      // Verificar se há dados
-                      if (canaisComVendas.length === 0 || totalVendas === 0) {
-                        return (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <div className="text-center">
-                              <p className="text-lg font-medium">Nenhuma venda registrada</p>
-                              <p className="text-sm mt-2">Os dados aparecerão aqui quando houver vendas nos canais</p>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      // Custom content simplificado
-                      const CustomizedContent = (props) => {
-                        const { x, y, width, height, payload } = props;
-                        
-                        if (!payload || !payload.size || width < 40 || height < 30) {
-                          return null;
-                        }
-
-                        const porcentagem = totalVendas > 0 ? 
-                          ((payload.size / totalVendas) * 100).toFixed(1) : 0;
-
-                        const mostrarTexto = width > 80 && height > 60;
-
-                        return (
-                          <g>
-                            <rect
-                              x={x}
-                              y={y}
-                              width={width}
-                              height={height}
-                              fill={payload.fill}
-                              stroke="#fff"
-                              strokeWidth={2}
-                              rx={4}
-                            />
-                            
-                            {mostrarTexto && (
-                              <g>
-                                <text
-                                  x={x + width / 2}
-                                  y={y + height / 2 - 8}
-                                  textAnchor="middle"
-                                  fill="white"
-                                  fontSize="12"
-                                  fontWeight="600"
-                                >
-                                  {payload.name}
-                                </text>
-                                <text
-                                  x={x + width / 2}
-                                  y={y + height / 2 + 8}
-                                  textAnchor="middle"
-                                  fill="white"
-                                  fontSize="11"
-                                >
-                                  {porcentagem}%
-                                </text>
-                              </g>
-                            )}
-                          </g>
-                        );
-                      };
-
+                    // Verificar se há dados
+                    if (canaisComVendas.length === 0) {
                       return (
-                        <ResponsiveContainer width="100%" height={400}>
-                          <PieChart>
-                            <Pie
-                              data={dadosTreemap}
-                              dataKey="size"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={150}
-                              label={({name, percent}: any) => `${name}: ${(Number(percent) * 100).toFixed(1)}%`}
-                              labelLine={false}
-                            >
-                              {dadosTreemap.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <RechartsTooltip 
-                              formatter={(value) => [formatCurrency(Number(value)), 'Vendas']}
-                              labelStyle={{ color: 'hsl(var(--foreground))' }}
-                              contentStyle={{ 
-                                backgroundColor: 'hsl(var(--background))', 
-                                border: '1px solid hsl(var(--border))' 
-                              }}
-                            />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+                          <div className="text-center">
+                            <p className="text-lg font-medium">Nenhuma venda registrada</p>
+                            <p className="text-sm mt-2">Os dados aparecerão aqui quando houver vendas nos canais</p>
+                          </div>
+                        </div>
                       );
-                    })()}
-                  </div>
+                    }
+
+                    // Configurar o chart config dinamicamente
+                    const chartConfig: ChartConfig = {
+                      sales: {
+                        label: "Vendas",
+                      },
+                    };
+
+                    // Adicionar configuração para cada canal
+                    canaisComVendas.forEach((channel, index) => {
+                      const chartColorIndex = (index % 8) + 1; // 1-8
+                      const configKey = channel.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                      chartConfig[configKey] = {
+                        label: channel.name,
+                        color: `hsl(var(--chart-${chartColorIndex}))`,
+                      };
+                    });
+
+                    // Preparar dados para o PieChart
+                    const chartData = canaisComVendas.map((channel, index) => {
+                      const chartColorIndex = (index % 8) + 1;
+                      const configKey = channel.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                      return {
+                        channel: channel.name,
+                        sales: channel.sales,
+                        fill: `var(--color-${configKey})`,
+                      };
+                    });
+
+                    return (
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto aspect-square max-h-[400px] [&_.recharts-pie-label-text]:fill-foreground"
+                      >
+                        <PieChart>
+                          <ChartTooltip 
+                            content={<ChartTooltipContent 
+                              hideLabel 
+                              formatter={(value) => [formatCurrency(Number(value)), 'Vendas']}
+                            />} 
+                          />
+                          <Pie
+                            data={chartData}
+                            dataKey="sales"
+                            nameKey="channel"
+                            label={({ name, percent }) => `${name}: ${(Number(percent) * 100).toFixed(1)}%`}
+                            labelLine={false}
+                          />
+                        </PieChart>
+                      </ChartContainer>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
