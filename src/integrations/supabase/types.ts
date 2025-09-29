@@ -83,6 +83,113 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_performance_data: {
+        Row: {
+          campaign_id: string
+          clicks: number | null
+          cost: number | null
+          created_at: string
+          date: string
+          id: string
+          impressions: number | null
+          sessions: number | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          clicks?: number | null
+          cost?: number | null
+          created_at?: string
+          date: string
+          id?: string
+          impressions?: number | null
+          sessions?: number | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          clicks?: number | null
+          cost?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number | null
+          sessions?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_performance_data_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          goal_average_ticket: number | null
+          goal_conversion_rate: number | null
+          goal_cps: number | null
+          goal_revenue: number | null
+          goal_sales: number | null
+          goal_sessions: number | null
+          id: string
+          name: string
+          start_date: string
+          updated_at: string
+          utm_campaign: string
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          goal_average_ticket?: number | null
+          goal_conversion_rate?: number | null
+          goal_cps?: number | null
+          goal_revenue?: number | null
+          goal_sales?: number | null
+          goal_sessions?: number | null
+          id?: string
+          name: string
+          start_date: string
+          updated_at?: string
+          utm_campaign: string
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          goal_average_ticket?: number | null
+          goal_conversion_rate?: number | null
+          goal_cps?: number | null
+          goal_revenue?: number | null
+          goal_sales?: number | null
+          goal_sessions?: number | null
+          id?: string
+          name?: string
+          start_date?: string
+          updated_at?: string
+          utm_campaign?: string
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       channels: {
         Row: {
           created_at: string | null
@@ -1009,6 +1116,10 @@ export type Database = {
           total_revenue: number
           total_sales: number
         }[]
+      }
+      get_campaign_analytics_v2: {
+        Args: { campaign_uuid: string }
+        Returns: Json
       }
       get_daily_sales_period: {
         Args: { end_date: string; start_date: string }
