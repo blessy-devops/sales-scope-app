@@ -1079,7 +1079,7 @@ const Index = () => {
                           <ChartTooltip 
                             content={<ChartTooltipContent 
                               hideLabel 
-                              formatter={(value, name) => [formatCurrency(Number(value)), chartConfig[name]?.label || name]}
+                              formatter={(value, name) => [chartConfig[name]?.label || name, formatCurrency(Number(value))]}
                             />} 
                           />
                           <Pie
