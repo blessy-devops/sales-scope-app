@@ -11,6 +11,7 @@ import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Channels from "./pages/Channels";
 import Targets from "./pages/Targets";
+import Campaigns from "./pages/Campaigns";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
 import Analises from "./pages/Analises";
@@ -79,6 +80,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Targets />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/campanhas" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Campaigns />
                   </Layout>
                 </ProtectedRoute>
               } />

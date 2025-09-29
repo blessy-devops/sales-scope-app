@@ -15,7 +15,8 @@ import {
   HelpCircle,
   BarChart3,
   Wrench,
-  ShoppingBag
+  ShoppingBag,
+  Megaphone
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
@@ -27,6 +28,7 @@ const menuItems = [
   { title: 'E-commerce', url: '/ecommerce', icon: ShoppingBag },
   { title: 'Canais de Venda', url: '/channels', icon: Store },
   { title: 'Metas', url: '/targets', icon: Target },
+  { title: 'Campanhas', url: '/campanhas', icon: Megaphone },
   { title: 'Lançar Vendas', url: '/sales', icon: DollarSign },
   { title: 'Análises', url: '/analises', icon: BarChart3 },
   { title: 'Ferramentas', url: '/ferramentas', icon: Wrench },
