@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/accordion';
 import { PeriodRangePicker } from '@/components/PeriodRangePicker';
 import { Campaign, CampaignFormData, CreateCampaignData, campaignFormSchema } from '@/types/campaign';
-import { format } from 'date-fns';
+import { formatDateLocal } from '@/lib/utils';
 
 interface CampaignFormDialogProps {
   open: boolean;
@@ -116,8 +116,8 @@ export function CampaignFormDialog({
     const submitData: CreateCampaignData = {
       name: data.name,
       description: data.description || undefined,
-      start_date: format(data.dateRange.from, 'yyyy-MM-dd'),
-      end_date: format(data.dateRange.to, 'yyyy-MM-dd'),
+      start_date: formatDateLocal(data.dateRange.from),
+      end_date: formatDateLocal(data.dateRange.to),
       utm_campaign: data.utm_campaign,
       utm_source: data.utm_source || undefined,
       utm_medium: data.utm_medium || undefined,
