@@ -8,6 +8,9 @@ interface ShopifyMetrics {
   averageTicket: number;
   cancellations: number;
   sessions: number;
+  totalCheckouts: number;
+  conversionRate: number;
+  checkoutConversionRate: number;
   loading: boolean;
   error: string | null;
 }
@@ -26,6 +29,9 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     averageTicket: 0,
     cancellations: 0,
     sessions: 0,
+    totalCheckouts: 0,
+    conversionRate: 0,
+    checkoutConversionRate: 0,
     loading: true,
     error: null,
   });
@@ -161,11 +167,16 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
       // Get GA4 sessions data
       const { data: ga4Data, error: ga4Error } = await supabase
         .from('ga4_daily_sessions')
-        .select('sessions')
+        .select('sessions, checkouts')
         .gte('session_date', startDateStr)
         .lte('session_date', endDateStr);
 
       const totalSessions = ga4Data?.reduce((sum: number, day: any) => sum + (day.sessions || 0), 0) || 0;
+      const totalCheckouts = ga4Data?.reduce((sum: number, day: any) => sum + (day.checkouts || 0), 0) || 0;
+
+      // Calculate conversion rates
+      const conversionRate = totalSessions > 0 ? (totalOrders / totalSessions) * 100 : 0;
+      const checkoutConversionRate = totalCheckouts > 0 ? (totalOrders / totalCheckouts) * 100 : 0;
 
       setMetrics({
         totalRevenue,
@@ -173,6 +184,9 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         averageTicket,
         cancellations,
         sessions: totalSessions,
+        totalCheckouts,
+        conversionRate,
+        checkoutConversionRate,
         loading: false,
         error: null,
       });

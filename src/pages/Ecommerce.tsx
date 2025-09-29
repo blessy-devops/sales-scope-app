@@ -41,6 +41,9 @@ const Ecommerce: React.FC = () => {
     averageTicket, 
     cancellations, 
     sessions,
+    totalCheckouts,
+    conversionRate,
+    checkoutConversionRate,
     loading, 
     coupons,
     refetch 
@@ -163,7 +166,7 @@ const Ecommerce: React.FC = () => {
         
         <MetricsSimple
           title="Taxa de Conversão"
-          value="2.73%" // TODO: Integrar dados reais
+          value={`${conversionRate.toFixed(2)}%`}
           subtitle="Taxa de conversão"
           change="+0.4%"
           trend="positive"
@@ -178,7 +181,7 @@ const Ecommerce: React.FC = () => {
         
         <MetricsSimple
           title="Checkout"
-          value="1.156" // TODO: Integrar dados reais
+          value={totalCheckouts.toLocaleString('pt-BR')}
           subtitle="Iniciaram checkout"
           change="+22.1%"
           trend="positive"
@@ -193,7 +196,7 @@ const Ecommerce: React.FC = () => {
         
         <MetricsSimple
           title="Conversão Checkout"
-          value="67.8%" // TODO: Integrar dados reais
+          value={`${checkoutConversionRate.toFixed(1)}%`}
           subtitle="Finalizaram compra"
           change="+5.2%"
           trend="positive"
