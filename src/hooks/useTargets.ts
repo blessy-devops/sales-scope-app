@@ -124,6 +124,29 @@ export function useTargets(options?: UseTargetsOptions) {
     return Array.from(uniqueTargetsMap.values());
   };
 
+  const getChannelTargetsOnly = (month: number, year: number): SalesTarget[] => {
+    // Filter targets for main channels only (excluding sub-channels)
+    const monthTargets = targets.filter(t => 
+      t.month === month && 
+      t.year === year && 
+      !t.sub_channel_id // Only main channel targets
+    );
+    
+    // Create a map to ensure uniqueness
+    const uniqueTargetsMap = new Map<string, SalesTarget>();
+    
+    monthTargets.forEach(target => {
+      const key = target.channel_id;
+      // Keep the most recent one (highest id or created_at)
+      const existing = uniqueTargetsMap.get(key);
+      if (!existing || (target.created_at && existing.created_at && target.created_at > existing.created_at)) {
+        uniqueTargetsMap.set(key, target);
+      }
+    });
+    
+    return Array.from(uniqueTargetsMap.values());
+  };
+
   const getPreviousMonthTargets = (month: number, year: number): SalesTarget[] => {
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
@@ -253,6 +276,7 @@ export function useTargets(options?: UseTargetsOptions) {
     history,
     loading,
     getTargetsForMonth,
+    getChannelTargetsOnly,
     getPreviousMonthTargets,
     saveMonthlyTargets,
     copyFromPreviousMonth,

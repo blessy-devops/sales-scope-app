@@ -107,7 +107,7 @@ const Index = () => {
     startDate: dateRange.from,
     endDate: dateRange.to
   });
-  const { getTargetsForMonth, loading: targetsLoading } = useTargets({
+  const { getTargetsForMonth, getChannelTargetsOnly, loading: targetsLoading } = useTargets({
     startDate: dateRange.from,
     endDate: dateRange.to
   });
@@ -168,7 +168,11 @@ const Index = () => {
   const periodTargets = months.flatMap(month => {
     const monthNum = month.getMonth() + 1;
     const yearNum = month.getFullYear();
-    return getTargetsForMonth(monthNum, yearNum);
+    // Para visão global, usar apenas metas principais (sem subcanais)
+    // Para canais específicos, usar todas as metas
+    return viewFilter === 'global' 
+      ? getChannelTargetsOnly(monthNum, yearNum)
+      : getTargetsForMonth(monthNum, yearNum);
   });
   
   // Filtrar metas conforme visão selecionada
