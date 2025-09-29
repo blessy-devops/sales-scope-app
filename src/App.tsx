@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Channels from "./pages/Channels";
 import Targets from "./pages/Targets";
 import Campaigns from "./pages/Campaigns";
+import CampaignDetails from "./pages/CampaignDetails";
 import Sales from "./pages/Sales";
 import Settings from "./pages/Settings";
 import Analises from "./pages/Analises";
@@ -88,6 +89,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Campaigns />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/campanhas/:id" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CampaignDetails />
                   </Layout>
                 </ProtectedRoute>
               } />

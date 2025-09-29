@@ -102,3 +102,48 @@ export const createCampaignSchema = z.object({
   goal_average_ticket: z.number().min(0).optional(),
   goal_cps: z.number().min(0).optional(),
 });
+
+// Performance data types
+export interface CampaignPerformanceData {
+  id: string;
+  campaign_id: string;
+  date: string;
+  utm_source?: string;
+  sessions: number;
+  clicks?: number;
+  impressions?: number;
+  cost?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreatePerformanceData {
+  campaign_id: string;
+  date: string;
+  utm_source?: string;
+  sessions: number;
+  clicks?: number;
+  impressions?: number;
+  cost?: number;
+}
+
+export interface UpdatePerformanceData extends Partial<CreatePerformanceData> {}
+
+export interface PerformanceFormData {
+  date: Date;
+  utm_source: string;
+  sessions: string;
+  clicks: string;
+  impressions: string;
+  cost: string;
+}
+
+// Validation schema for performance data
+export const performanceFormSchema = z.object({
+  date: z.date({ required_error: 'Data é obrigatória' }),
+  utm_source: z.string().max(100, 'UTM Source deve ter no máximo 100 caracteres').optional(),
+  sessions: z.string().refine(val => !isNaN(Number(val)) && Number(val) >= 0, 'Sessões deve ser um número válido'),
+  clicks: z.string().refine(val => val === '' || (!isNaN(Number(val)) && Number(val) >= 0), 'Cliques deve ser um número válido').optional(),
+  impressions: z.string().refine(val => val === '' || (!isNaN(Number(val)) && Number(val) >= 0), 'Impressões deve ser um número válido').optional(),
+  cost: z.string().refine(val => val === '' || (!isNaN(Number(val)) && Number(val) >= 0), 'Custo deve ser um número válido').optional(),
+});

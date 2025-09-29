@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Edit, Trash2, Calendar, Target, TrendingUp } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Calendar, Target, TrendingUp, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +55,12 @@ export function CampaignCard({ campaign, onEdit, onDelete }: CampaignCardProps) 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover border border-border">
+                <DropdownMenuItem asChild>
+                  <a href={`/campanhas/${campaign.id}`} className="flex items-center gap-2 w-full">
+                    <Eye className="h-4 w-4" />
+                    Ver Detalhes
+                  </a>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(campaign)} className="gap-2">
                   <Edit className="h-4 w-4" />
                   Editar
