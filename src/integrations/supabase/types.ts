@@ -1150,6 +1150,15 @@ export type Database = {
         Args: { campaign_uuid: string }
         Returns: Json
       }
+      get_campaign_realized_data: {
+        Args: { campaign_uuid: string }
+        Returns: {
+          attribution_type: string
+          revenue: number
+          sales_count: number
+          utm_source: string
+        }[]
+      }
       get_daily_sales_period: {
         Args: { end_date: string; start_date: string }
         Returns: {
