@@ -1063,6 +1063,7 @@ const Index = () => {
                       const chartColorIndex = (index % 8) + 1;
                       const configKey = channel.name.toLowerCase().replace(/[^a-z0-9]/g, '');
                       return {
+                        [configKey]: channel.sales,
                         channel: channel.name,
                         sales: channel.sales,
                         fill: `var(--color-${configKey})`,
@@ -1072,20 +1073,20 @@ const Index = () => {
                     return (
                       <ChartContainer
                         config={chartConfig}
-                        className="mx-auto h-[500px] [&_.recharts-pie-label-text]:fill-foreground"
+                        className="mx-auto aspect-square max-w-[450px] [&_.recharts-pie-label-text]:fill-foreground"
                       >
-                        <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+                        <PieChart margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                           <ChartTooltip 
                             content={<ChartTooltipContent 
                               hideLabel 
-                              formatter={(value) => [formatCurrency(Number(value)), 'Vendas']}
+                              formatter={(value, name) => [formatCurrency(Number(value)), chartConfig[name]?.label || name]}
                             />} 
                           />
                           <Pie
                             data={chartData}
                             dataKey="sales"
                             nameKey="channel"
-                            outerRadius={120}
+                            outerRadius={140}
                             label={({ name, percent }) => `${name}: ${(Number(percent) * 100).toFixed(1)}%`}
                             labelLine={true}
                           />
