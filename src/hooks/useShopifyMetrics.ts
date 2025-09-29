@@ -41,33 +41,23 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
     try {
       setMetrics(prev => ({ ...prev, loading: true }));
 
-      // CRITICAL DEBUG: Test with hardcoded dates first
-      const HARDCODED_TEST = true;
-      
-      let startDateStr, endDateStr, startDateISO, endDateISO;
-      
-      if (HARDCODED_TEST) {
-        // Use exact dates from the manual SQL query that worked
-        startDateStr = '2025-09-01';
-        endDateStr = '2025-09-21';
-        startDateISO = '2025-09-01T00:00:00-03:00'; // Sao Paulo timezone
-        endDateISO = '2025-09-21T23:59:59-03:00';   // Sao Paulo timezone
-        console.log('🔧 USANDO DATAS HARDCODED PARA TESTE');
-      } else {
-        // Original date formatting
-        startDateStr = format(startDate, 'yyyy-MM-dd');
-        endDateStr = format(endDate, 'yyyy-MM-dd');
-        // Create ISO strings with Sao Paulo timezone offset
-        startDateISO = startDateStr + 'T00:00:00-03:00';
-        endDateISO = endDateStr + 'T23:59:59-03:00';
-      }
+      // Format dates
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+      const startDateISO = startDateStr + 'T00:00:00-03:00';
+      const endDateISO = endDateStr + 'T23:59:59-03:00';
 
-      console.log('🔍 DEBUGGING DATES:', {
-        original: { startDate, endDate },
-        formatted: { startDateStr, endDateStr },
-        iso: { startDateISO, endDateISO },
-        hardcoded: HARDCODED_TEST
-      });
+      console.log('🔍 Date range:', { startDateStr, endDateStr });
+
+      // Fetch calculation mode from system_settings
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'shopify_sales_calculation_mode')
+        .maybeSingle();
+
+      const calculationMode = settingsData?.value || 'paid_only';
+      console.log('⚙️ Calculation mode:', calculationMode);
 
       // Add unique timestamp to bypass cache
       const cacheBypass = Date.now();
@@ -87,6 +77,7 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
             {
               start_date: startDateStr,
               end_date: endDateStr,
+              calculation_mode: calculationMode,
             }
           );
           
