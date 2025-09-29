@@ -1072,9 +1072,9 @@ const Index = () => {
                     return (
                       <ChartContainer
                         config={chartConfig}
-                        className="mx-auto aspect-square max-h-[400px] [&_.recharts-pie-label-text]:fill-foreground"
+                        className="mx-auto h-[500px] [&_.recharts-pie-label-text]:fill-foreground"
                       >
-                        <PieChart>
+                        <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
                           <ChartTooltip 
                             content={<ChartTooltipContent 
                               hideLabel 
@@ -1085,8 +1085,9 @@ const Index = () => {
                             data={chartData}
                             dataKey="sales"
                             nameKey="channel"
+                            outerRadius={120}
                             label={({ name, percent }) => `${name}: ${(Number(percent) * 100).toFixed(1)}%`}
-                            labelLine={false}
+                            labelLine={true}
                           />
                         </PieChart>
                       </ChartContainer>
