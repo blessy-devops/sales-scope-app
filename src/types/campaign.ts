@@ -146,4 +146,59 @@ export const performanceFormSchema = z.object({
   clicks: z.string().refine(val => val === '' || (!isNaN(Number(val)) && Number(val) >= 0), 'Cliques deve ser um número válido').optional(),
   impressions: z.string().refine(val => val === '' || (!isNaN(Number(val)) && Number(val) >= 0), 'Impressões deve ser um número válido').optional(),
   cost: z.string().refine(val => val === '' || (!isNaN(Number(val)) && Number(val) >= 0), 'Custo deve ser um número válido').optional(),
-});
+})
+
+// Campaign Analytics types
+export interface CampaignAnalyticsData {
+  campaign_info: {
+    id: string;
+    name: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+    utm_campaign: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_content?: string;
+    utm_term?: string;
+  };
+  goals: {
+    revenue?: number;
+    sales?: number;
+    sessions?: number;
+    conversion_rate?: number;
+    average_ticket?: number;
+    cps?: number;
+  };
+  shopify_analytics: {
+    totals: {
+      total_revenue: number;
+      total_sales: number;
+      average_ticket: number;
+    };
+    by_utm_source: UTMSourceMetrics[];
+  };
+  performance_data: CampaignPerformanceData[];
+}
+
+export interface UTMSourceMetrics {
+  utm_source: string;
+  revenue: number;
+  sales: number;
+  average_ticket: number;
+  sessions?: number;
+  clicks?: number;
+  impressions?: number;
+  cost?: number;
+  conversion_rate?: number;
+  cps?: number;
+}
+
+export interface CampaignKPI {
+  label: string;
+  value: number;
+  goal?: number;
+  percentage?: number;
+  format: 'currency' | 'number' | 'percentage';
+  icon: string;
+}
