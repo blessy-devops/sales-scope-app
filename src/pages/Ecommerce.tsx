@@ -8,7 +8,6 @@ import { MetricsChart } from '@/components/ecommerce/MetricsChart';
 import { MetricsSimple } from '@/components/ecommerce/MetricsSimple';
 import { CouponsTable } from '@/components/ecommerce/CouponsTable';
 import { BrazilRegionsChart } from '@/components/ecommerce/BrazilRegionsChart';
-import { EcommerceSettingsModal } from '@/components/EcommerceSettingsModal';
 import { useShopifyMetrics } from '@/hooks/useShopifyMetrics';
 import { 
   DollarSign, 
@@ -22,8 +21,7 @@ import {
   Eye,
   BarChart3,
   MapPin,
-  Tag,
-  Settings
+  Tag
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,8 +34,6 @@ const Ecommerce: React.FC = () => {
       to: endOfMonth(currentDate)
     };
   });
-  
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { 
     totalRevenue, 
@@ -83,9 +79,6 @@ const Ecommerce: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={() => setSettingsOpen(true)}>
-            <Settings className="h-4 w-4" />
-          </Button>
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
@@ -268,12 +261,6 @@ const Ecommerce: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Settings Modal */}
-      <EcommerceSettingsModal 
-        open={settingsOpen} 
-        onOpenChange={setSettingsOpen} 
-      />
     </div>
   );
 };

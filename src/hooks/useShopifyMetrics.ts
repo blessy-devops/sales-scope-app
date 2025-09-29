@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -20,37 +20,54 @@ interface CouponData {
 }
 
 export function useShopifyMetrics(startDate: Date, endDate: Date) {
-  // Query 1: Fetch calculation mode from system_settings
-  const { data: calculationMode } = useQuery({
-    queryKey: ['shopify-calculation-mode'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'shopify_sales_calculation_mode')
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching calculation mode:', error);
-      }
-      
-      return data?.value || 'paid_only';
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+  const [metrics, setMetrics] = useState<ShopifyMetrics>({
+    totalRevenue: 0,
+    totalOrders: 0,
+    averageTicket: 0,
+    cancellations: 0,
+    sessions: 0,
+    loading: true,
+    error: null,
   });
 
-  // Query 2: Fetch metrics (depends on calculationMode)
-  const metricsQuery = useQuery({
-    queryKey: ['shopify-metrics', startDate.toISOString(), endDate.toISOString(), calculationMode],
-    queryFn: async () => {
-      // Format dates
-      const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDate, 'yyyy-MM-dd');
-      const startDateISO = startDateStr + 'T00:00:00-03:00';
-      const endDateISO = endDateStr + 'T23:59:59-03:00';
+  const [coupons, setCoupons] = useState<CouponData[]>([]);
 
-      console.log('🔍 Date range:', { startDateStr, endDateStr });
-      console.log('⚙️ Calculation mode:', calculationMode);
+  useEffect(() => {
+    fetchMetrics();
+    fetchCoupons();
+  }, [startDate, endDate]);
+
+  const fetchMetrics = async () => {
+    try {
+      setMetrics(prev => ({ ...prev, loading: true }));
+
+      // CRITICAL DEBUG: Test with hardcoded dates first
+      const HARDCODED_TEST = true;
+      
+      let startDateStr, endDateStr, startDateISO, endDateISO;
+      
+      if (HARDCODED_TEST) {
+        // Use exact dates from the manual SQL query that worked
+        startDateStr = '2025-09-01';
+        endDateStr = '2025-09-21';
+        startDateISO = '2025-09-01T00:00:00-03:00'; // Sao Paulo timezone
+        endDateISO = '2025-09-21T23:59:59-03:00';   // Sao Paulo timezone
+        console.log('🔧 USANDO DATAS HARDCODED PARA TESTE');
+      } else {
+        // Original date formatting
+        startDateStr = format(startDate, 'yyyy-MM-dd');
+        endDateStr = format(endDate, 'yyyy-MM-dd');
+        // Create ISO strings with Sao Paulo timezone offset
+        startDateISO = startDateStr + 'T00:00:00-03:00';
+        endDateISO = endDateStr + 'T23:59:59-03:00';
+      }
+
+      console.log('🔍 DEBUGGING DATES:', {
+        original: { startDate, endDate },
+        formatted: { startDateStr, endDateStr },
+        iso: { startDateISO, endDateISO },
+        hardcoded: HARDCODED_TEST
+      });
 
       // Add unique timestamp to bypass cache
       const cacheBypass = Date.now();
@@ -70,8 +87,7 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
             {
               start_date: startDateStr,
               end_date: endDateStr,
-              calculation_mode: calculationMode,
-            } as any // Cast to any until types are regenerated
+            }
           );
           
           salesData = result.data;
@@ -205,22 +221,27 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
 
       const totalSessions = ga4Data?.reduce((sum: number, day: any) => sum + (day.sessions || 0), 0) || 0;
 
-      return {
+      setMetrics({
         totalRevenue,
         totalOrders,
         averageTicket,
         cancellations,
         sessions: totalSessions,
-      };
-    },
-    enabled: !!calculationMode, // Only run when calculationMode is available
-    staleTime: 60 * 1000, // 1 minute
-  });
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error fetching Shopify metrics:', error);
+      setMetrics(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      }));
+    }
+  };
 
-  // Query 3: Fetch coupons data
-  const couponsQuery = useQuery({
-    queryKey: ['shopify-coupons', startDate.toISOString(), endDate.toISOString()],
-    queryFn: async () => {
+  const fetchCoupons = async () => {
+    try {
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
       
@@ -270,25 +291,18 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         .sort((a, b) => b.uses - a.uses)
         .slice(0, 10); // Top 10 coupons
 
-      return couponsArray;
-    },
-    staleTime: 60 * 1000, // 1 minute
-  });
+      setCoupons(couponsArray);
+    } catch (error) {
+      console.error('Error fetching coupons:', error);
+    }
+  };
 
-  // Combine all query results
   return {
-    totalRevenue: metricsQuery.data?.totalRevenue || 0,
-    totalOrders: metricsQuery.data?.totalOrders || 0,
-    averageTicket: metricsQuery.data?.averageTicket || 0,
-    cancellations: metricsQuery.data?.cancellations || 0,
-    sessions: metricsQuery.data?.sessions || 0,
-    loading: metricsQuery.isLoading || couponsQuery.isLoading,
-    error: metricsQuery.error ? (metricsQuery.error as Error).message : 
-           couponsQuery.error ? (couponsQuery.error as Error).message : null,
-    coupons: couponsQuery.data || [],
+    ...metrics,
+    coupons,
     refetch: () => {
-      metricsQuery.refetch();
-      couponsQuery.refetch();
+      fetchMetrics();
+      fetchCoupons();
     },
   };
 }
