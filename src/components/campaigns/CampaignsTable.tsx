@@ -89,7 +89,7 @@ export function CampaignsTable({ campaigns }: CampaignsTableProps) {
                 <TableRow
                   key={campaign.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                  onClick={() => navigate(`/campanhas/${campaign.id}`)}
                 >
                   <TableCell className="font-medium">
                     <div>
