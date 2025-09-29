@@ -181,11 +181,11 @@ export function CampaignFormDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="dateRange"
-                render={({ field }) => (
-                  <FormItem>
+            <FormField
+              control={form.control}
+              name="dateRange"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
                     <FormLabel>Período da Campanha</FormLabel>
                     <FormControl>
                       <PeriodRangePicker
