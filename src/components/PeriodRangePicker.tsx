@@ -31,7 +31,19 @@ export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: P
     to: dateRange.to
   });
 
+  // Sincroniza tempRange quando dateRange muda (ex: form reset)
+  React.useEffect(() => {
+    setTempRange({
+      from: dateRange.from,
+      to: dateRange.to
+    });
+  }, [dateRange.from, dateRange.to]);
+
   const formatDateRange = (range: DateRange) => {
+    if (!range.from || !range.to) {
+      return "Selecionar período";
+    }
+    
     const fromFormatted = format(range.from, "dd/MM/yyyy", { locale: ptBR });
     const toFormatted = format(range.to, "dd/MM/yyyy", { locale: ptBR });
     
@@ -75,6 +87,7 @@ export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: P
           variant="outline"
           className={cn(
             "w-[280px] justify-start text-left font-normal",
+            !dateRange.from && "text-muted-foreground",
             className
           )}
         >
@@ -82,7 +95,7 @@ export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: P
           {formatDateRange(dateRange)}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 z-50" align="start" sideOffset={8}>
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium">Selecionar Período</h4>
@@ -104,7 +117,7 @@ export function PeriodRangePicker({ dateRange, onDateRangeChange, className }: P
             locale={ptBR}
             disabled={(date) => date > new Date()}
             initialFocus
-            className="p-3 pointer-events-auto"
+            className="p-3 pointer-events-auto select-none"
           />
           
           {tempRange?.from && (
