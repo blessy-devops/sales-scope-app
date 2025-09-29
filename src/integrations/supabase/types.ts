@@ -1210,7 +1210,9 @@ export type Database = {
         }[]
       }
       get_shopify_precise_sales: {
-        Args: { end_date: string; start_date: string }
+        Args:
+          | { calculation_mode?: string; end_date: string; start_date: string }
+          | { end_date: string; start_date: string }
         Returns: {
           sale_date: string
           total_sales: number

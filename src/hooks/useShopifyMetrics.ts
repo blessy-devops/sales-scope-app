@@ -78,7 +78,7 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
               start_date: startDateStr,
               end_date: endDateStr,
               calculation_mode: calculationMode,
-            }
+            } as any // Cast to any until types are regenerated
           );
           
           salesData = result.data;
