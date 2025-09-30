@@ -68,7 +68,7 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
 
       console.log('🏪 Shopify channel ID:', shopifyChannel.id);
 
-      // Use get_dashboard_sales (same as home dashboard)
+      // Use get_dashboard_sales (now includes order_count)
       const { data: salesData, error: salesError } = await supabase.rpc(
         'get_dashboard_sales',
         {
@@ -83,6 +83,11 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         dataLength: salesData?.length
       });
 
+      if (salesError) {
+        console.error('❌ Error from get_dashboard_sales:', salesError);
+        throw salesError;
+      }
+
       // Filter for Shopify channel only
       const shopifySales = salesData?.filter(
         (row: any) => row.channel_id === shopifyChannel.id
@@ -94,71 +99,39 @@ export function useShopifyMetrics(startDate: Date, endDate: Date) {
         data: shopifySales
       });
 
-      // Calculate total revenue from Shopify sales
-      let totalRevenue = shopifySales.reduce(
-        (sum: number, row: any) => sum + (row.amount || 0), 
-        0
-      );
-
-      console.log('💰 Total revenue from get_dashboard_sales:', totalRevenue);
-
-      if (salesError) {
-        console.error('❌ Error from get_dashboard_sales:', salesError);
-        // Will use fallback calculation below
-      }
-
-      // Get orders directly from shopify_orders_gold for other metrics
-      console.log('🔍 Fetching orders with date range:', {
-        startISO: startDateISO,
-        endISO: endDateISO,
-        oldWay: startDate.toISOString()
+      // Calculate total revenue and orders from Shopify sales (using order_count from DB)
+      let totalRevenue = 0;
+      let totalOrders = 0;
+      
+      shopifySales.forEach((row: any) => {
+        totalRevenue += Number(row.amount || 0);
+        totalOrders += Number(row.order_count || 0);
       });
 
+      console.log('💰 Metrics from get_dashboard_sales:', { totalRevenue, totalOrders });
+
+      // Get orders directly from shopify_orders_gold for cancellations only
       const { data: ordersData, error: ordersError } = await supabase
         .from('shopify_orders_gold')
-        .select('total_price, financial_status, cancelled_at, test, created_at')
+        .select('total_price, cancelled_at')
         .gte('created_at', startDateISO)
-        .lte('created_at', endDateISO);
+        .lte('created_at', endDateISO)
+        .not('cancelled_at', 'is', null);
 
-      console.log('📥 Orders query result:', {
+      console.log('📥 Cancelled orders query result:', {
         ordersData: ordersData?.length,
-        ordersError,
-        firstOrder: ordersData?.[0]
+        ordersError
       });
 
       if (ordersError) {
-        console.error('❌ Orders query error:', ordersError);
+        console.error('❌ Cancelled orders query error:', ordersError);
         throw ordersError;
       }
 
-      // Filter paid orders for count and average ticket
-      const paidOrders = ordersData?.filter((order: any) => 
-        order.financial_status === 'paid' && 
-        !order.test &&
-        !order.cancelled_at
-      ) || [];
-
-      console.log('📊 Filtered orders:', {
-        totalOrders: ordersData?.length,
-        paidOrders: paidOrders.length,
-        testOrders: ordersData?.filter(o => o.test).length,
-        cancelledOrders: ordersData?.filter(o => o.cancelled_at).length
-      });
-
       // Calculate cancellations
-      const cancelledOrders = ordersData?.filter((order: any) => 
-        order.cancelled_at !== null
-      ) || [];
-      
-      const cancellations = cancelledOrders.reduce((sum: number, order: any) => sum + (order.total_price || 0), 0);
-
-      const totalOrders = paidOrders.length;
-      
-      // Use fallback calculation if RPC didn't provide revenue
-      if (totalRevenue === 0 && paidOrders.length > 0) {
-        totalRevenue = paidOrders.reduce((sum: number, order: any) => sum + (order.total_price || 0), 0);
-        console.log('🔄 Using fallback revenue calculation:', totalRevenue);
-      }
+      const cancellations = ordersData?.reduce((sum: number, order: any) => 
+        sum + (order.total_price || 0), 0
+      ) || 0;
       
       const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 

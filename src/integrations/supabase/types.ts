@@ -1177,6 +1177,7 @@ export type Database = {
         Returns: {
           amount: number
           channel_id: string
+          order_count: number
           sale_date: string
         }[]
       }
@@ -1211,6 +1212,18 @@ export type Database = {
       }
       get_shopify_precise_sales: {
         Args: { end_date: string; start_date: string }
+        Returns: {
+          order_count: number
+          sale_date: string
+          total_sales: number
+        }[]
+      }
+      get_shopify_precise_sales_new: {
+        Args: {
+          calculation_mode?: string
+          end_date: string
+          start_date: string
+        }
         Returns: {
           sale_date: string
           total_sales: number
