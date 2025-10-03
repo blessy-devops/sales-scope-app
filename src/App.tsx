@@ -23,6 +23,7 @@ import Sazonalidade from "./pages/Sazonalidade";
 import SocialMedia from "./pages/SocialMedia";
 import Ferramentas from "./pages/Ferramentas";
 import FerramentasCalculadoraEmail from "./pages/FerramentasCalculadoraEmail";
+import SimuladorEcommerce from "./pages/ferramentas/SimuladorEcommerce";
 import ShopifyDebug from "./pages/ShopifyDebug";
 import Ecommerce from "./pages/Ecommerce";
 import Login from "./pages/Login";
@@ -177,6 +178,14 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <FerramentasCalculadoraEmail />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/ferramentas/simulador-ecommerce" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SimuladorEcommerce />
                   </Layout>
                 </ProtectedRoute>
               } />
