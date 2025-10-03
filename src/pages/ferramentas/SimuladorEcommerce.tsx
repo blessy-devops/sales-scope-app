@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TrendingUp, Save, Trash2, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MetricsState {
   acessos: string;
@@ -12,6 +15,17 @@ interface MetricsState {
   ticketMedio: string;
   receitaDesejada: string;
   metricaCalcular: 'acessos' | 'txConversao' | 'ticketMedio';
+}
+
+interface Cenario {
+  id: string;
+  nome: string;
+  acessos: number;
+  txConversao: number;
+  ticketMedio: number;
+  receita: number;
+  vendas: number;
+  timestamp: Date;
 }
 
 export default function SimuladorEcommerce() {
@@ -22,6 +36,8 @@ export default function SimuladorEcommerce() {
     receitaDesejada: '',
     metricaCalcular: 'acessos'
   });
+
+  const [cenarios, setCenarios] = useState<Cenario[]>([]);
 
   // Cálculos para Projeção de Receita
   const projecaoVendas = useMemo(() => {
@@ -78,6 +94,46 @@ export default function SimuladorEcommerce() {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
     }).format(value);
+  };
+
+  const handleSalvarCenario = () => {
+    const acessos = parseFloat(metrics.acessos) || 0;
+    const txConversao = parseFloat(metrics.txConversao) || 0;
+    const ticketMedio = parseFloat(metrics.ticketMedio) || 0;
+
+    if (acessos === 0 || txConversao === 0 || ticketMedio === 0) {
+      toast.error("Preencha todos os campos para registrar o cenário");
+      return;
+    }
+
+    const vendas = projecaoVendas;
+    const receita = projecaoReceita;
+
+    const novoCenario: Cenario = {
+      id: crypto.randomUUID(),
+      nome: `Cenário ${cenarios.length + 1}`,
+      acessos,
+      txConversao,
+      ticketMedio,
+      receita,
+      vendas,
+      timestamp: new Date()
+    };
+
+    setCenarios(prev => [...prev, novoCenario]);
+    toast.success("Cenário registrado!", {
+      description: `${novoCenario.nome} foi adicionado à comparação`
+    });
+  };
+
+  const handleRemoverCenario = (id: string) => {
+    setCenarios(prev => prev.filter(c => c.id !== id));
+    toast.success("Cenário removido");
+  };
+
+  const handleLimparTodos = () => {
+    setCenarios([]);
+    toast.success("Todos os cenários foram removidos");
   };
 
   return (
@@ -163,6 +219,13 @@ export default function SimuladorEcommerce() {
                   </div>
                 </CardContent>
               </Card>
+
+              <div className="flex justify-end mt-6">
+                <Button onClick={handleSalvarCenario} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Registrar Cenário
+                </Button>
+              </div>
             </TabsContent>
 
             {/* Aba: Engenharia Reversa */}
@@ -263,10 +326,73 @@ export default function SimuladorEcommerce() {
                   </Card>
                 )}
               </div>
+
+              <div className="flex justify-end mt-6">
+                <Button onClick={handleSalvarCenario} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Registrar Cenário
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {cenarios.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Comparação de Cenários</CardTitle>
+                <CardDescription>
+                  {cenarios.length} cenário(s) registrado(s)
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleLimparTodos} className="gap-2">
+                <X className="h-4 w-4" />
+                Limpar Todos
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cenário</TableHead>
+                  <TableHead className="text-right">Acessos</TableHead>
+                  <TableHead className="text-right">Taxa Conv.</TableHead>
+                  <TableHead className="text-right">Ticket Médio</TableHead>
+                  <TableHead className="text-right">Vendas</TableHead>
+                  <TableHead className="text-right">Receita</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cenarios.map((cenario) => (
+                  <TableRow key={cenario.id}>
+                    <TableCell className="font-medium">{cenario.nome}</TableCell>
+                    <TableCell className="text-right">{formatNumber(cenario.acessos, 0)}</TableCell>
+                    <TableCell className="text-right">{formatNumber(cenario.txConversao, 2)}%</TableCell>
+                    <TableCell className="text-right">{formatCurrency(cenario.ticketMedio)}</TableCell>
+                    <TableCell className="text-right">{formatNumber(cenario.vendas, 0)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatCurrency(cenario.receita)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleRemoverCenario(cenario.id)}
+                        className="h-8 w-8"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
